@@ -1,0 +1,56 @@
+.sidebar-main {
+  width: 200px;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.broadcast-main {
+  padding-top: 20px;
+  padding-right: 10px;
+  box-sizing: border-box;
+}
+
+.broadcast-content {
+  padding: 10px;
+  background-color: red;
+  border-radius: 5px;
+}
+
+.user-main {
+  margin: 10px 0px;
+  padding-right: 10px;
+  box-sizing: border-box;
+}
+.user-content {
+  padding: 10px;
+  background-color: red;
+  border-radius: 5px;
+}
+
+.filesystem-main {
+  margin: 10px 0px;
+  padding-right: 10px;
+  box-sizing: border-box;
+}
+.filesystem-content {
+  display: flex;
+  gap: 2px;
+  flex-direction: column;
+}
+.filesystem-item {
+  padding: 5px;
+  border-radius: 5px;
+  background-color: red;
+}
+
+.dividing-main {
+  padding-right: 10px;
+}
+.dividing-content {
+  margin: 0;
+  background-color: #aaaaaa;
+  height: 1px;
+  border: none;
+}
