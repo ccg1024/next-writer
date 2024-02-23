@@ -5,7 +5,7 @@ import { EditorState } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { useRef, useEffect, useState } from 'react'
 import { editorDefaultExtensions } from '../libs/codemirror'
-import { toggleHeadingMark } from '../plugins/head-mark-extension'
+import { hideMarkPlugin } from '../plugins/hide-marke-extension'
 
 interface Props {
   initialDoc?: string
@@ -23,7 +23,7 @@ export const useEditor = <T extends Element>(
 
     const startState = EditorState.create({
       doc: initialDoc,
-      extensions: [...editorDefaultExtensions, toggleHeadingMark()]
+      extensions: [...editorDefaultExtensions, hideMarkPlugin]
     })
 
     const view = new EditorView({

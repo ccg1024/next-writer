@@ -37,10 +37,12 @@ export const defaultTheme = EditorView.theme({
   },
   '.cm-line': {
     paddingLeft: '2px',
-    paddingRight: '2px'
+    paddingRight: '2px',
+    width: '80%',
+    margin: 'auto'
   },
   '.cm-content': {
-    marginRight: '5px'
+    // marginRight: '5px'
   },
   '.cm-activeLineGutter': {
     backgroundColor: '#cccccc44'
@@ -57,11 +59,11 @@ export const defaultTheme = EditorView.theme({
     backgroundColor: '#cccccc44',
     borderTopRightRadius: '2px',
     borderBottomRightRadius: '2px'
-  },
-  '.cm-activeLine > *': {
-    // show hiden content in current line.
-    display: 'unset'
   }
+  // '.cm-activeLine > *': {
+  // show hiden content in current line.
+  // display: 'unset'
+  // }
 })
 
 const defaultColor = {

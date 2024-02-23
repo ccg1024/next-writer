@@ -6,7 +6,6 @@ import {
   highlightActiveLine,
   dropCursor,
   rectangularSelection,
-  lineNumbers,
   highlightActiveLineGutter
 } from '@codemirror/view'
 import { Compartment, EditorState } from '@codemirror/state'
@@ -74,7 +73,6 @@ const markStylingExtension: MarkdownConfig = {
 export const themePlugin = new Compartment()
 
 export const editorDefaultExtensions = [
-  lineNumbers(),
   highlightActiveLineGutter(),
   highlightSpecialChars(),
   history(),
