@@ -22,6 +22,16 @@ this is a content text, *italic*, **bold**, ***italic bold***. the \`code\`
 2. item2
 
 > some quote
+
+![img-preview](/Users/ccg/MySupport/CodePlace/creations/imarkdown/img/mac-dark.png)
+
+\`\`\`javascript
+function helloWorld() {
+  return 'hello World'
+}
+
+console.log(helloWorld())
+\`\`\`
 `
 
 const Editor: FC = (): JSX.Element => {

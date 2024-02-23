@@ -6,6 +6,8 @@ import { EditorView } from '@codemirror/view'
 import { useRef, useEffect, useState } from 'react'
 import { editorDefaultExtensions } from '../libs/codemirror'
 import { hideMarkPlugin } from '../plugins/hide-marke-extension'
+import { imgPreview } from '../plugins/img-preview-extension'
+import { codeBlockHighlight } from '../plugins/code-block-extension'
 
 interface Props {
   initialDoc?: string
@@ -23,7 +25,12 @@ export const useEditor = <T extends Element>(
 
     const startState = EditorState.create({
       doc: initialDoc,
-      extensions: [...editorDefaultExtensions, hideMarkPlugin]
+      extensions: [
+        ...editorDefaultExtensions,
+        imgPreview(),
+        codeBlockHighlight(),
+        hideMarkPlugin
+      ]
     })
 
     const view = new EditorView({

@@ -19,7 +19,8 @@ export const defaultTheme = EditorView.theme({
   //   transition: 'all 80ms'
   // },
   '.cm-scroller': {
-    fontFamily: 'inherit !important'
+    fontFamily: 'inherit !important',
+    marginTop: '5px'
   },
   '&.cm-editor': {
     textAlign: 'left',

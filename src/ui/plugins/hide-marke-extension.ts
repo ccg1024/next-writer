@@ -26,6 +26,8 @@ function addDeco(view: EditorView) {
           } else if (node.name === 'InlineCode') {
             builder.add(node.from, node.from + 1, Decoration.replace({}))
             builder.add(node.to - 1, node.to, Decoration.replace({}))
+          } else if (node.name === 'Image') {
+            builder.add(node.from, node.to, Decoration.replace({}))
           }
         }
       })
