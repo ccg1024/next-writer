@@ -27,6 +27,15 @@ function addDeco(view: EditorView) {
             builder.add(node.from, node.from + 1, Decoration.replace({}))
             builder.add(node.to - 1, node.to, Decoration.replace({}))
           } else if (node.name === 'Image') {
+            // need a global config to check whther use img-preview extension.
+            // NOTE: the code blew is asuming using img-preview extension.
+            const imgText = view.state.doc.sliceString(node.from, node.to)
+            const regPre = /^!\[.*\]\(.* ['"](.*)['"]\)$/.exec(imgText)
+            if (!regPre || regPre.length <= 1) return
+
+            const imgAlign = regPre[1]
+            if (!imgAlign.split(',').includes('preview')) return
+
             builder.add(node.from, node.to, Decoration.replace({}))
           }
         }

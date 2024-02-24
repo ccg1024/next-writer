@@ -50,14 +50,21 @@ function imgBlock(view: EditorView) {
         enter: node => {
           if (node.name == 'Image') {
             const imgText = view.state.doc.sliceString(node.from, node.to)
-            const regRsult = /^!\[.*?\]\((.*?)\)$/.exec(imgText)
+            const regPre = /^!\[.*\]\(.* ['"](.*)['"]\)$/.exec(imgText)
+            // check whether need preview
+            if (!regPre || regPre.length <= 1) return
+
+            const imgAlign = regPre[1]
+            if (!imgAlign.split(',').includes('preview')) return
+
+            const regRsult = /^!\[.*?\]\((.*?) .*\)$/.exec(imgText)
             if (regRsult.length > 1) {
               const src = regRsult[1]
               const deco = Decoration.widget({
                 widget: new ImgWidget(src),
                 side: 2
               })
-              widgets.push(deco.range(node.to))
+              widgets.push(deco.range(node.from))
             }
           }
         }

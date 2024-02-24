@@ -23,7 +23,7 @@ this is a content text, *italic*, **bold**, ***italic bold***. the \`code\`
 
 > some quote
 
-![img-preview](/Users/ccg/MySupport/CodePlace/creations/imarkdown/img/mac-dark.png)
+![img-preview](/Users/ccg/MySupport/CodePlace/creations/imarkdown/img/mac-dark.png 'preview')
 
 \`\`\`javascript
 function helloWorld() {
