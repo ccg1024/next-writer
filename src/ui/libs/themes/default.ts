@@ -44,6 +44,7 @@ export const defaultTheme = EditorView.theme({
   },
   '.cm-content': {
     // marginRight: '5px'
+    paddingBottom: '80vh'
   },
   '.cm-activeLineGutter': {
     backgroundColor: '#cccccc44'

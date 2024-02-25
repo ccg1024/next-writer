@@ -32,13 +32,12 @@ export const useEditor = <T extends Element>(
           }
           if (update.selectionSet) {
             // typewriter mode
-            // NOTE: need a config to toglle typewriter mode
-            // and before start mode, need add `new Array(20).join("\n")`
-            // to doc, which make sure have enough space to scroll.
-            // const cursor = update.state.selection.ranges[0].from
-            // update.view.dispatch({
-            //   effects: EditorView.scrollIntoView(cursor, { y: 'center' })
-            // })
+            if (window._next_writer_rendererConfig.rendererPlugin.typewriter) {
+              const cursor = update.state.selection.ranges[0].from
+              update.view.dispatch({
+                effects: EditorView.scrollIntoView(cursor, { y: 'center' })
+              })
+            }
           }
         }),
         ...editorDefaultExtensions,

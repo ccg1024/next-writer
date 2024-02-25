@@ -14,7 +14,8 @@ const imgTheme = EditorView.baseTheme({
     width: '100%',
     position: 'relative',
     zIndex: '-1',
-    borderRadius: '10px'
+    borderRadius: '10px',
+    boxShadow: '0px 0px 5px #000000'
   }
 })
 

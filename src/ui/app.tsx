@@ -1,5 +1,12 @@
-import { createRoot } from "react-dom/client";
-import Home from "./components/home";
+import { createRoot } from 'react-dom/client'
+import Home from './components/home'
 
-const root = createRoot(document.getElementById("root"));
-root.render(<Home />);
+// initial global var
+window._next_writer_rendererConfig = {
+  rendererPlugin: {
+    typewriter: false
+  }
+}
+
+const root = createRoot(document.getElementById('root'))
+root.render(<Home />)

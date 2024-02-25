@@ -13,7 +13,9 @@
     "moduleResolution": "node",
     "resolveJsonModule": true,
     "paths": {
-      "*": ["node_modules/*"]
+      "*": ["node_modules/*"],
+      "_window_type": ["src/types/window.d.ts"],
+      "_common_type": ["src/types/common.d.ts"]
     }
   },
   "include": ["src/**/*"]

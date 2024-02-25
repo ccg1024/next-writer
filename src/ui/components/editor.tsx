@@ -1,7 +1,8 @@
-import { FC, useEffect, useLayoutEffect } from 'react'
+import { FC, useEffect, useLayoutEffect, useCallback } from 'react'
 import { useEditor } from '../hooks/useEditor'
 import { themePlugin } from '../libs/codemirror'
 import { defaultLight } from '../libs/themes/default'
+import { EditorChannel, TypeWriterIpcValue } from '../../types/common.d'
 
 import '../css/editor.css'
 
@@ -31,6 +32,7 @@ function helloWorld() {
 }
 
 console.log(helloWorld())
+// /Users/ccg/MySupport/CodePlace/creations/imarkdown/img/mac-dark.png
 \`\`\`
 `
 
@@ -50,6 +52,29 @@ const Editor: FC = (): JSX.Element => {
   useEffect(() => {
     if (editorView) {
       // some thing need deal with editor instance
+    }
+  }, [editorView])
+
+  const listener = useCallback(
+    (_: unknown, data: EditorChannel) => {
+      if (data.type === 'typewriter') {
+        // toggle typewriter mode
+        const value = data.value as TypeWriterIpcValue
+        if (value.checked) {
+          window._next_writer_rendererConfig.rendererPlugin.typewriter = true
+        } else {
+          window._next_writer_rendererConfig.rendererPlugin.typewriter = false
+        }
+      }
+    },
+    [editorView]
+  )
+  useEffect(() => {
+    // for eidtor ipc
+    const removeListener = window.ipc.listenEditorChannel(listener)
+
+    return () => {
+      removeListener()
     }
   }, [editorView])
 
