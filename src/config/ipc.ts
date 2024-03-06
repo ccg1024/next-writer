@@ -1,5 +1,6 @@
 export const ipcChannel = {
   'main-to-render': {
-    editor_typewriter: 'editor_typewriter'
+    editor_component: 'editor_component',
+    home_component: 'home_component'
   }
 }

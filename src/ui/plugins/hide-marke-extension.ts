@@ -36,7 +36,8 @@ function addDeco(view: EditorView) {
             const imgAlign = regPre[1]
             if (!imgAlign.split(',').includes('preview')) return
 
-            builder.add(node.from, node.to, Decoration.replace({}))
+            // NOTE: Need Update
+            // builder.add(node.from + 3, node.to, Decoration.replace({}))
           }
         }
       })

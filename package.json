@@ -54,8 +54,12 @@
     "@codemirror/search": "6.5.0",
     "@codemirror/state": "6.2.1",
     "@codemirror/view": "6.12.0",
+    "@emotion/react": "^11.11.3",
+    "@emotion/styled": "^11.11.0",
     "electron-squirrel-startup": "^1.0.0",
+    "framer-motion": "^11.0.8",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "style-mod": "^4.1.2"
   }
 }

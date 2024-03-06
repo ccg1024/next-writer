@@ -6,7 +6,13 @@ import type {
   KeyboardEvent
 } from 'electron'
 import { ipcChannel } from '../../config/ipc'
-import { EditorChannel, TypeWriterIpcValue } from '../../types/common.d'
+import {
+  EditorChannel,
+  HomeChannel,
+  TypeWriterIpcValue,
+  ReadFileIpcValue
+} from '../../types/common.d'
+import { handleOpenFile } from '../file_process'
 
 // menu callback
 async function editorTypewriter(
@@ -15,12 +21,45 @@ async function editorTypewriter(
   _event: KeyboardEvent
 ) {
   if (!win) return
-  win.webContents.send(ipcChannel['main-to-render'].editor_typewriter, {
+  win.webContents.send(ipcChannel['main-to-render'].editor_component, {
     type: 'typewriter',
     value: {
       checked: menuItem.checked
     } as TypeWriterIpcValue
   } as EditorChannel)
+}
+
+async function openFile(_: unknown, win: BrowserWindow) {
+  const fileBuffer = await handleOpenFile(win)
+
+  const ipcBuffer: EditorChannel = {
+    type: 'readfile',
+    value: {
+      content: fileBuffer
+    } as ReadFileIpcValue
+  }
+
+  if (fileBuffer)
+    return win.webContents.send(
+      ipcChannel['main-to-render'].editor_component,
+      ipcBuffer
+    )
+}
+
+async function toggleSideBar(
+  menuItem: MenuItem,
+  win: BrowserWindow,
+  _: unknown
+) {
+  if (!win) return
+
+  win.webContents.send(ipcChannel['main-to-render'].home_component, {
+    type: 'hideSidebar',
+    value: {
+      checked: menuItem.checked
+    }
+  } as HomeChannel)
+  win.setWindowButtonVisibility(!menuItem.checked)
 }
 
 export default function createMenus(): MenuItemConstructorOptions[] {
@@ -45,13 +84,28 @@ export default function createMenus(): MenuItemConstructorOptions[] {
     {
       label: 'File',
       submenu: [
+        {
+          label: 'open file',
+          click: openFile,
+          accelerator: isMac ? 'Cmd+o' : 'Ctrl+o'
+        },
         { type: 'separator' },
         isMac ? { role: 'close' } : { role: 'quit' }
       ]
     },
     {
       label: 'View',
-      submenu: [{ role: 'toggleDevTools' }, { type: 'separator' }]
+      submenu: [
+        { role: 'toggleDevTools' },
+        { type: 'separator' },
+        {
+          label: 'hide sidebar',
+          click: toggleSideBar,
+          type: 'checkbox',
+          checked: false,
+          accelerator: isMac ? 'Cmd+Shift+s' : 'Ctrl+Shift+s'
+        }
+      ]
     },
     {
       label: 'Edit',

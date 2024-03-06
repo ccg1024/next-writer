@@ -44,7 +44,8 @@ export const defaultTheme = EditorView.theme({
   },
   '.cm-content': {
     // marginRight: '5px'
-    paddingBottom: '80vh'
+    paddingBottom: '80vh',
+    wordBreak: 'break-all'
   },
   '.cm-activeLineGutter': {
     backgroundColor: '#cccccc44'
@@ -58,14 +59,17 @@ export const defaultTheme = EditorView.theme({
     color: 'transparent !important'
   },
   '.cm-activeLine': {
-    backgroundColor: '#cccccc44',
+    // backgroundColor: '#cccccc44',
+    backgroundColor: 'transparent',
     borderTopRightRadius: '2px',
     borderBottomRightRadius: '2px'
+  },
+  '&.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground': {
+    backgroundColor: '#d9d9d966'
+  },
+  '&.cm-focused > .cm-scroller > .cm-selectionLayer': {
+    zIndex: '99 !important'
   }
-  // '.cm-activeLine > *': {
-  // show hiden content in current line.
-  // display: 'unset'
-  // }
 })
 
 const defaultColor = {
@@ -204,8 +208,9 @@ export const defaultSyntaxHighlighting = HighlightStyle.define([
   },
   {
     tag: markTags.inlineCode,
-    color: defaultColor.content.inlineCode,
-    backgroundColor: '#EBF8FF'
+    class: 'cm-my-inline-code'
+    // color: defaultColor.content.inlineCode,
+    // backgroundColor: '#EBF8FF'
   },
   {
     tag: markTags.tableDelimiter,

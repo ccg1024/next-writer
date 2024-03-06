@@ -1,8 +1,12 @@
-import { FC, useEffect, useLayoutEffect, useCallback } from 'react'
+import { FC, useEffect, useLayoutEffect, useState } from 'react'
 import { useEditor } from '../hooks/useEditor'
 import { themePlugin } from '../libs/codemirror'
 import { defaultLight } from '../libs/themes/default'
-import { EditorChannel, TypeWriterIpcValue } from '../../types/common.d'
+import {
+  EditorChannel,
+  TypeWriterIpcValue,
+  ReadFileIpcValue
+} from '../../types/common.d'
 
 import '../css/editor.css'
 
@@ -37,8 +41,9 @@ console.log(helloWorld())
 `
 
 const Editor: FC = (): JSX.Element => {
+  const [doc, setDoc] = useState<string>(testInitialDoc)
   const [containerRef, editorView] = useEditor<HTMLDivElement>({
-    initialDoc: testInitialDoc
+    initialDoc: doc
   })
 
   useLayoutEffect(() => {
@@ -55,20 +60,21 @@ const Editor: FC = (): JSX.Element => {
     }
   }, [editorView])
 
-  const listener = useCallback(
-    (_: unknown, data: EditorChannel) => {
-      if (data.type === 'typewriter') {
-        // toggle typewriter mode
-        const value = data.value as TypeWriterIpcValue
-        if (value.checked) {
-          window._next_writer_rendererConfig.rendererPlugin.typewriter = true
-        } else {
-          window._next_writer_rendererConfig.rendererPlugin.typewriter = false
-        }
+  const listener = (_: unknown, data: EditorChannel) => {
+    if (data.type === 'typewriter') {
+      // toggle typewriter mode
+      const value = data.value as TypeWriterIpcValue
+      if (value.checked) {
+        window._next_writer_rendererConfig.rendererPlugin.typewriter = true
+      } else {
+        window._next_writer_rendererConfig.rendererPlugin.typewriter = false
       }
-    },
-    [editorView]
-  )
+    } else if (data.type === 'readfile') {
+      const value = data.value as ReadFileIpcValue
+      setDoc(value.content)
+    }
+  }
+
   useEffect(() => {
     // for eidtor ipc
     const removeListener = window.ipc.listenEditorChannel(listener)

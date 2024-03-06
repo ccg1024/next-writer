@@ -9,11 +9,21 @@ type CallbackFunction = (event: IpcRendererEvent, ...args: unknown[]) => void
 contextBridge.exposeInMainWorld('ipc', {
   // just recieve message from main process
   listenEditorChannel: (cb: CallbackFunction) => {
-    ipcRenderer.on(ipcChannel['main-to-render'].editor_typewriter, cb)
+    ipcRenderer.on(ipcChannel['main-to-render'].editor_component, cb)
 
     return () => {
       ipcRenderer.removeListener(
-        ipcChannel['main-to-render'].editor_typewriter,
+        ipcChannel['main-to-render'].editor_component,
+        cb
+      )
+    }
+  },
+  listenHomeChannel: (cb: CallbackFunction) => {
+    ipcRenderer.on(ipcChannel['main-to-render'].home_component, cb)
+
+    return () => {
+      ipcRenderer.removeListener(
+        ipcChannel['main-to-render'].home_component,
         cb
       )
     }

@@ -4,6 +4,7 @@ type CallbackFunction = (event: IpcRendererEvent, ...args: unknown[]) => void
 
 export interface ipc {
   listenEditorChannel: (cb: CallbackFunction) => () => void
+  listenHomeChannel: (cb: CallbackFunction) => () => void
 }
 
 declare global {

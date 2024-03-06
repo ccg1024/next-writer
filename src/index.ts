@@ -18,7 +18,7 @@ const createWindow = (): void => {
     height: 600,
     width: 800,
     frame: false,
-    titleBarStyle: 'customButtonsOnHover',
+    titleBarStyle: 'hidden',
     vibrancy: 'under-window',
     visualEffectState: 'active',
     webPreferences: {
@@ -35,7 +35,9 @@ const createWindow = (): void => {
   mainWindow.webContents.openDevTools()
 
   global._next_writer_windowConfig = {
-    win: mainWindow
+    win: mainWindow,
+    workPlatform: '',
+    root: ''
   }
 }
 
