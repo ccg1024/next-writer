@@ -9,8 +9,7 @@ import { ipcChannel } from '../../config/ipc'
 import {
   EditorChannel,
   HomeChannel,
-  TypeWriterIpcValue,
-  ReadFileIpcValue
+  TypeWriterIpcValue
 } from '../../types/common.d'
 import { handleOpenFile, openImageFileProcess } from '../file_process'
 
@@ -30,20 +29,19 @@ async function editorTypewriter(
 }
 
 async function openFile(_: unknown, win: BrowserWindow) {
-  const fileBuffer = await handleOpenFile(win)
+  const readFileIpcValue = await handleOpenFile(win)
 
-  const ipcBuffer: EditorChannel = {
+  const editorChannelValue: EditorChannel = {
     type: 'readfile',
-    value: {
-      content: fileBuffer
-    } as ReadFileIpcValue
+    value: readFileIpcValue
   }
 
-  if (fileBuffer !== null || fileBuffer !== undefined)
-    return win.webContents.send(
-      ipcChannel['main-to-render'].editor_component,
-      ipcBuffer
-    )
+  if (!readFileIpcValue) return
+
+  win.webContents.send(
+    ipcChannel['main-to-render'].editor_component,
+    editorChannelValue
+  )
 }
 
 async function insertImage(

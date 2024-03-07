@@ -4,6 +4,8 @@
   position: relative;
   overflow: hidden;
   flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .broadcast-main {

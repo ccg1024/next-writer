@@ -26,7 +26,7 @@ const Home = () => {
 
   return (
     <div id="home">
-      {showSide && <SideBar />}
+      <SideBar isVisible={showSide} />
       <div className="home-container">
         <Editor />
       </div>

@@ -19,6 +19,15 @@ declare module '_common_type' {
 
   export type ReadFileIpcValue = {
     content: string
+    fileDescriptor: FileDescriptor
+  }
+  export type FileDescriptor = {
+    isChange: boolean
+    path: string
+    name: string
+  }
+  export type FileDescriptorContainer = {
+    [key: string]: FileDescriptor
   }
 }
 

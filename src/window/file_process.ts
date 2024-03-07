@@ -3,6 +3,7 @@
 import { BrowserWindow, dialog, OpenDialogOptions } from 'electron'
 import path from 'path'
 import fs from 'fs/promises'
+import { ReadFileIpcValue } from '../types/common.d'
 
 /**
  * Unifiling file path between windows system and macos/linux system
@@ -85,10 +86,18 @@ export async function createFileProcess(
  */
 export async function handleOpenFile(
   win: BrowserWindow
-): Promise<string | null> {
+): Promise<ReadFileIpcValue | null> {
   const filePath = await openMarkdownFileProcess(win)
   if (!filePath) return null
 
   global._next_writer_windowConfig.workPlatform = path.dirname(filePath)
-  return fs.readFile(filePath, 'utf-8')
+
+  return {
+    content: await fs.readFile(filePath, 'utf-8'),
+    fileDescriptor: {
+      isChange: false,
+      path: filePath,
+      name: path.basename(filePath, path.extname(filePath))
+    }
+  }
 }

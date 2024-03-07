@@ -3,7 +3,7 @@
 // @author: crazycodegame
 import { EditorState } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
-import { useRef, useEffect, useState } from 'react'
+import { useRef, useState, useLayoutEffect } from 'react'
 import { editorDefaultExtensions } from '../libs/codemirror'
 import { hideMarkPlugin } from '../plugins/hide-marke-extension'
 // import { imgPreview, imgPreviewField } from '../plugins/img-preview-extension'
@@ -21,7 +21,7 @@ export const useEditor = <T extends Element>(
   const [editorView, setEditorView] = useState<EditorView>(null)
   const containerRef = useRef<T>(null)
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!containerRef.current) return
 
     const startState = EditorState.create({

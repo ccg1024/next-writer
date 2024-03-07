@@ -1,4 +1,5 @@
 import { FC, useEffect, useLayoutEffect, useState } from 'react'
+import PubSub from 'pubsub-js'
 import { useEditor } from '../hooks/useEditor'
 import { themePlugin } from '../libs/codemirror'
 import { defaultLight } from '../libs/themes/default'
@@ -72,6 +73,8 @@ const Editor: FC = (): JSX.Element => {
     } else if (data.type === 'readfile') {
       const value = data.value as ReadFileIpcValue
       setDoc(value.content)
+      // update recent file list component
+      PubSub.publish('nw-recent-filelist', value.fileDescriptor)
     } else if (data.type === 'insertImage') {
       const imgPath = data.value as string
 

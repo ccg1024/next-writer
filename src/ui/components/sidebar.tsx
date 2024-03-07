@@ -1,15 +1,20 @@
-import { FC, useRef } from 'react'
+import { FC, useEffect, useRef, useState } from 'react'
+import PubSub from 'pubsub-js'
+import styled from '@emotion/styled'
+
 import Resizer from './resizer'
 import BroadCast from './broadcast'
 import User from './user'
 import Filesystem from './filesystem'
 import Dividing from './dividing'
+import { RecentFileList } from './filelist'
+import { FileDescriptor, FileDescriptorContainer } from '../../types/common.d'
 
 import '../css/sidebar.css'
 
-// interface Props {
-//   isVisible: boolean
-// }
+interface Props {
+  isVisible: boolean
+}
 
 // type AnimateProps = {
 //   isVisible: boolean
@@ -32,16 +37,59 @@ import '../css/sidebar.css'
 //   )
 // }
 
-const SideBar: FC = (): JSX.Element => {
+const VerticalScrollBox = styled.div`
+  overflow: auto;
+`
+
+const SideBar: FC<Props> = (props): JSX.Element => {
+  const [recentFiles, setRecentFiles] = useState<FileDescriptorContainer>({})
+  const [currentFile, setCurrentFile] = useState<string>('')
+  const [filelist, setFilelist] = useState<string[]>([])
   const sidebarRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const token = PubSub.subscribe(
+      'nw-recent-filelist',
+      (_: string, fileDescriptor: FileDescriptor) => {
+        if (fileDescriptor) {
+          setRecentFiles(v => {
+            return {
+              ...v,
+              [fileDescriptor.path]: fileDescriptor
+            }
+          })
+          setCurrentFile(fileDescriptor.path)
+          setFilelist(v =>
+            v.includes(fileDescriptor.path) ? v : [...v, fileDescriptor.path]
+          )
+        }
+      }
+    )
+
+    return () => {
+      PubSub.unsubscribe(token)
+    }
+  }, [])
+
   return (
-    <div ref={sidebarRef} className="sidebar-main">
-      <BroadCast />
-      <User />
-      <Filesystem />
-      <Dividing />
-      <Resizer parentRef={sidebarRef} minWidth={100} />
-    </div>
+    <>
+      {props.isVisible && (
+        <div ref={sidebarRef} className="sidebar-main">
+          <BroadCast />
+          <User />
+          <VerticalScrollBox>
+            <Filesystem />
+            <Dividing />
+            <RecentFileList
+              filelist={filelist}
+              recentFiles={recentFiles}
+              currentFile={currentFile}
+            />
+          </VerticalScrollBox>
+          <Resizer parentRef={sidebarRef} minWidth={100} />
+        </div>
+      )}
+    </>
   )
 }
 
