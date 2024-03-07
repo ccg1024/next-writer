@@ -12,7 +12,7 @@ import {
   TypeWriterIpcValue,
   ReadFileIpcValue
 } from '../../types/common.d'
-import { handleOpenFile } from '../file_process'
+import { handleOpenFile, openImageFileProcess } from '../file_process'
 
 // menu callback
 async function editorTypewriter(
@@ -39,11 +39,26 @@ async function openFile(_: unknown, win: BrowserWindow) {
     } as ReadFileIpcValue
   }
 
-  if (fileBuffer)
+  if (fileBuffer !== null || fileBuffer !== undefined)
     return win.webContents.send(
       ipcChannel['main-to-render'].editor_component,
       ipcBuffer
     )
+}
+
+async function insertImage(
+  _m: MenuItem,
+  win: BrowserWindow,
+  _e: KeyboardEvent
+) {
+  const imgPath = await openImageFileProcess(win)
+
+  if (!imgPath) return
+
+  win.webContents.send(ipcChannel['main-to-render'].editor_component, {
+    type: 'insertImage',
+    value: imgPath
+  } as EditorChannel)
 }
 
 async function toggleSideBar(
@@ -118,7 +133,9 @@ export default function createMenus(): MenuItemConstructorOptions[] {
           click: editorTypewriter,
           type: 'checkbox',
           checked: false
-        }
+        },
+        { type: 'separator' },
+        { label: 'insert image', click: insertImage }
       ]
     },
     {

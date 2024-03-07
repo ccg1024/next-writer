@@ -4,6 +4,12 @@ import { BrowserWindow, dialog, OpenDialogOptions } from 'electron'
 import path from 'path'
 import fs from 'fs/promises'
 
+/**
+ * Unifiling file path between windows system and macos/linux system
+ *
+ * @param filePath A string value of file path
+ * @returns A formatted file path
+ */
 export function unifiledFilePath(filePath: string) {
   return filePath.split(path.sep).join(path.posix.sep)
 }
@@ -71,11 +77,18 @@ export async function createFileProcess(
   return unifiledFilePath(filePath)
 }
 
+/**
+ * Callback handle function, deal with open file option
+ *
+ * @param win Current BrowserWindow object
+ * @returns A string value of file content or null if not select file
+ */
 export async function handleOpenFile(
   win: BrowserWindow
 ): Promise<string | null> {
   const filePath = await openMarkdownFileProcess(win)
   if (!filePath) return null
 
+  global._next_writer_windowConfig.workPlatform = path.dirname(filePath)
   return fs.readFile(filePath, 'utf-8')
 }

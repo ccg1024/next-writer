@@ -95,8 +95,7 @@ export const images = (): Extension => {
       textAlign: 'center'
     },
     '.cm-image-preview': {
-      width: '80%',
-      display: 'block',
+      width: '90%',
       margin: 'auto',
       borderRadius: 'var(--nw-border-radius-md)',
       boxShadow: '0px 0px 5px #000000'

@@ -72,6 +72,21 @@ const Editor: FC = (): JSX.Element => {
     } else if (data.type === 'readfile') {
       const value = data.value as ReadFileIpcValue
       setDoc(value.content)
+    } else if (data.type === 'insertImage') {
+      const imgPath = data.value as string
+
+      if (!imgPath) return
+
+      const cursor = editorView.state.selection.main.from
+      editorView.dispatch({
+        changes: {
+          from: cursor,
+          insert: `![](${imgPath})`
+        },
+        selection: {
+          anchor: cursor + 2
+        }
+      })
     }
   }
 

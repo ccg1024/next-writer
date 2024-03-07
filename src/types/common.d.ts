@@ -1,6 +1,6 @@
 declare module '_common_type' {
   export type EditorChannel = {
-    type: readonly 'typewriter' | 'readfile'
+    type: readonly 'typewriter' | 'readfile' | 'insertImage'
     value?: unknown
   }
 
