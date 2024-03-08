@@ -5,6 +5,7 @@ type CallbackFunction = (event: IpcRendererEvent, ...args: unknown[]) => void
 export interface ipc {
   listenEditorChannel: (cb: CallbackFunction) => () => void
   listenHomeChannel: (cb: CallbackFunction) => () => void
+  _render_openFile: (filePath: string) => void
 }
 
 declare global {
@@ -21,3 +22,5 @@ export type RendererPlugin = {
 export type RendererConfig = {
   rendererPlugin: RendererPlugin
 }
+
+export type FileStatus = readonly 'modified' | 'normal'

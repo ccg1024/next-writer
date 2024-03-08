@@ -27,5 +27,9 @@ contextBridge.exposeInMainWorld('ipc', {
         cb
       )
     }
+  },
+
+  _render_openFile: (filePath: string) => {
+    ipcRenderer.send(ipcChannel['render-to-main']._render_open_file, filePath)
   }
 })

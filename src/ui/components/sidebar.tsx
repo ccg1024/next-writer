@@ -9,6 +9,7 @@ import Filesystem from './filesystem'
 import Dividing from './dividing'
 import { RecentFileList } from './filelist'
 import { FileDescriptor, FileDescriptorContainer } from '../../types/common.d'
+import { FileStatus } from '../../types/renderer.d'
 
 import '../css/sidebar.css'
 
@@ -70,6 +71,30 @@ const SideBar: FC<Props> = (props): JSX.Element => {
       PubSub.unsubscribe(token)
     }
   }, [])
+
+  useEffect(() => {
+    // listen file change
+    const token = PubSub.subscribe(
+      'nw-listen-file-change',
+      (_: string, fileStatus: FileStatus) => {
+        if (fileStatus === 'modified' && !recentFiles[currentFile].isChange) {
+          setRecentFiles(v => {
+            return {
+              ...v,
+              [currentFile]: {
+                ...v[currentFile],
+                isChange: true
+              }
+            }
+          })
+        }
+      }
+    )
+
+    return () => {
+      PubSub.unsubscribe(token)
+    }
+  }, [currentFile, recentFiles])
 
   return (
     <>

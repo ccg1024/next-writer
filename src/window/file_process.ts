@@ -4,6 +4,7 @@ import { BrowserWindow, dialog, OpenDialogOptions } from 'electron'
 import path from 'path'
 import fs from 'fs/promises'
 import { ReadFileIpcValue } from '../types/common.d'
+import { addCache, exitCache, getCache } from './cache'
 
 /**
  * Unifiling file path between windows system and macos/linux system
@@ -92,10 +93,41 @@ export async function handleOpenFile(
 
   global._next_writer_windowConfig.workPlatform = path.dirname(filePath)
 
+  if (exitCache(filePath)) {
+    const cache = getCache(filePath)
+    return generateReadFileIpcValue(filePath, cache.content, cache.isChange)
+  }
+
+  return constructFileData(filePath)
+}
+
+/**
+ * Construct a read file object, which used by read file ipc
+ *
+ * @param filePath A file path
+ * @returns A object of type `ReadFileIpcValue`
+ * */
+export async function constructFileData(
+  filePath: string
+): Promise<ReadFileIpcValue> {
+  const content = await fs.readFile(filePath, 'utf-8')
+  // add cache
+  addCache(filePath, {
+    isChange: false,
+    content
+  })
+  return generateReadFileIpcValue(filePath, content)
+}
+
+export function generateReadFileIpcValue(
+  filePath: string,
+  content: string,
+  isChange = false
+): ReadFileIpcValue {
   return {
-    content: await fs.readFile(filePath, 'utf-8'),
+    content: content,
     fileDescriptor: {
-      isChange: false,
+      isChange: isChange,
       path: filePath,
       name: path.basename(filePath, path.extname(filePath))
     }

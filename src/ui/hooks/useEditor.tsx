@@ -4,6 +4,7 @@
 import { EditorState } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { useRef, useState, useLayoutEffect } from 'react'
+import PubSub from 'pubsub-js'
 import { editorDefaultExtensions } from '../libs/codemirror'
 import { hideMarkPlugin } from '../plugins/hide-marke-extension'
 // import { imgPreview, imgPreviewField } from '../plugins/img-preview-extension'
@@ -29,7 +30,7 @@ export const useEditor = <T extends Element>(
       extensions: [
         EditorView.updateListener.of(update => {
           if (update.docChanged) {
-            // console.log('doc change')
+            PubSub.publish('nw-listen-file-change', 'modified')
           }
           if (update.selectionSet) {
             // typewriter mode
@@ -55,6 +56,13 @@ export const useEditor = <T extends Element>(
       parent: containerRef.current
     })
     setEditorView(view)
+
+    // NOTE:
+    // Make sure that the top is displayed when you open the file multiple times.
+    // Because the scroll body is lifted onto the parent box.
+    view.dispatch({
+      effects: EditorView.scrollIntoView(0, { y: 'nearest' })
+    })
 
     return () => {
       view.destroy()

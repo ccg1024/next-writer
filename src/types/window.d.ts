@@ -6,6 +6,13 @@ declare module '_window_type' {
     workPlatform: string // current open file location
     root: string // Library file path
   }
+  export type Cache = {
+    [key: string]: CacheContent
+  }
+  export type CacheContent = {
+    isChange: boolean
+    content: string
+  }
 }
 
 declare global {

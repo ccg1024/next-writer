@@ -10,7 +10,9 @@ export const defaultTheme = EditorView.theme({
     // backgroundColor: 'transparent !important',
     height: '100%',
     fontSize: '1.0em',
-    padding: '12px'
+    padding: '12px',
+    width: '80%',
+    margin: 'auto'
   },
   '&.cm-focused': {
     outline: 'none'
@@ -20,7 +22,8 @@ export const defaultTheme = EditorView.theme({
   // },
   '.cm-scroller': {
     fontFamily: 'inherit !important',
-    marginTop: '5px'
+    marginTop: '5px',
+    overflow: 'unset'
   },
   '&.cm-editor': {
     textAlign: 'left',
@@ -38,9 +41,7 @@ export const defaultTheme = EditorView.theme({
   },
   '.cm-line': {
     paddingLeft: '2px',
-    paddingRight: '2px',
-    width: '80%',
-    margin: 'auto'
+    paddingRight: '2px'
   },
   '.cm-content': {
     // marginRight: '5px'
@@ -65,10 +66,10 @@ export const defaultTheme = EditorView.theme({
     borderBottomRightRadius: '2px'
   },
   '&.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground': {
-    backgroundColor: '#d9d9d966'
+    // backgroundColor: '#d9d9d966'
   },
   '&.cm-focused > .cm-scroller > .cm-selectionLayer': {
-    zIndex: '99 !important'
+    // zIndex: '99 !important'
   }
 })
 
@@ -208,9 +209,9 @@ export const defaultSyntaxHighlighting = HighlightStyle.define([
   },
   {
     tag: markTags.inlineCode,
-    class: 'cm-my-inline-code'
-    // color: defaultColor.content.inlineCode,
-    // backgroundColor: '#EBF8FF'
+    color: defaultColor.content.inlineCode,
+    backgroundColor: 'rgba(175, 184, 193, 0.2)',
+    borderRadius: 'var(--nw-border-radius-sm)'
   },
   {
     tag: markTags.tableDelimiter,
