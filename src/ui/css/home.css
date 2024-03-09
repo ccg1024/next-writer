@@ -1,14 +1,26 @@
 /* custom css variables */
 :root {
-  --nw-color-whiteAlpha-50: rgba(255, 255, 255, 0.8);
+  --nw-color-whiteAlpha-50: rgba(255, 255, 255, 0.08);
   --nw-color-whiteAlpha-100: rgba(255, 255, 255, 0.16);
   --nw-color-whiteAlpha-200: rgba(255, 255, 255, 0.24);
+  --nw-color-whiteAlpha-300: rgba(255, 255, 255, 0.32);
+  --nw-color-whiteAlpha-400: rgba(255, 255, 255, 0.4);
+  --nw-color-whiteAlpha-500: rgba(255, 255, 255, 0.48);
+  --nw-color-whiteAlpha-600: rgba(255, 255, 255, 0.56);
+  --nw-color-whiteAlpha-700: rgba(255, 255, 255, 0.64);
+  --nw-color-whiteAlpha-800: rgba(255, 255, 255, 0.72);
+  --nw-color-whiteAlpha-900: rgba(255, 255, 255, 0.8);
+  --nw-color-blackAlpha-50: rgba(0, 0, 0, 0.08);
   --nw-color-blackAlpha-100: rgba(0, 0, 0, 0.16);
+  --nw-color-blackAlpha-200: rgba(0, 0, 0, 0.24);
+  --nw-color-blackAlpha-300: rgba(0, 0, 0, 0.32);
+  --nw-color-blackAlpha-400: rgba(0, 0, 0, 0.4);
   --nw-border-radius-sm: 5px;
   --nw-border-radius-md: 10px;
   --nw-border-radius-lg: 15px;
   --nw-box-shadow-sm: 2px 2px 5px #8c8c8c;
   --nw-box-shadow-md: 0px 0px 10px #8c8c8c;
+  --nw-box-shadow-lg: 2px 2px 15px #8c8c8c;
 }
 
 .test {

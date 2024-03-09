@@ -2,7 +2,6 @@
   width: 200px;
   height: 100%;
   position: relative;
-  overflow: hidden;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
@@ -12,12 +11,20 @@
   padding-top: 20px;
   padding-right: 10px;
   box-sizing: border-box;
+  position: relative;
 }
 
 .broadcast-content {
   padding: 10px;
-  background-color: red;
+  background-color: var(--nw-color-blackAlpha-50);
   border-radius: 5px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  user-select: none;
+}
+.broadcast-content:hover {
+  background-color: var(--nw-color-blackAlpha-100);
 }
 
 .user-main {

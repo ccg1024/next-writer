@@ -49,6 +49,31 @@ const SideBar: FC<Props> = (props): JSX.Element => {
   const sidebarRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
+    // ipc
+    const removeListener = window.ipc.listenSidebarChannel(
+      (_: unknown, fileDescriptor: FileDescriptor) => {
+        if (fileDescriptor) {
+          setRecentFiles(v => {
+            return {
+              ...v,
+              [fileDescriptor.path]: fileDescriptor
+            }
+          })
+          setCurrentFile(fileDescriptor.path)
+          setFilelist(v =>
+            v.includes(fileDescriptor.path) ? v : [...v, fileDescriptor.path]
+          )
+          window._next_writer_rendererConfig.workPath = fileDescriptor.path
+        }
+      }
+    )
+
+    return () => {
+      removeListener()
+    }
+  }, [])
+
+  useEffect(() => {
     const token = PubSub.subscribe(
       'nw-recent-filelist',
       (_: string, fileDescriptor: FileDescriptor) => {
@@ -100,7 +125,7 @@ const SideBar: FC<Props> = (props): JSX.Element => {
     <>
       {props.isVisible && (
         <div ref={sidebarRef} className="sidebar-main">
-          <BroadCast />
+          <BroadCast currentFile={currentFile} />
           <User />
           <VerticalScrollBox>
             <Filesystem />

@@ -6,6 +6,7 @@ type CallbackFunction = (event: IpcRendererEvent, ...args: unknown[]) => void
 export interface ipc {
   listenEditorChannel: (cb: CallbackFunction) => () => void
   listenHomeChannel: (cb: CallbackFunction) => () => void
+  listenSidebarChannel: (cb: CallbackFunction) => () => void
   _render_openFile: (filePath: string) => void
   _render_updateCache: (
     cache: Partial<CacheContent> & { filePath: string }

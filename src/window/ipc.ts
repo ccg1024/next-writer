@@ -3,7 +3,12 @@
 import { ipcMain } from 'electron'
 import fs from 'fs'
 import { ipcChannel } from '../config/ipc'
-import { generateReadFileIpcValue, constructFileData } from './file_process'
+import {
+  generateReadFileIpcValue,
+  constructFileData,
+  createFileProcess,
+  generateFileDescripter
+} from './file_process'
 import { EditorChannel } from '../types/common.d'
 import { exitCache, getCache, updateCache } from './cache'
 import { CacheContent } from '../types/window.d'
@@ -46,7 +51,19 @@ async function handleSave(_: unknown, content: string) {
   // save file
 
   // if not mount file path, open dialog to create a file path
-  if (global._next_writer_windowConfig.workPlatform == '') return
+  if (global._next_writer_windowConfig.workPlatform == '') {
+    const newFile = await createFileProcess(
+      global._next_writer_windowConfig.win
+    )
+    if (!newFile) return
+
+    global._next_writer_windowConfig.workPlatform = newFile
+    // notify renderer to show new file information.
+    global._next_writer_windowConfig.win.webContents.send(
+      ipcChannel['main-to-render'].sidebar_component,
+      generateFileDescripter(newFile)
+    )
+  }
 
   const filePath = global._next_writer_windowConfig.workPlatform
   updateCache(filePath, {

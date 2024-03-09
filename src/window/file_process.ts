@@ -126,10 +126,14 @@ export function generateReadFileIpcValue(
 ): ReadFileIpcValue {
   return {
     content: content,
-    fileDescriptor: {
-      isChange: isChange,
-      path: filePath,
-      name: path.basename(filePath, path.extname(filePath))
-    }
+    fileDescriptor: generateFileDescripter(filePath, isChange)
+  }
+}
+
+export function generateFileDescripter(filePath: string, isChange = false) {
+  return {
+    isChange: isChange,
+    path: filePath,
+    name: path.basename(filePath, path.extname(filePath))
   }
 }

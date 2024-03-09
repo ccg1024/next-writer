@@ -19,7 +19,7 @@ const ListItem = styled.div<ListItemProps>`
   padding: 5px 10px;
   border-radius: var(--nw-border-radius-md);
   background-color: ${props =>
-    props.isActive ? 'var(--nw-color-whiteAlpha-50)' : 'unset'};
+    props.isActive ? 'var(--nw-color-whiteAlpha-800)' : 'unset'};
   box-shadow: ${props =>
     props.isActive ? 'var(--nw-box-shadow-sm)' : 'unset'};
   user-select: none;
@@ -31,7 +31,7 @@ const ListItem = styled.div<ListItemProps>`
   &:hover {
     background-color: ${props =>
       props.isActive
-        ? 'var(--nw-color-whiteAlpha-50)'
+        ? 'var(--nw-color-whiteAlpha-800)'
         : 'var(--nw-color-blackAlpha-100)'};
   }
 `

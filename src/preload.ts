@@ -28,6 +28,16 @@ contextBridge.exposeInMainWorld('ipc', {
       )
     }
   },
+  listenSidebarChannel: (cb: CallbackFunction) => {
+    ipcRenderer.on(ipcChannel['main-to-render'].sidebar_component, cb)
+
+    return () => {
+      ipcRenderer.removeListener(
+        ipcChannel['main-to-render'].sidebar_component,
+        cb
+      )
+    }
+  },
 
   _render_openFile: (filePath: string) => {
     ipcRenderer.send(ipcChannel['render-to-main']._render_open_file, filePath)
