@@ -137,3 +137,27 @@ export function generateFileDescripter(filePath: string, isChange = false) {
     name: path.basename(filePath, path.extname(filePath))
   }
 }
+
+/**
+ * Create a virtual empty file
+ *
+ * @param win BrowserWindow
+ * */
+export async function handleCreateFile(win: BrowserWindow) {
+  const filePath = await createFileProcess(win)
+
+  if (!filePath) return
+
+  global._next_writer_windowConfig.workPlatform = filePath
+  return constructVirtualFileData(filePath)
+}
+
+export async function constructVirtualFileData(
+  filePath: string
+): Promise<ReadFileIpcValue> {
+  addCache(filePath, {
+    isChange: false,
+    content: ''
+  })
+  return generateReadFileIpcValue(filePath, '')
+}

@@ -11,7 +11,11 @@ import {
   HomeChannel,
   TypeWriterIpcValue
 } from '../../types/common.d'
-import { handleOpenFile, openImageFileProcess } from '../file_process'
+import {
+  handleCreateFile,
+  handleOpenFile,
+  openImageFileProcess
+} from '../file_process'
 
 // menu callback
 async function editorTypewriter(
@@ -49,6 +53,22 @@ async function saveFile(_: unknown, win: BrowserWindow) {
     type: 'writefile',
     value: {}
   } as EditorChannel)
+}
+
+async function createFile(_: unknown, win: BrowserWindow) {
+  const readFileIpcValue = await handleCreateFile(win)
+
+  if (!readFileIpcValue) return
+
+  const editorChannelValue: EditorChannel = {
+    type: 'readfile',
+    value: readFileIpcValue
+  }
+
+  win.webContents.send(
+    ipcChannel['main-to-render'].editor_component,
+    editorChannelValue
+  )
 }
 
 async function insertImage(
@@ -113,6 +133,11 @@ export default function createMenus(): MenuItemConstructorOptions[] {
           label: 'save file',
           click: saveFile,
           accelerator: isMac ? 'Cmd+s' : 'Ctrl+s'
+        },
+        {
+          label: 'creat file',
+          click: createFile,
+          accelerator: isMac ? 'Cmd+n' : 'Ctrl+n'
         },
         { type: 'separator' },
         isMac ? { role: 'close' } : { role: 'quit' }
