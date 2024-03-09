@@ -49,7 +49,7 @@ const SideBar: FC<Props> = (props): JSX.Element => {
   const sidebarRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    // ipc
+    // ipc, when save a empty path file, this listener will be triggered
     const removeListener = window.ipc.listenSidebarChannel(
       (_: unknown, fileDescriptor: FileDescriptor) => {
         if (fileDescriptor) {
@@ -64,6 +64,7 @@ const SideBar: FC<Props> = (props): JSX.Element => {
             v.includes(fileDescriptor.path) ? v : [...v, fileDescriptor.path]
           )
           window._next_writer_rendererConfig.workPath = fileDescriptor.path
+          PubSub.publish('nw-show-message', fileDescriptor.path)
         }
       }
     )

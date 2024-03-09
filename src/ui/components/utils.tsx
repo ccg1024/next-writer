@@ -42,7 +42,7 @@ interface AnimateHoverBoxProps extends HoverBoxProps {
   visible: boolean
 }
 
-const AnimateHoverBoxCoords = styled.div<HoverBoxProps>`
+export const AnimateHoverBoxCoords = styled.div<HoverBoxProps>`
   position: absolute;
   left: ${props =>
     props.x === 'left' ? (props.xOffset != null ? props.xOffset : 0) : 'unset'};
@@ -74,7 +74,6 @@ const RoundedCornersBox = styled.div`
   word-break: break-all;
 `
 
-// have some bug
 export const AnimateHoverBox: FC<
   AnimateHoverBoxProps & PropsWithChildren
 > = props => {

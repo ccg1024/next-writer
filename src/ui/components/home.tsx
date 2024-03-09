@@ -5,6 +5,7 @@ import Drag from './drag'
 import '../css/home.css'
 import { useEffect, useState } from 'react'
 import { HomeChannel, CheckBoxValue } from '../../types/common.d'
+import Message from './message'
 
 const Home = () => {
   const [showSide, setShowSide] = useState<boolean>(true)
@@ -31,6 +32,7 @@ const Home = () => {
         <Editor />
       </div>
       {!showSide && <Drag />}
+      <Message />
     </div>
   )
 }
