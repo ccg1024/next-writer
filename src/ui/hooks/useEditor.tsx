@@ -30,7 +30,17 @@ export const useEditor = <T extends Element>(
       extensions: [
         EditorView.updateListener.of(update => {
           if (update.docChanged) {
-            PubSub.publish('nw-listen-file-change', 'modified')
+            if (
+              !window._next_writer_rendererConfig.modified &&
+              window._next_writer_rendererConfig.workPath !== ''
+            ) {
+              PubSub.publish('nw-listen-file-change', 'modified')
+              window.ipc._render_updateCache({
+                filePath: window._next_writer_rendererConfig.workPath,
+                isChange: true
+              })
+              window._next_writer_rendererConfig.modified = true
+            }
           }
           if (update.selectionSet) {
             // typewriter mode
@@ -56,13 +66,6 @@ export const useEditor = <T extends Element>(
       parent: containerRef.current
     })
     setEditorView(view)
-
-    // NOTE:
-    // Make sure that the top is displayed when you open the file multiple times.
-    // Because the scroll body is lifted onto the parent box.
-    view.dispatch({
-      effects: EditorView.scrollIntoView(0, { y: 'nearest' })
-    })
 
     return () => {
       view.destroy()

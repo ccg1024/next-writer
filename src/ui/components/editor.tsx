@@ -58,6 +58,15 @@ const Editor: FC = (): JSX.Element => {
   useEffect(() => {
     if (editorView) {
       // some thing need deal with editor instance
+      // NOTE:
+      // Make sure that the top is displayed when you open the file multiple times.
+      // Because the scroll body is lifted onto the parent box.
+      // editorView.dispatch({
+      //   effects: EditorView.scrollIntoView(0, { y: 'nearest' })
+      // })
+      containerRef.current.scrollTo({
+        top: 0
+      })
     }
   }, [editorView])
 
@@ -72,9 +81,22 @@ const Editor: FC = (): JSX.Element => {
       }
     } else if (data.type === 'readfile') {
       const value = data.value as ReadFileIpcValue
+
+      // upload cache before show new file content
+      if (window._next_writer_rendererConfig.workPath !== '') {
+        window.ipc._render_updateCache({
+          filePath: window._next_writer_rendererConfig.workPath,
+          content: editorView.state.doc.toString()
+        })
+      }
+
       setDoc(value.content)
       // update recent file list component
       PubSub.publish('nw-recent-filelist', value.fileDescriptor)
+      // update editor working path
+      window._next_writer_rendererConfig.workPath = value.fileDescriptor.path
+      window._next_writer_rendererConfig.modified =
+        value.fileDescriptor.isChange
     } else if (data.type === 'insertImage') {
       const imgPath = data.value as string
 
@@ -90,6 +112,11 @@ const Editor: FC = (): JSX.Element => {
           anchor: cursor + 2
         }
       })
+    } else if (data.type === 'writefile') {
+      window.ipc._render_saveFile(editorView.state.doc.toString())
+      // trigger modify save
+      window._next_writer_rendererConfig.modified = false
+      PubSub.publish('nw-listen-file-change', 'normal')
     }
   }
 

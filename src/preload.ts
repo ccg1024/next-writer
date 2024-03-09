@@ -31,5 +31,11 @@ contextBridge.exposeInMainWorld('ipc', {
 
   _render_openFile: (filePath: string) => {
     ipcRenderer.send(ipcChannel['render-to-main']._render_open_file, filePath)
+  },
+  _render_updateCache: (cache: unknown) => {
+    ipcRenderer.send(ipcChannel['render-to-main']._render_update_cache, cache)
+  },
+  _render_saveFile: (content: string) => {
+    ipcRenderer.send(ipcChannel['render-to-main']._render_save_file, content)
   }
 })

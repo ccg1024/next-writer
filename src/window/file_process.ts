@@ -91,7 +91,7 @@ export async function handleOpenFile(
   const filePath = await openMarkdownFileProcess(win)
   if (!filePath) return null
 
-  global._next_writer_windowConfig.workPlatform = path.dirname(filePath)
+  global._next_writer_windowConfig.workPlatform = filePath
 
   if (exitCache(filePath)) {
     const cache = getCache(filePath)

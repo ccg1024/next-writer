@@ -77,17 +77,17 @@ const SideBar: FC<Props> = (props): JSX.Element => {
     const token = PubSub.subscribe(
       'nw-listen-file-change',
       (_: string, fileStatus: FileStatus) => {
-        if (fileStatus === 'modified' && !recentFiles[currentFile].isChange) {
-          setRecentFiles(v => {
-            return {
-              ...v,
-              [currentFile]: {
-                ...v[currentFile],
-                isChange: true
-              }
+        if (!currentFile) return
+
+        setRecentFiles(v => {
+          return {
+            ...v,
+            [currentFile]: {
+              ...v[currentFile],
+              isChange: fileStatus === 'modified'
             }
-          })
-        }
+          }
+        })
       }
     )
 

@@ -1,4 +1,5 @@
 import { IpcRendererEvent } from 'electron'
+import { CacheContent } from './window.d'
 
 type CallbackFunction = (event: IpcRendererEvent, ...args: unknown[]) => void
 
@@ -6,6 +7,10 @@ export interface ipc {
   listenEditorChannel: (cb: CallbackFunction) => () => void
   listenHomeChannel: (cb: CallbackFunction) => () => void
   _render_openFile: (filePath: string) => void
+  _render_updateCache: (
+    cache: Partial<CacheContent> & { filePath: string }
+  ) => void
+  _render_saveFile: (content: string) => void
 }
 
 declare global {
@@ -21,6 +26,8 @@ export type RendererPlugin = {
 
 export type RendererConfig = {
   rendererPlugin: RendererPlugin
+  workPath: string
+  modified: boolean
 }
 
 export type FileStatus = readonly 'modified' | 'normal'

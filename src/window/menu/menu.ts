@@ -44,6 +44,13 @@ async function openFile(_: unknown, win: BrowserWindow) {
   )
 }
 
+async function saveFile(_: unknown, win: BrowserWindow) {
+  win.webContents.send(ipcChannel['main-to-render'].editor_component, {
+    type: 'writefile',
+    value: {}
+  } as EditorChannel)
+}
+
 async function insertImage(
   _m: MenuItem,
   win: BrowserWindow,
@@ -101,6 +108,11 @@ export default function createMenus(): MenuItemConstructorOptions[] {
           label: 'open file',
           click: openFile,
           accelerator: isMac ? 'Cmd+o' : 'Ctrl+o'
+        },
+        {
+          label: 'save file',
+          click: saveFile,
+          accelerator: isMac ? 'Cmd+s' : 'Ctrl+s'
         },
         { type: 'separator' },
         isMac ? { role: 'close' } : { role: 'quit' }
