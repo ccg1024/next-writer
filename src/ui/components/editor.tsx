@@ -12,7 +12,7 @@ import {
 import '../css/editor.css'
 
 // NOTE: Just a simple txt for dev.
-const testInitialDoc = `# Head 1
+const _testInitialDoc = `# Head 1
 ## Head 2
 ### Head 3
 #### Head 4
@@ -42,7 +42,7 @@ console.log(helloWorld())
 `
 
 const Editor: FC = (): JSX.Element => {
-  const [doc, setDoc] = useState<string>(testInitialDoc)
+  const [doc, setDoc] = useState<string>('')
   const [containerRef, editorView] = useEditor<HTMLDivElement>({
     initialDoc: doc
   })
