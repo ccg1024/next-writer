@@ -19,6 +19,8 @@ const createWindow = (): void => {
   const mainWindow = new BrowserWindow({
     height: 600,
     width: 800,
+    minWidth: 500,
+    minHeight: 400,
     frame: false,
     titleBarStyle: 'hidden',
     vibrancy: 'under-window',

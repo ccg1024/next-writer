@@ -8,6 +8,18 @@
   font-size: var(--nw-ui-font-size);
 }
 
+@media screen and (max-width: 700px) {
+  .sidebar-main {
+    position: absolute;
+    left: 0;
+    top: 0;
+    box-shadow: var(--nw-box-shadow-lg);
+    padding-left: 10px;
+    background-color: white;
+    z-index: 100;
+  }
+}
+
 .broadcast-main {
   padding-top: 20px;
   padding-right: 10px;

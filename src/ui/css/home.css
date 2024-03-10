@@ -48,6 +48,7 @@
   height: 100%;
   display: flex;
   font-family: var(--nw-ui-font-family);
+  position: relative;
 }
 
 .home-container {
