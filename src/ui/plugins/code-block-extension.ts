@@ -16,7 +16,8 @@ import { ensureSyntaxTree } from '@codemirror/language'
 
 const baseTheme = EditorView.baseTheme({
   '&light .cm-code-block': {
-    backgroundColor: '#cccccc22 !important'
+    backgroundColor: '#cccccc22 !important',
+    fontFamily: 'var(--nw-editor-code-font-family)'
   },
   '&dark .cm-code-block': {
     backgroundColor: 'RGBA(0, 0, 0, 0.24)'

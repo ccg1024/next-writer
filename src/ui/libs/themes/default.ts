@@ -21,7 +21,7 @@ export const defaultTheme = EditorView.theme({
   //   transition: 'all 80ms'
   // },
   '.cm-scroller': {
-    fontFamily: 'inherit !important',
+    fontFamily: 'var(--nw-editor-font-family)',
     marginTop: '5px',
     overflow: 'unset'
   },
@@ -189,7 +189,8 @@ export const defaultSyntaxHighlighting = HighlightStyle.define([
   },
   {
     tag: markTags.codeMark,
-    color: defaultColor.markers.codeMark
+    color: defaultColor.markers.codeMark,
+    fontFamily: 'var(--nw-editor-code-font-family)'
   },
   {
     tag: markTags.codeInfo,
@@ -211,7 +212,8 @@ export const defaultSyntaxHighlighting = HighlightStyle.define([
     tag: markTags.inlineCode,
     color: defaultColor.content.inlineCode,
     backgroundColor: 'rgba(175, 184, 193, 0.2)',
-    borderRadius: 'var(--nw-border-radius-sm)'
+    borderRadius: 'var(--nw-border-radius-sm)',
+    fontFamily: 'var(--nw-editor-code-font-family)'
   },
   {
     tag: markTags.tableDelimiter,

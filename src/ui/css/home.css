@@ -21,6 +21,12 @@
   --nw-box-shadow-sm: 2px 2px 5px #8c8c8c;
   --nw-box-shadow-md: 0px 0px 10px #8c8c8c;
   --nw-box-shadow-lg: 2px 2px 15px #8c8c8c;
+
+  --nw-editor-font-family: 'M PLUS Rounded 1c';
+  --nw-editor-code-font-family: 'Hack Nerd Font';
+  --nw-ui-font-family: 'M PLUS Rounded 1c';
+  --nw-ui-font-size: 16px;
+  --nw-editor-font-size: 16px;
 }
 
 .test {
@@ -41,6 +47,7 @@
   -webkit-app-region: no-drag;
   height: 100%;
   display: flex;
+  font-family: var(--nw-ui-font-family);
 }
 
 .home-container {
