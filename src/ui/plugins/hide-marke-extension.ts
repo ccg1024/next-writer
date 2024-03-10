@@ -36,8 +36,36 @@ function addDeco(view: EditorView) {
             const imgAlign = regPre[1]
             if (!imgAlign.split(',').includes('preview')) return
 
-            // NOTE: Need Update
-            // builder.add(node.from + 3, node.to, Decoration.replace({}))
+            const regx = /^!\[(.*?)\].*?/
+            const altText = regx.exec(imgText)
+            if (altText && altText.length > 1) {
+              const textLen = altText[1].length
+              const line = view.state.doc.lineAt(node.from)
+
+              builder.add(
+                line.from,
+                line.from,
+                Decoration.line({
+                  attributes: { class: 'cm-text-center' }
+                })
+              )
+              builder.add(node.from, node.from + 1, Decoration.replace({}))
+              builder.add(
+                node.from + 3 + textLen,
+                node.to,
+                Decoration.replace({})
+              )
+            }
+          } else if (node.name === 'HorizontalRule') {
+            const line = view.state.doc.lineAt(node.from)
+            builder.add(
+              line.from,
+              line.from,
+              Decoration.line({
+                attributes: { class: 'cm-horizontal-rule' }
+              })
+            )
+            builder.add(node.from, node.to, Decoration.replace({}))
           }
         }
       })

@@ -4,3 +4,19 @@
   font-family: var(--nw-editor-font-family);
   font-size: var(--nw-editor-font-size);
 }
+
+.cm-text-center {
+  text-align: center;
+}
+.cm-horizontal-rule {
+  position: relative;
+}
+.cm-horizontal-rule::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  border-top: 2px solid #586ea5;
+  width: 100%;
+  transform: translateY(-50%);
+}
