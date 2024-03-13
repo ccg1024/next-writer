@@ -5,17 +5,13 @@ import type {
   BrowserWindow,
   KeyboardEvent
 } from 'electron'
-import { ipcChannel } from '../../config/ipc'
-import {
-  EditorChannel,
-  HomeChannel,
-  TypeWriterIpcValue
-} from '../../types/common.d'
+import { ipcChannel } from 'src/config/ipc'
 import {
   handleCreateFile,
   handleOpenFile,
   openImageFileProcess
 } from '../file_process'
+import { EditorChannel, HomeChannel, TypeWriterIpcValue } from '_common_type'
 
 // menu callback
 async function editorTypewriter(

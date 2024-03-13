@@ -46,7 +46,8 @@ export const defaultTheme = EditorView.theme({
   '.cm-content': {
     // marginRight: '5px'
     paddingBottom: '80vh',
-    wordBreak: 'break-all'
+    wordBreak: 'break-all',
+    textAlign: 'justify'
   },
   '.cm-activeLineGutter': {
     backgroundColor: '#cccccc44'

@@ -1,7 +1,8 @@
 import { FC, MouseEvent } from 'react'
 import styled from '@emotion/styled'
 
-import { FileDescriptorContainer } from '../../types/common.d'
+import { AnimatePresence, motion } from 'framer-motion'
+import { FileDescriptorContainer } from '_common_type'
 
 const ListBox = styled.div`
   margin: 10px 0;
@@ -48,21 +49,31 @@ export const RecentFileList: FC<Props> = props => {
   }
   return (
     <ListBox>
-      {props.filelist.map(filePath => {
-        const file = props.recentFiles[filePath]
-        const isActive = props.currentFile === file.path
-        return (
-          <ListItem
-            key={file.path}
-            id={file.path}
-            isActive={isActive}
-            onClick={isActive ? null : cb}
-          >
-            {file.isChange && '[+] '}
-            {file.name}
-          </ListItem>
-        )
-      })}
+      <AnimatePresence mode="wait" initial={false}>
+        {props.filelist.map(filePath => {
+          const file = props.recentFiles[filePath]
+          const isActive = props.currentFile === file.path
+          return (
+            <motion.div
+              key={file.path}
+              initial={{ x: -10, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: -10, opacity: 0 }}
+              transition={{ duration: 0.5 }}
+            >
+              <ListItem
+                key={file.path}
+                id={file.path}
+                isActive={isActive}
+                onClick={isActive ? null : cb}
+              >
+                {file.isChange && '[+] '}
+                {file.name}
+              </ListItem>
+            </motion.div>
+          )
+        })}
+      </AnimatePresence>
     </ListBox>
   )
 }

@@ -1,5 +1,5 @@
 import { IpcRendererEvent } from 'electron'
-import { CacheContent } from './window.d'
+import { CacheContent } from '_window_type'
 
 type CallbackFunction = (event: IpcRendererEvent, ...args: unknown[]) => void
 

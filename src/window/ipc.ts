@@ -9,9 +9,9 @@ import {
   createFileProcess,
   generateFileDescripter
 } from './file_process'
-import { EditorChannel } from '../types/common.d'
 import { exitCache, getCache, updateCache } from './cache'
-import { CacheContent } from '../types/window.d'
+import { EditorChannel } from '_common_type'
+import { CacheContent } from '_window_type'
 
 async function handleOpenFileFromRenderer(_: unknown, filePath: string) {
   // check whether have cache

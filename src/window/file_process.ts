@@ -3,8 +3,8 @@
 import { BrowserWindow, dialog, OpenDialogOptions } from 'electron'
 import path from 'path'
 import fs from 'fs/promises'
-import { ReadFileIpcValue } from '../types/common.d'
 import { addCache, exitCache, getCache } from './cache'
+import { ReadFileIpcValue } from '_common_type'
 
 /**
  * Unifiling file path between windows system and macos/linux system

@@ -15,7 +15,8 @@
     "paths": {
       "*": ["node_modules/*"],
       "_window_type": ["src/types/window.d.ts"],
-      "_common_type": ["src/types/common.d.ts"]
+      "_common_type": ["src/types/common.d.ts"],
+      "src/*": ["./src/*"]
     }
   },
   "include": ["src/**/*"]

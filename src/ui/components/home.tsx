@@ -1,11 +1,11 @@
+import { useEffect, useState } from 'react'
+import Message from './message'
 import SideBar from './sidebar'
 import Editor from './editor'
 import Drag from './drag'
+import { HomeChannel, CheckBoxValue } from '_common_type'
 
 import '../css/home.css'
-import { useEffect, useState } from 'react'
-import { HomeChannel, CheckBoxValue } from '../../types/common.d'
-import Message from './message'
 
 const Home = () => {
   const [showSide, setShowSide] = useState<boolean>(true)

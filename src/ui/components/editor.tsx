@@ -7,7 +7,7 @@ import {
   EditorChannel,
   TypeWriterIpcValue,
   ReadFileIpcValue
-} from '../../types/common.d'
+} from '_common_type'
 
 import '../css/editor.css'
 
