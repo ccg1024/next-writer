@@ -40,6 +40,7 @@
   box-sizing: border-box;
   position: relative;
   height: 100vh;
+  background-color: var(--nw-color-whiteAlpha-600);
   -webkit-app-region: drag;
 }
 
