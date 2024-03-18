@@ -92,7 +92,10 @@ const Editor: FC = (): JSX.Element => {
 
       setDoc(value.content)
       // update recent file list component
-      PubSub.publish('nw-recent-filelist', value.fileDescriptor)
+      PubSub.publish('nw-sidebar-pubsub', {
+        type: 'nw-sidebar-add-recent-file',
+        data: value.fileDescriptor
+      })
       // update editor working path
       window._next_writer_rendererConfig.workPath = value.fileDescriptor.path
       window._next_writer_rendererConfig.modified =
@@ -116,7 +119,10 @@ const Editor: FC = (): JSX.Element => {
       window.ipc._render_saveFile(editorView.state.doc.toString())
       // trigger modify save
       window._next_writer_rendererConfig.modified = false
-      PubSub.publish('nw-listen-file-change', 'normal')
+      PubSub.publish('nw-sidebar-pubsub', {
+        type: 'nw-sidebar-file-change',
+        data: 'normal'
+      })
       // if not a empty file save, publi a message
       if (window._next_writer_rendererConfig.workPath !== '') {
         PubSub.publish(

@@ -8,35 +8,14 @@ import User from './user'
 import Filesystem from './filesystem'
 import Dividing from './dividing'
 import { RecentFileList } from './filelist'
-import { FileDescriptor, FileDescriptorContainer } from '../../types/common.d'
-import { FileStatus } from '../../types/renderer.d'
+import { FileDescriptor, FileDescriptorContainer } from '_common_type'
+import { PubSubData } from 'src/types/renderer'
 
 import '../css/sidebar.css'
 
 interface Props {
   isVisible: boolean
 }
-
-// type AnimateProps = {
-//   isVisible: boolean
-// } & PropsWithChildren
-
-// const Animate: FC<AnimateProps> = (props): JSX.Element => {
-//   return (
-//     <AnimatePresence mode="wait">
-//       {props.isVisible && (
-//         <motion.div
-//           initial={{ x: -100, opacity: 0 }}
-//           animate={{ x: 0, opacity: 1 }}
-//           exit={{ x: -100, opacity: 0 }}
-//           transition={{ duration: 0.5 }}
-//         >
-//           {props.children}
-//         </motion.div>
-//       )}
-//     </AnimatePresence>
-//   )
-// }
 
 const VerticalScrollBox = styled.div`
   overflow: auto;
@@ -74,53 +53,38 @@ const SideBar: FC<Props> = (props): JSX.Element => {
     }
   }, [])
 
+  // regist pubsub event
   useEffect(() => {
-    const token = PubSub.subscribe(
-      'nw-recent-filelist',
-      (_: string, fileDescriptor: FileDescriptor) => {
-        if (fileDescriptor) {
-          setRecentFiles(v => {
-            return {
-              ...v,
-              [fileDescriptor.path]: fileDescriptor
-            }
-          })
-          setCurrentFile(fileDescriptor.path)
-          setFilelist(v =>
-            v.includes(fileDescriptor.path) ? v : [...v, fileDescriptor.path]
-          )
-        }
-      }
-    )
-
-    return () => {
-      PubSub.unsubscribe(token)
-    }
-  }, [])
-
-  useEffect(() => {
-    // listen file change
-    const token = PubSub.subscribe(
-      'nw-listen-file-change',
-      (_: string, fileStatus: FileStatus) => {
+    const tokenFuc = (_: string, data: PubSubData) => {
+      if (data.type === 'nw-sidebar-file-change') {
         if (!currentFile) return
 
-        setRecentFiles(v => {
-          return {
-            ...v,
-            [currentFile]: {
-              ...v[currentFile],
-              isChange: fileStatus === 'modified'
-            }
+        setRecentFiles(v => ({
+          ...v,
+          [currentFile]: {
+            ...v[currentFile],
+            isChange: data.data === 'modified'
           }
-        })
+        }))
+      } else if (data.type === 'nw-sidebar-add-recent-file') {
+        const fileDescriptor = data.data as FileDescriptor
+        setRecentFiles(v => ({
+          ...v,
+          [fileDescriptor.path]: fileDescriptor
+        }))
+        setCurrentFile(fileDescriptor.path)
+        setFilelist(v =>
+          v.includes(fileDescriptor.path) ? v : [...v, fileDescriptor.path]
+        )
       }
-    )
+    }
+    // regist pubsub listener
+    const token = PubSub.subscribe('nw-sidebar-pubsub', tokenFuc)
 
     return () => {
       PubSub.unsubscribe(token)
     }
-  }, [currentFile, recentFiles])
+  }, [currentFile])
 
   return (
     <>
