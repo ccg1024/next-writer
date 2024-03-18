@@ -47,5 +47,8 @@ contextBridge.exposeInMainWorld('ipc', {
   },
   _render_saveFile: (content: string) => {
     ipcRenderer.send(ipcChannel['render-to-main']._render_save_file, content)
-  }
+  },
+
+  _invoke_get_info: (type: string) =>
+    ipcRenderer.invoke(ipcChannel['invoke-channel']._invoke_get_info, type)
 })

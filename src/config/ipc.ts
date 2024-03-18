@@ -8,5 +8,8 @@ export const ipcChannel = {
     _render_open_file: '_render_open_file',
     _render_update_cache: '_render_update_cache',
     _render_save_file: '_render_save_file'
+  },
+  'invoke-channel': {
+    _invoke_get_info: '_invoke_get_info'
   }
 }

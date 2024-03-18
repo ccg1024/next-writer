@@ -1,4 +1,5 @@
 import { IpcRendererEvent } from 'electron'
+import { InvokeInfoType } from '_common_type'
 import { CacheContent } from '_window_type'
 
 type CallbackFunction = (event: IpcRendererEvent, ...args: unknown[]) => void
@@ -12,6 +13,7 @@ export interface ipc {
     cache: Partial<CacheContent> & { filePath: string }
   ) => void
   _render_saveFile: (content: string) => void
+  _invoke_get_info: (type: InvokeInfoType) => Promise<unknown>
 }
 
 declare global {
@@ -32,3 +34,8 @@ export type RendererConfig = {
 }
 
 export type FileStatus = readonly 'modified' | 'normal'
+
+export type PubSubData = {
+  type: string
+  data: unknown
+}

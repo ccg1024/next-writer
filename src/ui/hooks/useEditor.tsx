@@ -34,7 +34,10 @@ export const useEditor = <T extends Element>(
               !window._next_writer_rendererConfig.modified &&
               window._next_writer_rendererConfig.workPath !== ''
             ) {
-              PubSub.publish('nw-listen-file-change', 'modified')
+              PubSub.publish('nw-sidebar-pubsub', {
+                type: 'nw-sidebar-file-change',
+                data: 'modified'
+              })
               window.ipc._render_updateCache({
                 filePath: window._next_writer_rendererConfig.workPath,
                 isChange: true

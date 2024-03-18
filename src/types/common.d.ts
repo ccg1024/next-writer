@@ -29,6 +29,8 @@ declare module '_common_type' {
   export type FileDescriptorContainer = {
     [key: string]: FileDescriptor
   }
+
+  export type InvokeInfoType = readonly 'workstation'
 }
 
 export default '_common_type'

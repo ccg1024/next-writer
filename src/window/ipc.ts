@@ -1,6 +1,6 @@
 // Making comunication with rederer process
 
-import { ipcMain } from 'electron'
+import { ipcMain, IpcMainInvokeEvent } from 'electron'
 import fs from 'fs'
 import { ipcChannel } from '../config/ipc'
 import {
@@ -10,7 +10,7 @@ import {
   generateFileDescripter
 } from './file_process'
 import { exitCache, getCache, updateCache } from './cache'
-import { EditorChannel } from '_common_type'
+import { EditorChannel, InvokeInfoType } from '_common_type'
 import { CacheContent } from '_window_type'
 
 async function handleOpenFileFromRenderer(_: unknown, filePath: string) {
@@ -81,6 +81,15 @@ async function handleSave(_: unknown, content: string) {
   })
 }
 
+async function handleInvokeGetInfo(
+  _e: IpcMainInvokeEvent,
+  type: InvokeInfoType
+) {
+  if (type === 'workstation') {
+    return global._next_writer_windowConfig.workPlatform
+  }
+}
+
 export function mountIPC() {
   // initial all ipc process to recieve message from renderer
   ipcMain.on(
@@ -93,4 +102,10 @@ export function mountIPC() {
   )
 
   ipcMain.on(ipcChannel['render-to-main']._render_save_file, handleSave)
+
+  // handle invoke ipc
+  ipcMain.handle(
+    ipcChannel['invoke-channel']._invoke_get_info,
+    handleInvokeGetInfo
+  )
 }
