@@ -12,6 +12,7 @@ import { FileDescriptor, FileDescriptorContainer } from '_common_type'
 import { PubSubData } from 'src/types/renderer'
 
 import '../css/sidebar.css'
+import { GlobalMask } from './utils'
 
 interface Props {
   isVisible: boolean
@@ -102,6 +103,7 @@ const SideBar: FC<Props> = (props): JSX.Element => {
             />
           </VerticalScrollBox>
           <Resizer parentRef={sidebarRef} minWidth={100} />
+          <GlobalMask isMediaControl={true} />
         </div>
       )}
     </>

@@ -1,7 +1,8 @@
 import { FC, useState } from 'react'
 import styled from '@emotion/styled'
 import { css } from '@emotion/css'
-import { AnimateHoverBox } from './utils'
+import { TiDocumentText } from 'react-icons/ti'
+import { AnimateHoverBox, InlineFlex } from './utils'
 import { useWorkStation } from '../hooks/useComponentEffect'
 import { reversePath } from '../libs/utils'
 
@@ -21,7 +22,14 @@ const BroadCast: FC<Props> = (props): JSX.Element => {
   return (
     <div className="broadcast-main">
       <div className="broadcast-content" onClick={toggleHover}>
-        {props.currentFile ? makeBroadcast(props.currentFile) : 'next Writer'}
+        <InlineFlex>
+          <TiDocumentText />
+          <span>
+            {props.currentFile
+              ? makeBroadcast(props.currentFile)
+              : 'Next Writer'}
+          </span>
+        </InlineFlex>
       </div>
       <AnimateHoverBox
         visible={showHover}

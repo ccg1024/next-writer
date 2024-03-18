@@ -17,6 +17,7 @@
     padding-left: 10px;
     background-color: white;
     z-index: 100;
+    border-radius: var(--nw-border-radius-sm);
   }
 }
 
@@ -44,15 +45,26 @@
   margin: 10px 0px;
   padding-right: 10px;
   box-sizing: border-box;
+  position: relative;
 }
 .user-content {
   padding: 10px;
-  background-color: red;
   border-radius: 5px;
+}
+.user-content:hover {
+  background-color: var(--nw-color-blackAlpha-50);
+}
+.icon-hover {
+  padding: 5px;
+  border-radius: var(--nw-border-radius-sm);
+}
+.icon-hover:hover {
+  background-color: var(--nw-color-blackAlpha-100);
+  cursor: pointer;
 }
 
 .filesystem-main {
-  margin: 10px 0px;
+  margin-bottom: 10px;
   padding-right: 10px;
   box-sizing: border-box;
 }
@@ -62,9 +74,11 @@
   flex-direction: column;
 }
 .filesystem-item {
-  padding: 5px;
+  padding: 10px;
   border-radius: 5px;
-  background-color: red;
+}
+.filesystem-item:hover {
+  background-color: var(--nw-color-blackAlpha-50);
 }
 
 .dividing-main {
@@ -75,4 +89,8 @@
   background-color: #aaaaaa;
   height: 1px;
   border: none;
+}
+
+.no-select {
+  user-select: none;
 }

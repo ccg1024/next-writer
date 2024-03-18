@@ -1,6 +1,7 @@
 import styled from '@emotion/styled'
 import { AnimatePresence, motion } from 'framer-motion'
-import { FC, PropsWithChildren } from 'react'
+import { FC, PropsWithChildren, ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 
 interface HoverBoxProps {
   x: 'left' | 'right'
@@ -95,4 +96,39 @@ export const AnimateHoverBox: FC<
       </AnimatePresence>
     </AnimateHoverBoxCoords>
   )
+}
+
+export const InlineFlex = styled.div`
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  line-height: 1;
+`
+
+type AnimateClickDivProps = {
+  child: ReactNode
+}
+
+export const AnimateClickDiv: FC<AnimateClickDivProps> = props => {
+  return <motion.div whileTap={{ scale: 0.6 }}>{props.child}</motion.div>
+}
+
+type MaskProps = {
+  isMediaControl?: boolean
+}
+export const Mask = styled.div<MaskProps>`
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: ${props => (props.isMediaControl ? 'none' : 'block')};
+  @media (max-width: 700px) {
+    display: block;
+  }
+`
+
+export const GlobalMask: FC<MaskProps> = props => {
+  return createPortal(<Mask {...props} />, document.body)
 }
