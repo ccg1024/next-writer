@@ -1,5 +1,6 @@
 import { FC, MouseEvent } from 'react'
 import styled from '@emotion/styled'
+import { TiMediaRecord, TiDocumentText } from 'react-icons/ti'
 
 import { AnimatePresence, motion } from 'framer-motion'
 import { FileDescriptorContainer } from '_common_type'
@@ -17,6 +18,9 @@ type ListItemProps = {
   isActive: boolean
 }
 const ListItem = styled.div<ListItemProps>`
+  display: flex;
+  align-items: center;
+  gap: 5px;
   padding: 5px 10px;
   border-radius: var(--nw-border-radius-md);
   background-color: ${props =>
@@ -67,8 +71,14 @@ export const RecentFileList: FC<Props> = props => {
                 isActive={isActive}
                 onClick={isActive ? null : cb}
               >
-                {file.isChange && '[+] '}
-                {file.name}
+                <TiDocumentText className="fixed-flex-item" />
+                <span className="text-hide">{file.name}</span>
+                {file.isChange && (
+                  <TiMediaRecord
+                    className="fixed-flex-item"
+                    style={{ marginLeft: 'auto', color: 'red' }}
+                  />
+                )}
               </ListItem>
             </motion.div>
           )
