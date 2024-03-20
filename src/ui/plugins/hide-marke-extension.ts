@@ -10,6 +10,15 @@ import {
   ViewUpdate
 } from '@codemirror/view'
 
+const ATXHeading = [
+  'ATXHeading1',
+  'ATXHeading2',
+  'ATXHeading3',
+  'ATXHeading4',
+  'ATXHeading5',
+  'ATXHeading6'
+]
+
 function addDeco(view: EditorView) {
   const builder = new RangeSetBuilder<Decoration>()
   for (const { from, to } of view.visibleRanges) {
@@ -19,8 +28,20 @@ function addDeco(view: EditorView) {
         from,
         to,
         enter: node => {
-          if (node.name === 'HeaderMark') {
-            builder.add(node.from, node.to + 1, Decoration.replace({}))
+          if (ATXHeading.includes(node.name)) {
+            // Cannot using meadmarks, since the content will be a head
+            // when there are three '=' or '-' next below the line.
+            // Then,
+            // just there are head content, the head mark and 1 space will be hidden.
+            const headLevel = parseInt(node.name[node.name.length - 1])
+            const diff = node.to - node.from
+            if (diff > headLevel + 1) {
+              builder.add(
+                node.from,
+                node.from + headLevel + 1,
+                Decoration.replace({})
+              )
+            }
           } else if (node.name === 'EmphasisMark') {
             builder.add(node.from, node.to, Decoration.replace({}))
           } else if (node.name === 'InlineCode') {
