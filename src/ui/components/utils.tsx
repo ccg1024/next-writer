@@ -1,7 +1,9 @@
 import styled from '@emotion/styled'
+import { css } from '@emotion/css'
 import { AnimatePresence, motion } from 'framer-motion'
-import { FC, PropsWithChildren, ReactNode } from 'react'
+import React, { FC, PropsWithChildren, ReactNode } from 'react'
 import { createPortal } from 'react-dom'
+import { TiFolderAdd, TiDocumentAdd } from 'react-icons/ti'
 
 interface HoverBoxProps {
   x: 'left' | 'right'
@@ -103,14 +105,23 @@ export const InlineFlex = styled.div`
   gap: 5px;
   align-items: center;
   line-height: 1;
+  white-space: nowrap;
 `
 
 type AnimateClickDivProps = {
   child: ReactNode
+  onClick?: (e: React.MouseEvent) => void
 }
 
 export const AnimateClickDiv: FC<AnimateClickDivProps> = props => {
-  return <motion.div whileTap={{ scale: 0.6 }}>{props.child}</motion.div>
+  return (
+    <motion.div
+      onClick={props.onClick && props.onClick}
+      whileTap={{ scale: 0.6 }}
+    >
+      {props.child}
+    </motion.div>
+  )
 }
 
 type MaskProps = {
@@ -131,4 +142,102 @@ export const Mask = styled.div<MaskProps>`
 
 export const GlobalMask: FC<MaskProps> = props => {
   return createPortal(<Mask {...props} />, document.body)
+}
+
+export const CircalLoad = styled.div`
+  box-sizing: border-box;
+  width: var(--nw-size-lg);
+  height: var(--nw-size-lg);
+  border-radius: var(--nw-border-radius-mx);
+  border-width: 2px;
+  border-bottom-color: var(--nw-color-transparent);
+  border-left-color: var(--nw-color-transparent);
+  border-right-color: ${props => (props.color ? props.color : '#333333')};
+  border-top-color: ${props => (props.color ? props.color : '#333333')};
+  border-style: solid;
+  animation: 0.45s linear 0s infinite normal none running animation-rotate;
+`
+export const Spinner: FC<React.HTMLAttributes<HTMLDivElement>> = props => {
+  const { color } = props
+  return (
+    <div {...props}>
+      <CircalLoad color={color} />
+    </div>
+  )
+}
+
+type CloseIconProps = {
+  onClick?: () => void
+}
+
+export const CloseIcon: FC<CloseIconProps> = props => {
+  const wrapper = css`
+    width: var(--nw-size-md);
+    height: var(--nw-size-md);
+    position: relative;
+    box-sizing: border-box;
+  `
+  const horizon = css`
+    box-sizing: border-box;
+    width: 100%;
+    height: 2px;
+    border-radius: 2px;
+    position: absolute;
+    top: 50%;
+    left: 0;
+    transform: translate(0, -50%) rotate(45deg);
+    background-color: black;
+  `
+  const vertical = css`
+    width: 2px;
+    height: 100%;
+    border-radius: 2px;
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translate(-50%, 0) rotate(45deg);
+    background-color: black;
+  `
+  return (
+    <motion.div
+      className={wrapper}
+      whileHover={{ scale: 1.2 }}
+      whileTap={{ scale: 0.8 }}
+      onClick={props.onClick}
+    >
+      <div className={horizon}></div>
+      <div className={vertical}></div>
+    </motion.div>
+  )
+}
+
+type AddEffectProps = {
+  wrapperClass?: string
+  onClick: (type: string, prefix: string) => (e: React.MouseEvent) => void
+  uniq: string
+}
+
+export const AddEffect: FC<AddEffectProps> = props => {
+  const { wrapperClass, uniq } = props
+  const _wrapper = css`
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+  `
+  return (
+    <div className={wrapperClass || _wrapper}>
+      <InlineFlex>
+        <AnimateClickDiv
+          onClick={props.onClick('file', uniq)}
+          child={<TiDocumentAdd className="icon-hover" />}
+        ></AnimateClickDiv>
+
+        <AnimateClickDiv
+          onClick={props.onClick('folder', uniq)}
+          child={<TiFolderAdd className="icon-hover" />}
+        ></AnimateClickDiv>
+      </InlineFlex>
+    </div>
+  )
 }

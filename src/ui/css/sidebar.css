@@ -55,6 +55,7 @@
   background-color: var(--nw-color-blackAlpha-50);
 }
 .icon-hover {
+  display: block;
   padding: 5px;
   border-radius: var(--nw-border-radius-sm);
 }
@@ -76,6 +77,7 @@
 .filesystem-item {
   padding: 10px;
   border-radius: 5px;
+  position: relative;
 }
 .filesystem-item:hover {
   background-color: var(--nw-color-blackAlpha-50);

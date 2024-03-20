@@ -13,6 +13,7 @@ import { images } from '../plugins/images-extension'
 
 interface Props {
   initialDoc?: string
+  timeKey: string // Ensure the editor re-build when toggle file which content is same.
 }
 
 export const useEditor = <T extends Element>(
@@ -73,7 +74,7 @@ export const useEditor = <T extends Element>(
     return () => {
       view.destroy()
     }
-  }, [initialDoc])
+  }, [initialDoc, props.timeKey])
 
   return [containerRef, editorView]
 }

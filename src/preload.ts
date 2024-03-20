@@ -49,6 +49,18 @@ contextBridge.exposeInMainWorld('ipc', {
     ipcRenderer.send(ipcChannel['render-to-main']._render_save_file, content)
   },
 
-  _invoke_get_info: (type: string) =>
-    ipcRenderer.invoke(ipcChannel['invoke-channel']._invoke_get_info, type)
+  _invoke_get_info: (type: string) => {
+    return ipcRenderer.invoke(
+      ipcChannel['invoke-channel']._invoke_get_info,
+      type
+    )
+  },
+  _invoke_post: (channel: string, data: unknown) => {
+    // 双向通道总调用接口
+    return ipcRenderer.invoke(channel, data)
+  },
+  _render_post: (channel: string, data: unknown) => {
+    // 单向通道总调用接口
+    return ipcRenderer.send(channel, data)
+  }
 })

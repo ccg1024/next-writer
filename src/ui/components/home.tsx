@@ -6,6 +6,7 @@ import Drag from './drag'
 import { HomeChannel, CheckBoxValue } from '_common_type'
 
 import '../css/home.css'
+import { GlobalInput } from './input'
 
 const Home = () => {
   const [showSide, setShowSide] = useState<boolean>(true)
@@ -26,14 +27,17 @@ const Home = () => {
   }, [])
 
   return (
-    <div id="home">
-      <SideBar isVisible={showSide} />
-      <div className="home-container">
-        <Editor />
+    <>
+      <div id="home">
+        <SideBar isVisible={showSide} />
+        <div className="home-container">
+          <Editor />
+        </div>
+        {!showSide && <Drag />}
+        <Message />
       </div>
-      {!showSide && <Drag />}
-      <Message />
-    </div>
+      <GlobalInput />
+    </>
   )
 }
 

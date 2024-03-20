@@ -2,9 +2,9 @@
 
 import { BrowserWindow, dialog, OpenDialogOptions } from 'electron'
 import path from 'path'
-import fs from 'fs/promises'
+import fs from 'fs'
 import { addCache, exitCache, getCache } from './cache'
-import { ReadFileIpcValue } from '_common_type'
+import { ReadFileIpcValue, RootWorkstationInfo } from '_common_type'
 
 /**
  * Unifiling file path between windows system and macos/linux system
@@ -110,7 +110,7 @@ export async function handleOpenFile(
 export async function constructFileData(
   filePath: string
 ): Promise<ReadFileIpcValue> {
-  const content = await fs.readFile(filePath, 'utf-8')
+  const content = await fs.promises.readFile(filePath, 'utf-8')
   // add cache
   addCache(filePath, {
     isChange: false,
@@ -160,4 +160,90 @@ export async function constructVirtualFileData(
     content: ''
   })
   return generateReadFileIpcValue(filePath, '')
+}
+
+export function writeDefaultConfig(configPath: string) {
+  // if there not any config file,
+  // this function will write default config file throw
+  // to default config path
+  const configName = 'nwriter.json'
+  const fullpath = path.resolve(configPath, configName)
+  const home = process.env.HOME || process.env.USERPROFILE
+  const defaultConfig = {
+    root: `${home}/documents/nwriter`
+  }
+  if (!fs.existsSync(fullpath)) {
+    fs.writeFileSync(fullpath, JSON.stringify(defaultConfig))
+  }
+}
+
+export function readConfig(configPath: string) {
+  if (!fs.existsSync(configPath)) {
+    throw new Error('The config file do not exist!!!')
+  }
+  const config = fs.readFileSync(configPath, { encoding: 'utf-8' })
+
+  return JSON.parse(config)
+}
+
+export function initialRootWorkplatform() {
+  const root = global._next_writer_windowConfig.root
+
+  if (!root) {
+    throw new Error(
+      'The root dir path is empty, did `initialRootWorkplatform` function place wrong way?'
+    )
+  }
+
+  if (!fs.existsSync(root)) {
+    fs.mkdirSync(root, { recursive: true })
+  }
+}
+
+export function readRootWorkstationInfo() {
+  const root = global._next_writer_windowConfig.root
+  const infoFileName = '.nwriter.info.json'
+  const infoPath = path.resolve(root, infoFileName)
+
+  if (!root) {
+    throw new Error(
+      'The root dir path is empty, did `readRootWorkstationInfo` function place right way?'
+    )
+  }
+  if (!fs.existsSync(infoPath)) {
+    const emptyInfo: RootWorkstationInfo = {
+      folders: [],
+      files: []
+    }
+    fs.promises.writeFile(infoPath, JSON.stringify(emptyInfo)).catch(err => {
+      throw err
+    })
+  } else {
+    fs.promises
+      .readFile(infoPath)
+      .then(value => {
+        const info = JSON.parse(value.toString('utf8')) as RootWorkstationInfo
+        global._next_writer_windowConfig.rootWorkplatformInfo = { ...info }
+      })
+      .catch(err => {
+        throw err
+      })
+  }
+}
+
+export async function writeRootWorkstationInfo() {
+  const root = global._next_writer_windowConfig.root
+  const infoFileName = '.nwriter.info.json'
+  const infoPath = path.resolve(root, infoFileName)
+
+  if (!root) {
+    throw new Error(
+      'The root dir path is empty, did `writeRootWorkstationInfo` function place right way?'
+    )
+  }
+
+  const infoData = global._next_writer_windowConfig.rootWorkplatformInfo
+  fs.promises.writeFile(infoPath, JSON.stringify(infoData)).catch(err => {
+    throw err
+  })
 }

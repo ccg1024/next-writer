@@ -23,8 +23,8 @@ const BroadCast: FC<Props> = (props): JSX.Element => {
     <div className="broadcast-main">
       <div className="broadcast-content" onClick={toggleHover}>
         <InlineFlex>
-          <TiDocumentText />
-          <span>
+          <TiDocumentText className="fixed-flex-item" />
+          <span className="text-hide">
             {props.currentFile
               ? makeBroadcast(props.currentFile)
               : 'Next Writer'}

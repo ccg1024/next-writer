@@ -49,7 +49,7 @@ export const RecentFileList: FC<Props> = props => {
   }
   return (
     <ListBox>
-      <AnimatePresence mode="wait" initial={false}>
+      <AnimatePresence initial={false}>
         {props.filelist.map(filePath => {
           const file = props.recentFiles[filePath]
           const isActive = props.currentFile === file.path

@@ -1,5 +1,6 @@
 /* custom css variables */
 :root {
+  --nw-color-transparent: transparent;
   --nw-color-whiteAlpha-50: rgba(255, 255, 255, 0.08);
   --nw-color-whiteAlpha-100: rgba(255, 255, 255, 0.16);
   --nw-color-whiteAlpha-200: rgba(255, 255, 255, 0.24);
@@ -18,15 +19,29 @@
   --nw-border-radius-sm: 5px;
   --nw-border-radius-md: 10px;
   --nw-border-radius-lg: 15px;
+  --nw-border-radius-mx: 100%;
   --nw-box-shadow-sm: 2px 2px 5px #8c8c8c;
   --nw-box-shadow-md: 0px 0px 10px #8c8c8c;
   --nw-box-shadow-lg: 2px 2px 15px #8c8c8c;
+
+  --nw-size-sm: 0.5em;
+  --nw-size-md: 1em;
+  --nw-size-lg: 1.5em;
 
   --nw-editor-font-family: 'M PLUS Rounded 1c';
   --nw-editor-code-font-family: 'Hack Nerd Font';
   --nw-ui-font-family: 'M PLUS Rounded 1c';
   --nw-ui-font-size: 16px;
   --nw-editor-font-size: 16px;
+}
+
+@keyframes animation-rotate {
+  0% {
+    transform: rotate(0);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .test {
@@ -58,4 +73,21 @@
   border-radius: 5px;
   box-shadow: 0px 0px 10px #878787;
   font-size: 16px;
+}
+
+.right-center-absolute {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  transform: translate(0, -50%);
+}
+
+.fixed-flex-item {
+  flex-shrink: 0;
+  flex-grow: 0;
+}
+.text-hide {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }

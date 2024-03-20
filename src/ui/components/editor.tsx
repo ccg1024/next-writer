@@ -43,8 +43,10 @@ console.log(helloWorld())
 
 const Editor: FC = (): JSX.Element => {
   const [doc, setDoc] = useState<string>('')
+  const [timeKey, setTimeKey] = useState<string>('')
   const [containerRef, editorView] = useEditor<HTMLDivElement>({
-    initialDoc: doc
+    initialDoc: doc,
+    timeKey
   })
 
   useLayoutEffect(() => {
@@ -91,6 +93,7 @@ const Editor: FC = (): JSX.Element => {
       }
 
       setDoc(value.content)
+      setTimeKey(new Date().toString()) // Make sure the editor re-build
       // update recent file list component
       PubSub.publish('nw-sidebar-pubsub', {
         type: 'nw-sidebar-add-recent-file',

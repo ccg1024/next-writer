@@ -1,5 +1,5 @@
 import { IpcRendererEvent } from 'electron'
-import { InvokeInfoType } from '_common_type'
+import { InvokeInfoType, IpcRequestData, IpcResponseData } from '_common_type'
 import { CacheContent } from '_window_type'
 
 type CallbackFunction = (event: IpcRendererEvent, ...args: unknown[]) => void
@@ -14,6 +14,14 @@ export interface ipc {
   ) => void
   _render_saveFile: (content: string) => void
   _invoke_get_info: (type: InvokeInfoType) => Promise<unknown>
+  _invoke_post: (
+    channel: string,
+    data: IpcRequestData
+  ) => Promise<IpcResponseData>
+  _render_post: (
+    channel: string,
+    data: IpcRequestData
+  ) => Promise<IpcResponseData>
 }
 
 declare global {
@@ -38,4 +46,16 @@ export type FileStatus = readonly 'modified' | 'normal'
 export type PubSubData = {
   type: string
   data: unknown
+}
+
+export type RenderNewFileType = {
+  pathType: readonly 'file' | 'folder'
+  replyChannel: string // 对应组件
+  replyType: string // 对应组件内部处理分支
+  pathPrefix: string
+}
+
+export type RenderNewFileReply = {
+  pathType: 'file' | 'folder'
+  pathName: string
 }
