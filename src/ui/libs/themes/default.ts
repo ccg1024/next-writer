@@ -17,9 +17,9 @@ export const defaultTheme = EditorView.theme({
   '&.cm-focused': {
     outline: 'none'
   },
-  // '&.cm-focused .cm-cursor': {
-  //   transition: 'all 80ms'
-  // },
+  '&.cm-focused .cm-cursor': {
+    transition: 'left 40ms linear, top 40ms linear'
+  },
   '.cm-scroller': {
     fontFamily: 'var(--nw-editor-font-family)',
     marginTop: '5px',
