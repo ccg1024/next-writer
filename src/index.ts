@@ -32,6 +32,16 @@ global._next_writer_windowConfig = {
   rootWorkplatformInfo: { folders: [], files: [] }
 }
 
+protocol.registerSchemesAsPrivileged([
+  {
+    scheme: 'atom',
+    privileges: {
+      bypassCSP: true,
+      stream: true
+    }
+  }
+])
+
 const createWindow = (): void => {
   // Create the browser window.
   const mainWindow = new BrowserWindow({
@@ -57,7 +67,7 @@ const createWindow = (): void => {
   mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY)
 
   // Open the DevTools.
-  mainWindow.webContents.openDevTools()
+  // mainWindow.webContents.openDevTools()
   global._next_writer_windowConfig.workPlatform = ''
   global._next_writer_windowConfig.root = configContent.root
   global._next_writer_windowConfig.win = mainWindow
@@ -74,7 +84,7 @@ app.whenReady().then(() => {
   //   callback(decodeURI(path.normalize(url)))
   // })
   protocol.handle('atom', request => {
-    return net.fetch('file://' + request.url.slice('atom://'.length))
+    return net.fetch('file://' + decodeURI(request.url.slice('atom://'.length)))
   })
 
   // create menu

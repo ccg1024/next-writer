@@ -4,6 +4,7 @@ import { tags } from '@lezer/highlight'
 import { HighlightStyle, syntaxHighlighting } from '@codemirror/language'
 
 import { markTags } from '../codemirror'
+import { syntaxTags } from '../../plugins/sytanx-extension'
 
 export const defaultTheme = EditorView.theme({
   '&': {
@@ -286,6 +287,11 @@ export const defaultSyntaxHighlighting = HighlightStyle.define([
       tags.definition(tags.propertyName)
     ],
     color: '#6F42C1'
+  },
+  {
+    tag: syntaxTags.NWvideo,
+    color: '#6F42C1',
+    fontWeight: 'bold'
   }
 ])
 

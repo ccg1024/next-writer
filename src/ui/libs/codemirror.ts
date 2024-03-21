@@ -31,6 +31,7 @@ import { languages } from '@codemirror/language-data'
 import { markdown, markdownLanguage } from '@codemirror/lang-markdown'
 import { Tag, styleTags } from '@lezer/highlight'
 import { MarkdownConfig } from '@lezer/markdown'
+import { NWvideo } from '../plugins/sytanx-extension'
 
 export const markTags = {
   headingMark: Tag.define(),
@@ -100,6 +101,6 @@ export const editorDefaultExtensions = [
     base: markdownLanguage,
     codeLanguages: languages,
     addKeymap: true,
-    extensions: [markStylingExtension]
+    extensions: [markStylingExtension, NWvideo]
   })
 ]
