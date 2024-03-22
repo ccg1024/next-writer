@@ -37,7 +37,11 @@ protocol.registerSchemesAsPrivileged([
     scheme: 'atom',
     privileges: {
       bypassCSP: true,
-      stream: true
+      stream: true,
+      supportFetchAPI: true,
+      corsEnabled: true,
+      allowServiceWorkers: true,
+      secure: true
     }
   }
 ])
