@@ -8,7 +8,7 @@ declare module '_common_type' {
   }
 
   export type HomeChannel = {
-    type: readonly 'hideSidebar'
+    type: readonly 'hideSidebar' | 'toggleHeadNav'
     value?: unknown
   }
 

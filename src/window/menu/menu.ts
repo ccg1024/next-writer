@@ -98,6 +98,21 @@ async function toggleSideBar(
   win.setWindowButtonVisibility(!menuItem.checked)
 }
 
+async function toggleHeadNav(
+  menuItem: MenuItem,
+  win: BrowserWindow,
+  _: unknown
+) {
+  if (!win) return
+
+  win.webContents.send(ipcChannel['main-to-render'].home_component, {
+    type: 'toggleHeadNav',
+    value: {
+      checked: menuItem.checked
+    }
+  } as HomeChannel)
+}
+
 export default function createMenus(): MenuItemConstructorOptions[] {
   // const appname = app.name
   const isMac = process.platform === 'darwin'
@@ -150,6 +165,12 @@ export default function createMenus(): MenuItemConstructorOptions[] {
           type: 'checkbox',
           checked: false,
           accelerator: isMac ? 'Cmd+Shift+s' : 'Ctrl+Shift+s'
+        },
+        {
+          label: 'show headNav',
+          click: toggleHeadNav,
+          type: 'checkbox',
+          checked: false
         }
       ]
     },

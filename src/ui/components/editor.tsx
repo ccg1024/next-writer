@@ -10,6 +10,8 @@ import {
 } from '_common_type'
 
 import '../css/editor.css'
+import { PubSubData } from 'src/types/renderer'
+import { EditorView } from '@codemirror/view'
 
 // NOTE: Just a simple txt for dev.
 const _testInitialDoc = `# Head 1
@@ -58,17 +60,37 @@ const Editor: FC = (): JSX.Element => {
   }, [editorView])
 
   useEffect(() => {
-    if (editorView) {
-      // some thing need deal with editor instance
-      // NOTE:
-      // Make sure that the top is displayed when you open the file multiple times.
-      // Because the scroll body is lifted onto the parent box.
-      // editorView.dispatch({
-      //   effects: EditorView.scrollIntoView(0, { y: 'nearest' })
-      // })
-      containerRef.current.scrollTo({
-        top: 0
-      })
+    if (!editorView) return
+    // some thing need deal with editor instance
+    // NOTE:
+    // Remove, Since the scrolling body reset to codemirror
+    // Make sure that the top is displayed when you open the file multiple times.
+    // Because the scroll body is lifted onto the parent box.
+    // editorView.dispatch({
+    //   effects: EditorView.scrollIntoView(0, { y: 'nearest' })
+    // })
+    // containerRef.current.scrollTo({
+    //   top: 0
+    // })
+
+    function pubsubListener(_: string, data: PubSubData) {
+      if (!data) return
+
+      if (data.type === 'head-jump') {
+        const jumpPos = data.data as number
+        editorView.dispatch({
+          selection: { anchor: jumpPos, head: jumpPos },
+          effects: EditorView.scrollIntoView(jumpPos, {
+            y: 'start',
+            yMargin: 0
+          })
+        })
+      }
+    }
+    const token = PubSub.subscribe('nw-editor-pubsub', pubsubListener)
+
+    return () => {
+      PubSub.unsubscribe(token)
     }
   }, [editorView])
 

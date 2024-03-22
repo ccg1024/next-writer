@@ -11,9 +11,9 @@ export const defaultTheme = EditorView.theme({
     // backgroundColor: 'transparent !important',
     height: '100%',
     fontSize: '1.0em',
-    padding: '12px',
-    width: '80%',
-    margin: 'auto'
+    padding: '12px'
+    // width: '80%',
+    // margin: 'auto'
   },
   '&.cm-focused': {
     outline: 'none'
@@ -24,10 +24,12 @@ export const defaultTheme = EditorView.theme({
   '.cm-scroller': {
     fontFamily: 'var(--nw-editor-font-family)',
     marginTop: '5px',
-    overflow: 'unset'
+    // overflow: 'unset'
+    padding: '0 10%',
+    justifyContent: 'center'
   },
   '&.cm-editor': {
-    textAlign: 'left',
+    // textAlign: 'left',
     padding: '0'
   },
   '.cm-gutters': {
@@ -48,7 +50,8 @@ export const defaultTheme = EditorView.theme({
     // marginRight: '5px'
     paddingBottom: '80vh',
     wordBreak: 'break-all',
-    textAlign: 'justify'
+    textAlign: 'justify',
+    maxWidth: '600px'
   },
   '.cm-activeLineGutter': {
     backgroundColor: '#cccccc44'

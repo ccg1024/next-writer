@@ -59,3 +59,10 @@ export type RenderNewFileReply = {
   pathType: 'file' | 'folder'
   pathName: string
 }
+
+export type HeadNav = {
+  title: string
+  level: number
+  number: number
+  jumpPos: number
+}

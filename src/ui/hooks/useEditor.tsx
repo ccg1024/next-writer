@@ -10,10 +10,15 @@ import { hideMarkPlugin } from '../plugins/hide-marke-extension'
 // import { imgPreview, imgPreviewField } from '../plugins/img-preview-extension'
 import { codeBlockHighlight } from '../plugins/code-block-extension'
 import { images } from '../plugins/images-extension'
+import { headNav } from '../plugins/head-nav-extension'
 
 interface Props {
   initialDoc?: string
   timeKey: string // Ensure the editor re-build when toggle file which content is same.
+}
+
+const ctl = {
+  scrollTimer: null as NodeJS.Timeout
 }
 
 export const useEditor = <T extends Element>(
@@ -56,12 +61,29 @@ export const useEditor = <T extends Element>(
             }
           }
         }),
+        EditorView.domEventHandlers({
+          scroll(_e, view) {
+            // handle scroll
+            if (ctl.scrollTimer || !view) return
+            ctl.scrollTimer = setTimeout(() => {
+              const scrollTop = view.scrollDOM.scrollTop
+              const topBlockInfo = view.elementAtHeight(scrollTop)
+              const line = view.state.doc.lineAt(topBlockInfo.from).number
+              PubSub.publish('nw-head-nav-pubsub', {
+                type: 'top-head-line',
+                data: { line }
+              })
+              ctl.scrollTimer = null
+            }, 500)
+          }
+        }),
         ...editorDefaultExtensions,
         // imgPreview(),
         codeBlockHighlight(),
         hideMarkPlugin,
         // imgPreviewField
-        images()
+        images(),
+        headNav()
       ]
     })
 

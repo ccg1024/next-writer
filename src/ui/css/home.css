@@ -33,6 +33,7 @@
   --nw-ui-font-family: 'M PLUS Rounded 1c';
   --nw-ui-font-size: 16px;
   --nw-editor-font-size: 16px;
+  --nw-head-nav-item-color: #4299e1;
 }
 
 @keyframes animation-rotate {
@@ -73,6 +74,7 @@
   border-radius: 5px;
   box-shadow: 0px 0px 10px #878787;
   font-size: 16px;
+  position: relative;
 }
 
 .right-center-absolute {
