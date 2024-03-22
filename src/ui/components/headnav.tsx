@@ -93,16 +93,18 @@ const HeadNav: FC<HeadNavProps> = props => {
         <HeadNavContainer onClick={handleClick}>
           {headers.map((header, idx) => {
             const { title, level, jumpPos, number } = header
+            const regularTitle = title.replace(/^(#+\s*)/, '')
             return (
               <NavItem
                 id={`navitem-${jumpPos}`}
                 key={idx}
                 isActive={number === activeLine}
                 style={{
-                  marginLeft: `${10 * (level - 1)}px`
+                  marginLeft: `${10 * (level - 1)}px`,
+                  color: regularTitle ? 'unset' : 'gray'
                 }}
               >
-                {title.replace(/^(#+\s+)/, '')}
+                {regularTitle ? regularTitle : '[empty]'}
               </NavItem>
             )
           })}

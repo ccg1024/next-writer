@@ -8,6 +8,7 @@ const headNavPlugin = ViewPlugin.fromClass(
   class {
     headNav: HeadNav[] = []
     debounceTimer: NodeJS.Timeout
+    minPos = -1
     headsList: string[] = [
       'ATXHeading1',
       'ATXHeading2',
@@ -27,8 +28,16 @@ const headNavPlugin = ViewPlugin.fromClass(
             clearTimeout(this.debounceTimer)
           }
 
+          if (this.minPos === -1 || this.minPos > fromA) {
+            this.minPos = fromA
+          }
           this.debounceTimer = setTimeout(() => {
-            this._startUpdate(update.view, fromA, update.view.state.doc.length)
+            this._startUpdate(
+              update.view,
+              this.minPos,
+              update.view.state.doc.length
+            )
+            this.minPos = -1
           }, 500)
         })
       }
