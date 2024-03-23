@@ -5,6 +5,13 @@ export function reversePath(path: string, sep?: string) {
   return path.split(_sep).reverse().join(_sep)
 }
 
+/**
+ * The general interface for sending Ipc data.
+ *
+ * @param channel The ipc communication channel
+ * @param data Optional data sent by ipc request
+ * @param single Specify whether it is one-way ipc communication
+ * */
 export async function Post(
   channel: string,
   data: IpcRequestData,

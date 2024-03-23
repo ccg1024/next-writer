@@ -39,22 +39,22 @@ contextBridge.exposeInMainWorld('ipc', {
     }
   },
 
-  _render_openFile: (filePath: string) => {
-    ipcRenderer.send(ipcChannel['render-to-main']._render_open_file, filePath)
-  },
-  _render_updateCache: (cache: unknown) => {
-    ipcRenderer.send(ipcChannel['render-to-main']._render_update_cache, cache)
-  },
-  _render_saveFile: (content: string) => {
-    ipcRenderer.send(ipcChannel['render-to-main']._render_save_file, content)
-  },
+  // _render_openFile: (filePath: string) => {
+  //   ipcRenderer.send(ipcChannel['render-to-main']._render_open_file, filePath)
+  // },
+  // _render_updateCache: (cache: unknown) => {
+  //   ipcRenderer.send(ipcChannel['render-to-main']._render_update_cache, cache)
+  // },
+  // _render_saveFile: (content: string) => {
+  //   ipcRenderer.send(ipcChannel['render-to-main']._render_save_file, content)
+  // },
 
-  _invoke_get_info: (type: string) => {
-    return ipcRenderer.invoke(
-      ipcChannel['invoke-channel']._invoke_get_info,
-      type
-    )
-  },
+  // _invoke_get_info: (type: string) => {
+  //   return ipcRenderer.invoke(
+  //     ipcChannel['invoke-channel']._invoke_get_info,
+  //     type
+  //   )
+  // },
   _invoke_post: (channel: string, data: unknown) => {
     // 双向通道总调用接口
     return ipcRenderer.invoke(channel, data)

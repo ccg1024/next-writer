@@ -18,6 +18,9 @@ declare module '_window_type' {
     isChange: boolean
     content: string
   }
+  export type UpdateCacheContent = {
+    filePath: string
+  } & Partial<CacheContent>
 }
 
 declare global {

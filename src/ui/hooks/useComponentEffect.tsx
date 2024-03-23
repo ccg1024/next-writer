@@ -1,12 +1,20 @@
 import { useEffect, useState } from 'react'
+import { Post } from '../libs/utils'
 
 export const useWorkStation = (rendererStation: string) => {
   const [station, setStation] = useState('')
 
   useEffect(() => {
-    window.ipc._invoke_get_info('workstation').then((_station: string) => {
-      if (_station) setStation(_station)
+    Post('render-to-main-to-render', {
+      type: 'read-current-workstation'
     })
+      .then(res => {
+        const { data } = res
+        if (data) setStation(data as string)
+      })
+      .catch(err => {
+        throw err
+      })
   }, [rendererStation])
 
   return station

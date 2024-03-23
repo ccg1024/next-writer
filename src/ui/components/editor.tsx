@@ -12,6 +12,8 @@ import {
 import '../css/editor.css'
 import { PubSubData } from 'src/types/renderer'
 import { EditorView } from '@codemirror/view'
+import { Post } from '../libs/utils'
+import { UpdateCacheContent } from '_window_type'
 
 // NOTE: Just a simple txt for dev.
 const _testInitialDoc = `# Head 1
@@ -108,9 +110,22 @@ const Editor: FC = (): JSX.Element => {
 
       // upload cache before show new file content
       if (window._next_writer_rendererConfig.workPath !== '') {
-        window.ipc._render_updateCache({
-          filePath: window._next_writer_rendererConfig.workPath,
-          content: editorView.state.doc.toString()
+        // window.ipc._render_updateCache({
+        //   filePath: window._next_writer_rendererConfig.workPath,
+        //   content: editorView.state.doc.toString()
+        // })
+        Post(
+          'render-to-main',
+          {
+            type: 'update-cache',
+            data: {
+              filePath: window._next_writer_rendererConfig.workPath,
+              content: editorView.state.doc.toString()
+            } as UpdateCacheContent
+          },
+          true
+        ).catch(err => {
+          throw err
         })
       }
 
@@ -141,7 +156,17 @@ const Editor: FC = (): JSX.Element => {
         }
       })
     } else if (data.type === 'writefile') {
-      window.ipc._render_saveFile(editorView.state.doc.toString())
+      // window.ipc._render_saveFile(editorView.state.doc.toString())
+      Post(
+        'render-to-main',
+        {
+          type: 'save-file',
+          data: { content: editorView.state.doc.toString() }
+        },
+        true
+      ).catch(err => {
+        throw err
+      })
       // trigger modify save
       window._next_writer_rendererConfig.modified = false
       PubSub.publish('nw-sidebar-pubsub', {

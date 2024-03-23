@@ -11,6 +11,8 @@ import { hideMarkPlugin } from '../plugins/hide-marke-extension'
 import { codeBlockHighlight } from '../plugins/code-block-extension'
 import { images } from '../plugins/images-extension'
 import { headNav } from '../plugins/head-nav-extension'
+import { Post } from '../libs/utils'
+import { UpdateCacheContent } from '_window_type'
 
 interface Props {
   initialDoc?: string
@@ -44,9 +46,22 @@ export const useEditor = <T extends Element>(
                 type: 'nw-sidebar-file-change',
                 data: 'modified'
               })
-              window.ipc._render_updateCache({
-                filePath: window._next_writer_rendererConfig.workPath,
-                isChange: true
+              // window.ipc._render_updateCache({
+              //   filePath: window._next_writer_rendererConfig.workPath,
+              //   isChange: true
+              // })
+              Post(
+                'render-to-main',
+                {
+                  type: 'update-cache',
+                  data: {
+                    filePath: window._next_writer_rendererConfig.workPath,
+                    isChange: true
+                  } as UpdateCacheContent
+                },
+                true
+              ).catch(err => {
+                throw err
               })
               window._next_writer_rendererConfig.modified = true
             }

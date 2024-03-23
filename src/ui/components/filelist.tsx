@@ -4,6 +4,7 @@ import { TiMediaRecord, TiDocumentText } from 'react-icons/ti'
 
 import { AnimatePresence, motion } from 'framer-motion'
 import { FileDescriptorContainer } from '_common_type'
+import { Post } from '../libs/utils'
 
 const ListBox = styled.div`
   margin: 10px 0;
@@ -49,7 +50,19 @@ interface Props {
 
 export const RecentFileList: FC<Props> = props => {
   function cb(e: MouseEvent) {
-    window.ipc._render_openFile(e.currentTarget.id)
+    // window.ipc._render_openFile(e.currentTarget.id)
+    Post(
+      'render-to-main',
+      {
+        type: 'open-recent-file',
+        data: {
+          filePath: e.currentTarget.id
+        }
+      },
+      true
+    ).catch(err => {
+      throw err
+    })
   }
   return (
     <ListBox>

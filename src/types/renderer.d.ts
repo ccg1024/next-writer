@@ -1,6 +1,5 @@
 import { IpcRendererEvent } from 'electron'
-import { InvokeInfoType, IpcRequestData, IpcResponseData } from '_common_type'
-import { CacheContent } from '_window_type'
+import { IpcRequestData, IpcResponseData } from '_common_type'
 
 type CallbackFunction = (event: IpcRendererEvent, ...args: unknown[]) => void
 
@@ -8,12 +7,12 @@ export interface ipc {
   listenEditorChannel: (cb: CallbackFunction) => () => void
   listenHomeChannel: (cb: CallbackFunction) => () => void
   listenSidebarChannel: (cb: CallbackFunction) => () => void
-  _render_openFile: (filePath: string) => void
-  _render_updateCache: (
-    cache: Partial<CacheContent> & { filePath: string }
-  ) => void
-  _render_saveFile: (content: string) => void
-  _invoke_get_info: (type: InvokeInfoType) => Promise<unknown>
+  // _render_openFile: (filePath: string) => void
+  // _render_updateCache: (
+  //   cache: Partial<CacheContent> & { filePath: string }
+  // ) => void
+  // _render_saveFile: (content: string) => void
+  // _invoke_get_info: (type: InvokeInfoType) => Promise<unknown>
   _invoke_post: (
     channel: string,
     data: IpcRequestData
