@@ -30,7 +30,10 @@ global._next_writer_windowConfig = {
   logPath: log,
   configName: 'nwriter.json',
   rootWorkplatformInfo: { folders: [], files: [] },
-  renderConfig: {}
+  renderConfig: {},
+  menuStatus: {
+    sideBarVisble: true
+  }
 }
 
 protocol.registerSchemesAsPrivileged([
@@ -78,12 +81,21 @@ const createWindow = (): void => {
   global._next_writer_windowConfig.root = root
   global._next_writer_windowConfig.win = mainWindow
   global._next_writer_windowConfig.renderConfig = rendererConfig
+  global._next_writer_windowConfig.menuStatus = {
+    sideBarVisble: true
+  }
   initialRootWorkplatform()
 
   // create menu
   const menuTemp = createMenus()
   const menu = Menu.buildFromTemplate(menuTemp)
   Menu.setApplicationMenu(menu)
+
+  // init cache accessor
+  initCacheAccessor()
+
+  // initialRootWorkplatform
+  readRootWorkstationInfo()
 }
 
 // This method will be called when Electron has finished
@@ -102,11 +114,12 @@ app.whenReady().then(() => {
   // mount ipc
   mountIPC()
 
-  // init cache accessor
-  initCacheAccessor()
-
-  // initialRootWorkplatform
-  readRootWorkstationInfo()
+  // add some window listen
+  global._next_writer_windowConfig.win.on('leave-full-screen', () => {
+    if (!global._next_writer_windowConfig.menuStatus.sideBarVisble) {
+      global._next_writer_windowConfig.win.setWindowButtonVisibility(false)
+    }
+  })
 })
 
 // Quit when all windows are closed, except on macOS. There, it's common

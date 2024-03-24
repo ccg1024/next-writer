@@ -11,6 +11,7 @@ declare module '_window_type' {
     configName: 'nwriter.json'
     rootWorkplatformInfo: RootWorkstationInfo
     renderConfig: { [key: string]: string | number | boolean }
+    menuStatus: MenuStatus
   }
   export type Cache = {
     [key: string]: CacheContent
@@ -22,6 +23,10 @@ declare module '_window_type' {
   export type UpdateCacheContent = {
     filePath: string
   } & Partial<CacheContent>
+
+  export type MenuStatus = {
+    sideBarVisble: boolean
+  }
 }
 
 declare global {

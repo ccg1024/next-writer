@@ -96,6 +96,11 @@ async function toggleSideBar(
     }
   } as HomeChannel)
   win.setWindowButtonVisibility(!menuItem.checked)
+
+  if (win.isFullScreen()) {
+    win.setWindowButtonVisibility(true)
+  }
+  global._next_writer_windowConfig.menuStatus.sideBarVisble = !menuItem.checked
 }
 
 async function toggleHeadNav(
