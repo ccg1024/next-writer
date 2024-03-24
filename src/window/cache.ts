@@ -7,6 +7,7 @@ interface CacheManager {
   addCache: (filePath: string, cacheContent: CacheContent) => void
   update: (filePath: string, updateContent: Partial<CacheContent>) => void
   exitCache: (filePath: string) => boolean
+  hasModifiedFile: () => boolean
   [key: string]: unknown
 }
 
@@ -33,6 +34,17 @@ export const cacheManager: CacheManager = {
   },
   exitCache(filePath: string) {
     return this.cache[filePath] ? true : false
+  },
+  hasModifiedFile() {
+    const cache = this.cache as object
+    let res = false
+    for (const [_key, value] of Object.entries(cache)) {
+      if ((<CacheContent>value).isChange) {
+        res = true
+        break
+      }
+    }
+    return res
   }
 }
 
@@ -56,4 +68,8 @@ export function updateCache(filePath: string, update: Partial<CacheContent>) {
 
 export function addCache(filePath: string, cache: CacheContent) {
   cacheAccessor.addCache(filePath, cache)
+}
+
+export function hasModifiedFile() {
+  return cacheAccessor.hasModifiedFile()
 }
