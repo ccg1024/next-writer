@@ -29,7 +29,8 @@ global._next_writer_windowConfig = {
   configPath: config,
   logPath: log,
   configName: 'nwriter.json',
-  rootWorkplatformInfo: { folders: [], files: [] }
+  rootWorkplatformInfo: { folders: [], files: [] },
+  renderConfig: {}
 }
 
 protocol.registerSchemesAsPrivileged([
@@ -66,6 +67,7 @@ const createWindow = (): void => {
 
   // read default config
   const configContent = readConfig(config + '/nwriter.json')
+  const { root, ...rendererConfig } = configContent
 
   // and load the index.html of the app.
   mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY)
@@ -73,9 +75,15 @@ const createWindow = (): void => {
   // Open the DevTools.
   // mainWindow.webContents.openDevTools()
   global._next_writer_windowConfig.workPlatform = ''
-  global._next_writer_windowConfig.root = configContent.root
+  global._next_writer_windowConfig.root = root
   global._next_writer_windowConfig.win = mainWindow
+  global._next_writer_windowConfig.renderConfig = rendererConfig
   initialRootWorkplatform()
+
+  // create menu
+  const menuTemp = createMenus()
+  const menu = Menu.buildFromTemplate(menuTemp)
+  Menu.setApplicationMenu(menu)
 }
 
 // This method will be called when Electron has finished
@@ -90,11 +98,6 @@ app.whenReady().then(() => {
   protocol.handle('atom', request => {
     return net.fetch('file://' + decodeURI(request.url.slice('atom://'.length)))
   })
-
-  // create menu
-  const menuTemp = createMenus()
-  const menu = Menu.buildFromTemplate(menuTemp)
-  Menu.setApplicationMenu(menu)
 
   // mount ipc
   mountIPC()

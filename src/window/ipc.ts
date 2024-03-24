@@ -197,6 +197,10 @@ async function handler(
     return {
       data: global._next_writer_windowConfig.workPlatform
     }
+  } else if (req.type === 'read-render-config') {
+    return {
+      data: global._next_writer_windowConfig.renderConfig
+    }
   }
 }
 

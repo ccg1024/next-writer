@@ -10,6 +10,7 @@ declare module '_window_type' {
     logPath: string
     configName: 'nwriter.json'
     rootWorkplatformInfo: RootWorkstationInfo
+    renderConfig: { [key: string]: string | number | boolean }
   }
   export type Cache = {
     [key: string]: CacheContent

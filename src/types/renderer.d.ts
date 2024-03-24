@@ -65,3 +65,11 @@ export type HeadNav = {
   number: number
   jumpPos: number
 }
+
+export type WriterConfig = {
+  editorFont?: string
+  codeFont?: string
+  uiFont?: string
+  uiFontSize?: string
+  editorFontSize?: string
+}
