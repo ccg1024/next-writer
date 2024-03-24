@@ -175,7 +175,8 @@ export default function createMenus(): MenuItemConstructorOptions[] {
           label: 'show headNav',
           click: toggleHeadNav,
           type: 'checkbox',
-          checked: false
+          checked: false,
+          accelerator: isMac ? 'Cmd+Shift+h' : 'Ctrl+Shift+h'
         }
       ]
     },
