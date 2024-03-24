@@ -102,6 +102,14 @@ const Editor: FC = (): JSX.Element => {
       const value = data.value as TypeWriterIpcValue
       if (value.checked) {
         window._next_writer_rendererConfig.rendererPlugin.typewriter = true
+        // make scroll if editor is focused.
+        if (editorView.hasFocus)
+          editorView.dispatch({
+            effects: EditorView.scrollIntoView(
+              editorView.state.selection.main.from,
+              { y: 'center' }
+            )
+          })
       } else {
         window._next_writer_rendererConfig.rendererPlugin.typewriter = false
       }
