@@ -42,7 +42,7 @@ class ImageWidget extends WidgetType {
     return container
   }
   get estimatedHeight(): number {
-    return this.imgWidget ? this.imgWidget.clientHeight : -1
+    return this.imgWidget ? this.imgWidget.clientHeight : 300
   }
 }
 
