@@ -1,7 +1,7 @@
 // some code from internet
 // the code logic is the same as file `img-preview-extension.ts`
 // each time the content is changed, the complete document is traversed
-import { syntaxTree } from '@codemirror/language'
+import { ensureSyntaxTree } from '@codemirror/language'
 import {
   EditorState,
   Extension,
@@ -9,12 +9,7 @@ import {
   RangeSet,
   StateField
 } from '@codemirror/state'
-import {
-  Decoration,
-  DecorationSet,
-  EditorView,
-  WidgetType
-} from '@codemirror/view'
+import { Decoration, EditorView, WidgetType } from '@codemirror/view'
 
 interface ImageWidgetParams {
   url: string
@@ -22,6 +17,7 @@ interface ImageWidgetParams {
 
 class ImageWidget extends WidgetType {
   readonly url
+  imgWidget: Element
 
   constructor({ url }: ImageWidgetParams) {
     super()
@@ -36,6 +32,7 @@ class ImageWidget extends WidgetType {
   toDOM() {
     const container = document.createElement('div')
     const image = container.appendChild(document.createElement('img'))
+    this.imgWidget = image
 
     container.setAttribute('aria-hidden', 'true')
     container.setAttribute('class', 'cm-image-preview-box')
@@ -43,6 +40,9 @@ class ImageWidget extends WidgetType {
     image.setAttribute('class', 'cm-image-preview')
 
     return container
+  }
+  get estimatedHeight(): number {
+    return this.imgWidget ? this.imgWidget.clientHeight : -1
   }
 }
 
@@ -92,19 +92,21 @@ export const images = (): Extension => {
     Decoration.widget({
       widget: new ImageWidget(imageWidgetParams),
       side: -1,
-      block: true
+      block: true,
+      uniq: imageWidgetParams.url
     })
   const videoDecoration = (videoWidgetParams: VideoWidgetParams) =>
     Decoration.widget({
       widget: new VideoWidge(videoWidgetParams),
       side: -1,
-      block: true
+      block: true,
+      uniq: videoWidgetParams.src
     })
 
-  const decorate = (state: EditorState) => {
+  const _decorate = (state: EditorState) => {
     const widgets: Range<Decoration>[] = []
 
-    syntaxTree(state).iterate({
+    ensureSyntaxTree(state, state.doc.length, 200).iterate({
       enter: ({ type, from, to }) => {
         if (type.name === 'Image') {
           const imgText = state.doc.sliceString(from, to)
@@ -174,21 +176,78 @@ export const images = (): Extension => {
     }
   })
 
-  const imagesField = StateField.define<DecorationSet>({
+  const getImageLinks = (state: EditorState) => {
+    const res: Array<{ src: string; from: number }> = []
+    ensureSyntaxTree(state, state.doc.length, 200).iterate({
+      enter({ type, from, to }) {
+        if (type.name === 'Image') {
+          const imgText = state.doc.sliceString(from, to)
+          const isPreview = previewRegx.exec(imgText)
+
+          if (
+            !isPreview ||
+            isPreview.length <= 1 ||
+            !isPreview[1].split(',').includes('preview')
+          )
+            return
+
+          const result = urlRegx.exec(imgText)
+          if (result && result.length > 1) {
+            const src = result[1]
+            res.push({
+              src,
+              from: state.doc.lineAt(from).from
+            })
+          }
+        }
+      }
+    })
+    return res
+  }
+
+  const imagesField = StateField.define<Array<{ src: string; from: number }>>({
     create(state) {
-      return decorate(state)
+      return getImageLinks(state)
     },
     update(images, transaction) {
       if (transaction.docChanged) {
-        return decorate(transaction.state)
+        return getImageLinks(transaction.state)
       }
 
-      return images.map(transaction.changes)
+      return images
     },
-    provide(field) {
-      return EditorView.decorations.from(field)
+    compare(a, b) {
+      let res = true
+
+      if (a.length !== b.length) return false
+
+      for (let i = 0; i < a.length; i++) {
+        if (a[i].src !== b[i].src || a[i].from !== b[i].from) {
+          res = false
+          break
+        }
+      }
+      return res
     }
   })
 
-  return [imagesTheme, imagesField]
+  const imagesWidgets = EditorView.decorations.compute([imagesField], state => {
+    const images = state.field(imagesField)
+
+    if (images.length === 0) return Decoration.none
+
+    return Decoration.set(
+      images.map(image => {
+        const widget = new ImageWidget({ url: image.src })
+        const deco = Decoration.widget({
+          widget,
+          block: true,
+          side: -1
+        })
+        return deco.range(image.from)
+      })
+    )
+  })
+
+  return [imagesTheme, imagesField, imagesWidgets]
 }
