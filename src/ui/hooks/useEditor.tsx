@@ -13,6 +13,7 @@ import { images } from '../plugins/images-extension'
 import { headNav } from '../plugins/head-nav-extension'
 import { Post } from '../libs/utils'
 import { UpdateCacheContent } from '_window_type'
+import { inlineEmoji } from '../plugins/emoji-extension'
 
 interface Props {
   initialDoc?: string
@@ -98,13 +99,15 @@ export const useEditor = <T extends Element>(
         hideMarkPlugin,
         // imgPreviewField
         images(),
-        headNav()
+        headNav(),
+        inlineEmoji()
       ]
     })
 
     const view = new EditorView({
       state: startState,
-      parent: containerRef.current
+      parent: containerRef.current,
+      scrollTo: EditorView.scrollIntoView(0)
     })
     setEditorView(view)
 
