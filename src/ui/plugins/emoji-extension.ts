@@ -114,7 +114,7 @@ export const emojier = ViewPlugin.fromClass(
       this.emojiers = emojiMatcher.createDeco(view)
     }
     update(update: ViewUpdate) {
-      if (update.docChanged) {
+      if (update.docChanged || update.viewportChanged) {
         this.emojiers = emojiMatcher.updateDeco(update, this.emojiers)
       }
     }
