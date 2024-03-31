@@ -13,6 +13,7 @@ import { PubSubData } from 'src/types/renderer'
 
 import '../css/sidebar.css'
 import { GlobalMask } from './utils'
+import { AnimatePresence, motion } from 'framer-motion'
 
 interface Props {
   isVisible: boolean
@@ -89,23 +90,32 @@ const SideBar: FC<Props> = (props): JSX.Element => {
 
   return (
     <>
-      {props.isVisible && (
-        <div ref={sidebarRef} className="sidebar-main">
-          <BroadCast currentFile={currentFile} />
-          <User />
-          <VerticalScrollBox>
-            <Filesystem />
-            <Dividing />
-            <RecentFileList
-              filelist={filelist}
-              recentFiles={recentFiles}
-              currentFile={currentFile}
-            />
-          </VerticalScrollBox>
-          <Resizer parentRef={sidebarRef} minWidth={100} />
-          <GlobalMask isMediaControl={true} />
-        </div>
-      )}
+      <AnimatePresence initial={false}>
+        {props.isVisible && (
+          <motion.div
+            ref={sidebarRef}
+            className="sidebar-main"
+            initial={{ width: 0 }}
+            animate={{ width: '200px' }}
+            exit={{ width: 0 }}
+            transition={{ duration: 0.25 }}
+          >
+            <BroadCast currentFile={currentFile} />
+            <User />
+            <VerticalScrollBox>
+              <Filesystem />
+              <Dividing />
+              <RecentFileList
+                filelist={filelist}
+                recentFiles={recentFiles}
+                currentFile={currentFile}
+              />
+            </VerticalScrollBox>
+            <Resizer parentRef={sidebarRef} minWidth={100} />
+            <GlobalMask isMediaControl={true} />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   )
 }

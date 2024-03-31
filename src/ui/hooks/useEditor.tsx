@@ -82,7 +82,8 @@ export const useEditor = <T extends Element>(
             // handle scroll
             if (ctl.scrollTimer || !view) return
             ctl.scrollTimer = setTimeout(() => {
-              const scrollTop = view.scrollDOM.scrollTop
+              const scrollTop =
+                view.scrollDOM.scrollTop - window.innerHeight * 0.5
               const topBlockInfo = view.elementAtHeight(scrollTop)
               const line = view.state.doc.lineAt(topBlockInfo.from).number
               PubSub.publish('nw-head-nav-pubsub', {
@@ -107,7 +108,7 @@ export const useEditor = <T extends Element>(
     const view = new EditorView({
       state: startState,
       parent: containerRef.current,
-      scrollTo: EditorView.scrollIntoView(0)
+      scrollTo: EditorView.scrollIntoView(0, { y: 'center', yMargin: 0 })
     })
     setEditorView(view)
 

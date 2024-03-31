@@ -6,7 +6,8 @@ import {
   highlightActiveLine,
   dropCursor,
   rectangularSelection,
-  highlightActiveLineGutter
+  highlightActiveLineGutter,
+  placeholder
 } from '@codemirror/view'
 import { Compartment, EditorState } from '@codemirror/state'
 import {
@@ -97,6 +98,7 @@ export const editorDefaultExtensions = [
     ...foldKeymap
   ]),
   EditorView.lineWrapping,
+  placeholder('Welcome to next writer...'),
   markdown({
     base: markdownLanguage,
     codeLanguages: languages,

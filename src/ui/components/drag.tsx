@@ -4,8 +4,8 @@ import styled from '@emotion/styled'
 
 const DragBar = styled.div`
   background-color: blue;
-  width: 100px;
-  height: 40px;
+  width: 10vw;
+  height: 10vh;
   position: absolute;
   top: 0;
   left: 0;

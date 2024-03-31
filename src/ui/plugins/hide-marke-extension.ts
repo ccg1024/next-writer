@@ -7,7 +7,8 @@ import {
   ViewPlugin,
   EditorView,
   DecorationSet,
-  ViewUpdate
+  ViewUpdate,
+  WidgetType
 } from '@codemirror/view'
 
 const ATXHeading = [
@@ -18,6 +19,29 @@ const ATXHeading = [
   'ATXHeading5',
   'ATXHeading6'
 ]
+
+class OffsetHeadMark extends WidgetType {
+  mark: string
+  constructor(mark: string) {
+    super()
+    this.mark = mark
+  }
+  eq(widget: OffsetHeadMark) {
+    return this.mark === widget.mark
+  }
+  toDOM() {
+    const span = document.createElement('span')
+    span.innerHTML = `#<sup>${this.mark.length}</sup> `
+    span.style.cssText = `
+      position: absolute;
+      left: 0;
+      top: 50%;
+      transform: translate(-100%, -50%);
+      color: #A9BBCC
+`
+    return span
+  }
+}
 
 function addDeco(view: EditorView) {
   const builder = new RangeSetBuilder<Decoration>()
@@ -35,6 +59,17 @@ function addDeco(view: EditorView) {
             // just there are head content, the head mark and 1 space will be hidden.
             const headLevel = parseInt(node.name[node.name.length - 1])
             const diff = node.to - node.from
+
+            // make a margin
+            const line = view.state.doc.lineAt(node.from)
+            builder.add(
+              line.from,
+              line.from,
+              Decoration.line({
+                attributes: { class: 'cm-head-relative' },
+                permanent: true
+              })
+            )
             if (diff > headLevel + 1) {
               builder.add(
                 node.from,
@@ -42,6 +77,15 @@ function addDeco(view: EditorView) {
                 Decoration.replace({})
               )
             }
+            builder.add(
+              node.to,
+              node.to,
+              Decoration.widget({
+                widget: new OffsetHeadMark('#'.repeat(headLevel)),
+                side: 1,
+                block: false
+              })
+            )
           } else if (node.name === 'EmphasisMark') {
             builder.add(node.from, node.to, Decoration.replace({}))
           } else if (node.name === 'InlineCode') {
@@ -104,7 +148,8 @@ function removeDeco(view: EditorView, decorations: DecorationSet) {
 
   return decorations.update({
     filter: (from, _to, _v) => {
-      if (view.state.doc.lineAt(from).from == line) return false
+      if (view.state.doc.lineAt(from).from == line && !_v.spec.permanent)
+        return false
 
       return true
     }

@@ -93,3 +93,6 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.root-animation {
+  transition: padding 0.25s linear;
+}

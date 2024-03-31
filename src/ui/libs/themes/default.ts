@@ -43,12 +43,11 @@ export const defaultTheme = EditorView.theme({
     borderBottomLeftRadius: '2px'
   },
   '.cm-line': {
-    paddingLeft: '2px',
-    paddingRight: '2px'
+    padding: '0px'
   },
   '.cm-content': {
-    // marginRight: '5px'
-    paddingBottom: '80vh',
+    paddingTop: '50vh',
+    paddingBottom: '50vh',
     wordBreak: 'break-all',
     textAlign: 'justify',
     maxWidth: '600px'

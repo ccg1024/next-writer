@@ -118,6 +118,21 @@ async function toggleHeadNav(
   } as HomeChannel)
 }
 
+async function toggleZenMode(
+  menuItem: MenuItem,
+  win: BrowserWindow,
+  _: unknown
+) {
+  if (!win) return
+
+  win.webContents.send(ipcChannel['main-to-render'].home_component, {
+    type: 'zenMode',
+    value: {
+      checked: menuItem.checked
+    }
+  } as HomeChannel)
+}
+
 export default function createMenus(): MenuItemConstructorOptions[] {
   // const appname = app.name
   const isMac = process.platform === 'darwin'
@@ -177,6 +192,13 @@ export default function createMenus(): MenuItemConstructorOptions[] {
           type: 'checkbox',
           checked: false,
           accelerator: isMac ? 'Cmd+Shift+h' : 'Ctrl+Shift+h'
+        },
+        {
+          label: 'zen mode',
+          click: toggleZenMode,
+          type: 'checkbox',
+          checked: false,
+          accelerator: isMac ? 'Cmd+Option+z' : 'Ctrl+Alt+z'
         }
       ]
     },

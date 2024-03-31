@@ -107,7 +107,7 @@ const Editor: FC = (): JSX.Element => {
           editorView.dispatch({
             effects: EditorView.scrollIntoView(
               editorView.state.selection.main.from,
-              { y: 'center' }
+              { y: 'center', yMargin: 0 }
             )
           })
       } else {

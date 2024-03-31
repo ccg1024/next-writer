@@ -20,3 +20,12 @@
   width: 100%;
   transform: translateY(-50%);
 }
+.cm-content > .cm-head-relative {
+  position: relative;
+  padding: 1em 0;
+  box-sizing: border-box;
+}
+
+/* #editor-container *::-webkit-scrollbar { */
+/*   display: none; */
+/* } */

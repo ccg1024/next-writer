@@ -1,21 +1,24 @@
 import PubSub from 'pubsub-js'
 import React, { useEffect, useState, FC } from 'react'
 import styled from '@emotion/styled'
+import { css } from '@emotion/css'
 import { HeadNav, PubSubData } from 'src/types/renderer'
+import { AnimatePresence, motion } from 'framer-motion'
 
-const HeadNavContainer = styled.div`
-  width: 200px;
-  padding-top: 10px;
-  padding-left: 10px;
-  overflow: auto;
-  flex-shrink: 0;
-`
+// const HeadNavContainer = styled.div`
+//   width: 200px;
+//   padding-top: 10px;
+//   padding-left: 10px;
+//   overflow: auto;
+//   flex-shrink: 0;
+// `
 
 type NavItemProps = {
   isActive: boolean
 }
 
 const NavItem = styled.div<NavItemProps>`
+  text-wrap: nowrap;
   padding: 10px 5px;
   background-color: ${props =>
     props.isActive ? 'var(--nw-head-nav-item-color)' : 'unset'};
@@ -89,27 +92,40 @@ const HeadNav: FC<HeadNavProps> = props => {
   }, [jumpPos, props.visible])
   return (
     <>
-      {props.visible && (
-        <HeadNavContainer onClick={handleClick}>
-          {headers.map((header, idx) => {
-            const { title, level, jumpPos, number } = header
-            const regularTitle = title.replace(/^(#+\s*)/, '')
-            return (
-              <NavItem
-                id={`navitem-${jumpPos}`}
-                key={idx}
-                isActive={number === activeLine}
-                style={{
-                  marginLeft: `${10 * (level - 1)}px`,
-                  color: regularTitle ? 'unset' : 'gray'
-                }}
-              >
-                {regularTitle ? regularTitle : '[empty]'}
-              </NavItem>
-            )
-          })}
-        </HeadNavContainer>
-      )}
+      <AnimatePresence initial={false}>
+        {props.visible && (
+          <motion.div
+            className={css({
+              width: '200px',
+              overflow: 'hidden',
+              flexShrink: 0
+            })}
+            onClick={handleClick}
+            initial={{ width: 0 }}
+            animate={{ width: '200px' }}
+            exit={{ width: 0 }}
+            transition={{ duration: 0.25 }}
+          >
+            {headers.map((header, idx) => {
+              const { title, level, jumpPos, number } = header
+              const regularTitle = title.replace(/^(#+\s*)/, '')
+              return (
+                <NavItem
+                  id={`navitem-${jumpPos}`}
+                  key={idx}
+                  isActive={number === activeLine}
+                  style={{
+                    marginLeft: `${10 * (level - 1)}px`,
+                    color: regularTitle ? 'unset' : 'gray'
+                  }}
+                >
+                  {regularTitle ? regularTitle : '[empty]'}
+                </NavItem>
+              )
+            })}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   )
 }

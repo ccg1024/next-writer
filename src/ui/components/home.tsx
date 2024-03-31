@@ -22,6 +22,16 @@ const Home = () => {
     } else if (data.type === 'toggleHeadNav') {
       const { checked } = data.value as CheckBoxValue
       setShowHeadNav(checked)
+    } else if (data.type === 'zenMode') {
+      const root = document.getElementById('root') as HTMLDivElement
+      if (!root) {
+        console.log(
+          '[ERROR] can not get root element by id, when toggle zen mode'
+        )
+        return
+      }
+      const { checked } = data.value as CheckBoxValue
+      root.style.padding = checked ? '0px' : '10px'
     }
   }
 
@@ -56,6 +66,9 @@ const Home = () => {
         if (config.editorFontSize) {
           r.style.setProperty('--nw-editor-font-size', config.editorFontSize)
         }
+        // add transition on root.
+        const root = document.getElementById('root') as HTMLDivElement
+        if (root) root.classList.add('root-animation')
       })
       .catch(err => {
         throw err
