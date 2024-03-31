@@ -209,7 +209,7 @@ export default function createMenus(): MenuItemConstructorOptions[] {
         { role: 'paste' },
         { type: 'separator' },
         {
-          label: 'typewriter',
+          label: 'close typewriter',
           click: editorTypewriter,
           type: 'checkbox',
           checked: false

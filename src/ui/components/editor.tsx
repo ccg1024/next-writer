@@ -100,7 +100,7 @@ const Editor: FC = (): JSX.Element => {
     if (data.type === 'typewriter') {
       // toggle typewriter mode
       const value = data.value as TypeWriterIpcValue
-      if (value.checked) {
+      if (!value.checked) {
         window._next_writer_rendererConfig.rendererPlugin.typewriter = true
         // make scroll if editor is focused.
         if (editorView.hasFocus)
@@ -200,7 +200,13 @@ const Editor: FC = (): JSX.Element => {
     }
   }, [editorView])
 
-  return <div id="editor-container" ref={containerRef}></div>
+  return (
+    <div
+      id="editor-container"
+      className="hide-scroll-bar"
+      ref={containerRef}
+    ></div>
+  )
 }
 
 export default Editor

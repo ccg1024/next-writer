@@ -1,3 +1,4 @@
+import { EditorState } from '@codemirror/state'
 import { IpcRequestData } from '_common_type'
 
 export function reversePath(path: string, sep?: string) {
@@ -443,3 +444,7 @@ export const emojiList = [
   '\ud83d\udc6f',
   '\ud83d\udc6f\u200d\u2642\ufe0f'
 ]
+
+export const noSelection = (state: EditorState) => {
+  return state.selection.main.anchor === state.selection.main.head
+}

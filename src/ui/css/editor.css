@@ -26,6 +26,6 @@
   box-sizing: border-box;
 }
 
-/* #editor-container *::-webkit-scrollbar { */
-/*   display: none; */
-/* } */
+.hide-scroll-bar *::-webkit-scrollbar {
+  display: none;
+}

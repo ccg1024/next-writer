@@ -11,7 +11,7 @@ import { hideMarkPlugin } from '../plugins/hide-marke-extension'
 import { codeBlockHighlight } from '../plugins/code-block-extension'
 import { images } from '../plugins/images-extension'
 import { headNav } from '../plugins/head-nav-extension'
-import { Post } from '../libs/utils'
+import { noSelection, Post } from '../libs/utils'
 import { UpdateCacheContent } from '_window_type'
 import { inlineEmoji } from '../plugins/emoji-extension'
 
@@ -67,13 +67,15 @@ export const useEditor = <T extends Element>(
               window._next_writer_rendererConfig.modified = true
             }
           }
-          if (update.selectionSet) {
+          if (update.selectionSet && noSelection(update.state)) {
             // typewriter mode
             if (window._next_writer_rendererConfig.rendererPlugin.typewriter) {
               const cursor = update.state.selection.ranges[0].from
-              update.view.dispatch({
-                effects: EditorView.scrollIntoView(cursor, { y: 'center' })
-              })
+              setTimeout(() => {
+                update.view.dispatch({
+                  effects: EditorView.scrollIntoView(cursor, { y: 'center' })
+                })
+              }, 0)
             }
           }
         }),
