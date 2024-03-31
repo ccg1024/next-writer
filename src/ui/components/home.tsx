@@ -10,10 +10,12 @@ import { GlobalInput } from './input'
 import HeadNav from './headnav'
 import { Post } from '../libs/utils'
 import { WriterConfig } from 'src/types/renderer'
+import { VerticalBlur } from './blur'
 
 const Home = () => {
   const [showSide, setShowSide] = useState<boolean>(true)
   const [showHeadNav, setShowHeadNav] = useState<boolean>(false)
+  const [showFocus, setShowFocus] = useState<boolean>(true)
 
   const listener = (_: unknown, data: HomeChannel) => {
     if (data.type === 'hideSidebar') {
@@ -32,6 +34,10 @@ const Home = () => {
       }
       const { checked } = data.value as CheckBoxValue
       root.style.padding = checked ? '0px' : '10px'
+    } else if (data.type === 'focusMode') {
+      const { checked } = data.value as CheckBoxValue
+
+      setShowFocus(checked)
     }
   }
 
@@ -81,6 +87,7 @@ const Home = () => {
         <SideBar isVisible={showSide} />
         <div className="home-container">
           <Editor />
+          {showFocus && <VerticalBlur />}
         </div>
         <HeadNav visible={showHeadNav} />
         {!showSide && <Drag />}

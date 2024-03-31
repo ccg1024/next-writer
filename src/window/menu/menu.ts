@@ -133,6 +133,17 @@ async function toggleZenMode(
   } as HomeChannel)
 }
 
+async function toggleFocusMode(m: MenuItem, win: BrowserWindow) {
+  if (!win) return
+
+  win.webContents.send(ipcChannel['main-to-render'].home_component, {
+    type: 'focusMode',
+    value: {
+      checked: m.checked
+    }
+  } as HomeChannel)
+}
+
 export default function createMenus(): MenuItemConstructorOptions[] {
   // const appname = app.name
   const isMac = process.platform === 'darwin'
@@ -199,6 +210,12 @@ export default function createMenus(): MenuItemConstructorOptions[] {
           type: 'checkbox',
           checked: false,
           accelerator: isMac ? 'Cmd+Option+z' : 'Ctrl+Alt+z'
+        },
+        {
+          label: 'focus mode',
+          click: toggleFocusMode,
+          type: 'checkbox',
+          checked: true
         }
       ]
     },
