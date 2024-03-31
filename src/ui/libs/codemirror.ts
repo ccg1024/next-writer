@@ -33,6 +33,7 @@ import { markdown, markdownLanguage } from '@codemirror/lang-markdown'
 import { Tag, styleTags } from '@lezer/highlight'
 import { MarkdownConfig } from '@lezer/markdown'
 import { NWvideo } from '../plugins/sytanx-extension'
+import { nextWriterKeymap } from '../libs/keymap'
 
 export const markTags = {
   headingMark: Tag.define(),
@@ -91,6 +92,7 @@ export const editorDefaultExtensions = [
   highlightSelectionMatches(),
   keymap.of([
     indentWithTab,
+    ...nextWriterKeymap,
     ...closeBracketsKeymap,
     ...defaultKeymap,
     ...searchKeymap,
