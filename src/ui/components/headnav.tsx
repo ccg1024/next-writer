@@ -97,7 +97,8 @@ const HeadNav: FC<HeadNavProps> = props => {
           <motion.div
             className={css({
               width: '200px',
-              overflow: 'hidden',
+              overflowX: 'hidden',
+              overflowY: 'auto',
               flexShrink: 0
             })}
             onClick={handleClick}
