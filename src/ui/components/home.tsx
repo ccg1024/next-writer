@@ -17,14 +17,16 @@ const Home = () => {
   const [showHeadNav, setShowHeadNav] = useState<boolean>(false)
   const [showFocus, setShowFocus] = useState<boolean>(true)
 
-  const listener = (_: unknown, data: HomeChannel) => {
-    if (data.type === 'hideSidebar') {
+  const listenerMap = {
+    hideSidebar: (data: HomeChannel) => {
       const { checked } = data.value as CheckBoxValue
       setShowSide(!checked)
-    } else if (data.type === 'toggleHeadNav') {
+    },
+    toggleHeadNav: (data: HomeChannel) => {
       const { checked } = data.value as CheckBoxValue
       setShowHeadNav(checked)
-    } else if (data.type === 'zenMode') {
+    },
+    zenMode: (data: HomeChannel) => {
       const root = document.getElementById('root') as HTMLDivElement
       if (!root) {
         console.log(
@@ -34,11 +36,17 @@ const Home = () => {
       }
       const { checked } = data.value as CheckBoxValue
       root.style.padding = checked ? '0px' : '10px'
-    } else if (data.type === 'focusMode') {
+    },
+    focusMode: (data: HomeChannel) => {
       const { checked } = data.value as CheckBoxValue
 
       setShowFocus(checked)
     }
+  }
+
+  const listener = (_: unknown, data: HomeChannel) => {
+    const cb = listenerMap[data.type]
+    if (cb) cb(data)
   }
 
   useEffect(() => {
