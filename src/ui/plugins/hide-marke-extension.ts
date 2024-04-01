@@ -83,7 +83,8 @@ function addDeco(view: EditorView) {
               Decoration.widget({
                 widget: new OffsetHeadMark('#'.repeat(headLevel)),
                 side: 1,
-                block: false
+                block: false,
+                name: 'OffsetHeadMark'
               })
             )
           } else if (node.name === 'EmphasisMark') {
@@ -111,7 +112,8 @@ function addDeco(view: EditorView) {
                 line.from,
                 line.from,
                 Decoration.line({
-                  attributes: { class: 'cm-text-center' }
+                  attributes: { class: 'cm-text-center' },
+                  permanent: true
                 })
               )
               builder.add(node.from, node.from + 1, Decoration.replace({}))
@@ -127,10 +129,29 @@ function addDeco(view: EditorView) {
               line.from,
               line.from,
               Decoration.line({
-                attributes: { class: 'cm-horizontal-rule' }
+                attributes: { class: 'cm-horizontal-rule' },
+                name: 'HorizontalRule'
               })
             )
-            builder.add(node.from, node.to, Decoration.replace({}))
+            builder.add(
+              node.from,
+              node.to,
+              Decoration.replace({
+                name: 'HorizontalRule'
+              })
+            )
+          } else if (node.name === 'Link') {
+            const sliceString = view.state.doc.sliceString(node.from, node.to)
+            const pat = /^\[(.*)\]\((.*)\)/
+            const match = pat.exec(sliceString)
+            if (!match || match[2].length === 0) return
+
+            // hide link url
+            builder.add(
+              node.from + match[1].length + 2,
+              node.to,
+              Decoration.replace({})
+            )
           }
         }
       })
@@ -145,11 +166,20 @@ function removeDeco(view: EditorView, decorations: DecorationSet) {
   if (curRange == undefined) return decorations
 
   const line = view.state.doc.lineAt(curRange[0].from).from
+  const cursor = view.state.selection.main.from
+  const specName = ['HorizontalRule', 'OffsetHeadMark']
 
   return decorations.update({
-    filter: (from, _to, _v) => {
-      if (view.state.doc.lineAt(from).from == line && !_v.spec.permanent)
+    filter: (from, to, v) => {
+      if (v.spec.permanent) return true
+
+      if (
+        view.state.doc.lineAt(from).from == line &&
+        specName.includes(v.spec.name)
+      )
         return false
+
+      if (cursor >= from && cursor <= to) return false
 
       return true
     }
