@@ -67,7 +67,11 @@ export const useEditor = <T extends Element>(
               window._next_writer_rendererConfig.modified = true
             }
           }
-          if (update.selectionSet && noSelection(update.state)) {
+          if (
+            update.selectionSet &&
+            noSelection(update.state) &&
+            update.docChanged
+          ) {
             // typewriter mode
             if (window._next_writer_rendererConfig.rendererPlugin.typewriter) {
               const cursor = update.state.selection.ranges[0].from
