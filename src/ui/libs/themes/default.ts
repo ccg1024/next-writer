@@ -89,7 +89,7 @@ const defaultColor = {
   },
   markers: {
     headMark: '#A9B8CC',
-    quoteMark: '#CBD5E0',
+    quoteMark: '#4299E1',
     listMark: '#A0AEC0',
     linkMark: '#A9B8CC',
     empahsisMark: '#FC8181',

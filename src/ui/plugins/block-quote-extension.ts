@@ -10,22 +10,12 @@ import {
 
 const theme = EditorView.baseTheme({
   '.cm-content > .cm-quote-block': {
-    backgroundColor: 'rgba(226,232,240,0.5)',
-    borderLeft: '2px solid black',
-    borderRight: '2px solid black',
-    paddingLeft: '5px',
-    paddingRight: '5px'
+    backgroundColor: 'rgba(226,232,240,0.5)'
   },
   '.cm-content > .cm-quote-block-start': {
-    borderTop: '2px solid black',
-    borderTopLeftRadius: '5px',
-    borderTopRightRadius: '5px',
     paddingTop: '5px'
   },
   '.cm-content > .cm-quote-block-end': {
-    borderBottom: '2px solid black',
-    borderBottomLeftRadius: '5px',
-    borderBottomRightRadius: '5px',
     paddingBottom: '5px'
   }
 })
@@ -65,12 +55,6 @@ const addDeco = (view: EditorView) => {
             value: Decoration.line({
               class: 'cm-quote-block-end'
             })
-          })
-        } else if (node.name === 'QuoteMark') {
-          deco.push({
-            from: node.from,
-            to: node.to,
-            value: Decoration.replace({})
           })
         }
       }
