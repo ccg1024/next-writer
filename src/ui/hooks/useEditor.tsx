@@ -14,6 +14,7 @@ import { headNav } from '../plugins/head-nav-extension'
 import { noSelection, Post } from '../libs/utils'
 import { UpdateCacheContent } from '_window_type'
 import { inlineEmoji } from '../plugins/emoji-extension'
+import { blockquote } from '../plugins/block-quote-extension'
 
 interface Props {
   initialDoc?: string
@@ -107,7 +108,8 @@ export const useEditor = <T extends Element>(
         // imgPreviewField
         images(),
         headNav(),
-        inlineEmoji()
+        inlineEmoji(),
+        blockquote()
       ]
     })
 

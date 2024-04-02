@@ -51,7 +51,8 @@ export const defaultTheme = EditorView.theme({
     paddingBottom: '50vh',
     wordBreak: 'break-all',
     textAlign: 'justify',
-    maxWidth: '600px'
+    maxWidth: '600px',
+    lineHeight: '1.5'
   },
   '.cm-activeLineGutter': {
     backgroundColor: '#cccccc44'
@@ -66,9 +67,7 @@ export const defaultTheme = EditorView.theme({
   },
   '.cm-activeLine': {
     // backgroundColor: '#cccccc44',
-    backgroundColor: 'transparent',
-    borderTopRightRadius: '2px',
-    borderBottomRightRadius: '2px'
+    backgroundColor: 'transparent'
   },
   '&.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground': {
     // backgroundColor: '#d9d9d966'

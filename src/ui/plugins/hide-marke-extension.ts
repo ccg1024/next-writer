@@ -78,14 +78,15 @@ function addDeco(view: EditorView) {
               })
             }
             decos.push({
-              from: node.to,
-              to: node.to,
+              from: node.from,
+              to: node.from,
               value: Decoration.widget({
                 widget: new OffsetHeadMark('#'.repeat(headLevel)),
-                side: 1,
+                side: -1,
                 block: false,
                 name: 'OffsetHeadMark',
-                type: 'line-disable'
+                type: 'line-disable',
+                permanent: true
               })
             })
           } else if (node.name === 'Emphasis') {
@@ -232,6 +233,9 @@ function removeDeco(view: EditorView, decorations: DecorationSet) {
 
   const line = view.state.doc.lineAt(curRange[0].from).from
   const cursor = view.state.selection.main.from
+
+  // no change in selection mode
+  if (!view.state.selection.main.empty) return decorations
 
   return decorations.update({
     filter: (from, to, v) => {
