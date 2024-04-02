@@ -1,7 +1,7 @@
 // hide some mark when cursor not in-line
 // author: crazycodegame
 import { ensureSyntaxTree } from '@codemirror/language'
-import { RangeSetBuilder } from '@codemirror/state'
+import { Range, RangeSet } from '@codemirror/state'
 import {
   Decoration,
   ViewPlugin,
@@ -44,7 +44,7 @@ class OffsetHeadMark extends WidgetType {
 }
 
 function addDeco(view: EditorView) {
-  const builder = new RangeSetBuilder<Decoration>()
+  const decos: Range<Decoration>[] = []
   for (const { from, to } of view.visibleRanges) {
     const tree = ensureSyntaxTree(view.state, to, 200)
     if (tree) {
@@ -62,36 +62,95 @@ function addDeco(view: EditorView) {
 
             // make a margin
             const line = view.state.doc.lineAt(node.from)
-            builder.add(
-              line.from,
-              line.from,
-              Decoration.line({
+            decos.push({
+              from: line.from,
+              to: line.from,
+              value: Decoration.line({
                 attributes: { class: 'cm-head-relative' },
                 permanent: true
               })
-            )
+            })
             if (diff > headLevel + 1) {
-              builder.add(
-                node.from,
-                node.from + headLevel + 1,
-                Decoration.replace({})
-              )
+              decos.push({
+                from: node.from,
+                to: node.from + headLevel + 1,
+                value: Decoration.replace({})
+              })
             }
-            builder.add(
-              node.to,
-              node.to,
-              Decoration.widget({
+            decos.push({
+              from: node.to,
+              to: node.to,
+              value: Decoration.widget({
                 widget: new OffsetHeadMark('#'.repeat(headLevel)),
                 side: 1,
                 block: false,
-                name: 'OffsetHeadMark'
+                name: 'OffsetHeadMark',
+                type: 'line-disable'
               })
-            )
-          } else if (node.name === 'EmphasisMark') {
-            builder.add(node.from, node.to, Decoration.replace({}))
+            })
+          } else if (node.name === 'Emphasis') {
+            decos.push({
+              from: node.from,
+              to: node.from + 1,
+              value: Decoration.replace({
+                name: 'Emphasis',
+                from: node.from,
+                to: node.to,
+                type: 'inline-pair'
+              })
+            })
+            decos.push({
+              from: node.to - 1,
+              to: node.to,
+              value: Decoration.replace({
+                name: 'Emphasis',
+                from: node.from,
+                to: node.to,
+                type: 'inline-pair'
+              })
+            })
+          } else if (node.name === 'StrongEmphasis') {
+            decos.push({
+              from: node.from,
+              to: node.from + 2,
+              value: Decoration.replace({
+                name: 'StrongEmphasis',
+                from: node.from,
+                to: node.to,
+                type: 'inline-pair'
+              })
+            })
+            decos.push({
+              from: node.to - 2,
+              to: node.to,
+              value: Decoration.replace({
+                name: 'StrongEmphasis',
+                from: node.from,
+                to: node.to,
+                type: 'inline-pair'
+              })
+            })
           } else if (node.name === 'InlineCode') {
-            builder.add(node.from, node.from + 1, Decoration.replace({}))
-            builder.add(node.to - 1, node.to, Decoration.replace({}))
+            decos.push({
+              from: node.from,
+              to: node.from + 1,
+              value: Decoration.replace({
+                name: 'InlineCode',
+                from: node.from,
+                to: node.to,
+                type: 'inline-pair'
+              })
+            })
+            decos.push({
+              from: node.to - 1,
+              to: node.to,
+              value: Decoration.replace({
+                name: 'InlineCode',
+                from: node.from,
+                to: node.to,
+                type: 'inline-pair'
+              })
+            })
           } else if (node.name === 'Image') {
             // need a global config to check whther use img-preview extension.
             // NOTE: the code blew is asuming using img-preview extension.
@@ -108,38 +167,44 @@ function addDeco(view: EditorView) {
               const textLen = altText[1].length
               const line = view.state.doc.lineAt(node.from)
 
-              builder.add(
-                line.from,
-                line.from,
-                Decoration.line({
+              decos.push({
+                from: line.from,
+                to: line.from,
+                value: Decoration.line({
                   attributes: { class: 'cm-text-center' },
                   permanent: true
                 })
-              )
-              builder.add(node.from, node.from + 1, Decoration.replace({}))
-              builder.add(
-                node.from + 3 + textLen,
-                node.to,
-                Decoration.replace({})
-              )
+              })
+              decos.push({
+                from: node.from,
+                to: node.from + 1,
+                value: Decoration.replace({})
+              })
+              decos.push({
+                from: node.from + 3 + textLen,
+                to: node.to,
+                value: Decoration.replace({})
+              })
             }
           } else if (node.name === 'HorizontalRule') {
             const line = view.state.doc.lineAt(node.from)
-            builder.add(
-              line.from,
-              line.from,
-              Decoration.line({
+            decos.push({
+              from: line.from,
+              to: line.from,
+              value: Decoration.line({
                 attributes: { class: 'cm-horizontal-rule' },
-                name: 'HorizontalRule'
+                name: 'HorizontalRule',
+                type: 'line-disable'
               })
-            )
-            builder.add(
-              node.from,
-              node.to,
-              Decoration.replace({
-                name: 'HorizontalRule'
+            })
+            decos.push({
+              from: node.from,
+              to: node.to,
+              value: Decoration.replace({
+                name: 'HorizontalRule',
+                type: 'line-disable'
               })
-            )
+            })
           } else if (node.name === 'Link') {
             const sliceString = view.state.doc.sliceString(node.from, node.to)
             const pat = /^\[(.*)\]\((.*)\)/
@@ -147,18 +212,18 @@ function addDeco(view: EditorView) {
             if (!match || match[2].length === 0) return
 
             // hide link url
-            builder.add(
-              node.from + match[1].length + 2,
-              node.to,
-              Decoration.replace({})
-            )
+            decos.push({
+              from: node.from + match[1].length + 2,
+              to: node.to,
+              value: Decoration.replace({})
+            })
           }
         }
       })
     }
   }
 
-  return builder.finish()
+  return RangeSet.of(decos, true)
 }
 
 function removeDeco(view: EditorView, decorations: DecorationSet) {
@@ -167,15 +232,21 @@ function removeDeco(view: EditorView, decorations: DecorationSet) {
 
   const line = view.state.doc.lineAt(curRange[0].from).from
   const cursor = view.state.selection.main.from
-  const specName = ['HorizontalRule', 'OffsetHeadMark']
 
   return decorations.update({
     filter: (from, to, v) => {
       if (v.spec.permanent) return true
 
       if (
-        view.state.doc.lineAt(from).from == line &&
-        specName.includes(v.spec.name)
+        v.spec.type === 'inline-pair' &&
+        cursor >= v.spec.from &&
+        cursor <= v.spec.to
+      )
+        return false
+
+      if (
+        v.spec.type === 'line-disable' &&
+        view.state.doc.lineAt(from).from == line
       )
         return false
 
