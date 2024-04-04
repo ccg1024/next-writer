@@ -69,7 +69,7 @@ const getEmojiByName = (name: string) => {
   } else if (name === 'celebrate') {
     return emojiList[136]
   }
-  return emojiList[0]
+  return name
 }
 
 class EmojiWidget extends WidgetType {
@@ -99,8 +99,12 @@ class EmojiWidget extends WidgetType {
   }
 }
 
+// match emoji string or custom emoji name
+const regexExp =
+  /:\{(\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff]|\w+)\}:/gi
+
 const emojiMatcher = new MatchDecorator({
-  regexp: /:\{(\w+)\}:/g,
+  regexp: regexExp,
   decoration: match =>
     Decoration.replace({
       widget: new EmojiWidget(match[1])

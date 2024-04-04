@@ -11,6 +11,7 @@ import HeadNav from './headnav'
 import { Post } from '../libs/utils'
 import { WriterConfig } from 'src/types/renderer'
 import { VerticalBlur } from './blur'
+import FloatEmoji from './float-emoji'
 
 const Home = () => {
   const [showSide, setShowSide] = useState<boolean>(true)
@@ -100,6 +101,7 @@ const Home = () => {
         <HeadNav visible={showHeadNav} />
         {!showSide && <Drag />}
         <Message />
+        <FloatEmoji />
       </div>
       <GlobalInput />
     </>

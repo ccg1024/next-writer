@@ -1,4 +1,4 @@
-import { FC, useEffect, useLayoutEffect, useState } from 'react'
+import { FC, MouseEvent, useEffect, useLayoutEffect, useState } from 'react'
 import PubSub from 'pubsub-js'
 import { useEditor } from '../hooks/useEditor'
 import { themePlugin } from '../libs/codemirror'
@@ -75,6 +75,15 @@ const Editor: FC = (): JSX.Element => {
             y: 'start',
             yMargin: 0
           })
+        })
+      } else if (data.type === 'insert-emoji') {
+        const cursor = editorView.state.selection.main.from
+        const emoji = data.data as string
+        editorView.dispatch({
+          changes: {
+            from: cursor,
+            insert: `:{${emoji}}:`
+          }
         })
       }
     }
@@ -185,8 +194,26 @@ const Editor: FC = (): JSX.Element => {
     }
   }, [editorView])
 
+  const openFloat = (e: MouseEvent) => {
+    // e.preventDefault() and return false will close right click selection
+    e.preventDefault()
+    const rect = containerRef.current.getBoundingClientRect()
+    const diffX = e.clientX - rect.left
+    const diffY = e.clientY - rect.top
+
+    const left = diffX >= rect.width / 2 ? e.clientX - 200 : e.clientX
+    const top = diffY >= rect.height / 2 ? e.clientY - 200 : e.clientY
+    PubSub.publish('nw-float-emoji-pubsub', {
+      type: 'open',
+      data: { top, left }
+    })
+
+    return false
+  }
+
   return (
     <div
+      onContextMenu={openFloat}
       id="editor-container"
       className="hide-scroll-bar"
       ref={containerRef}
