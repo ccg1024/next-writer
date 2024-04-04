@@ -83,7 +83,7 @@ const defaultColor = {
     quote: '#839496',
     emphasis: '#FD5455',
     list: '#000000',
-    url: '#718096',
+    url: '#4299E1',
     link: '#68D391',
     inlineCode: '#4299E1'
   },
@@ -91,7 +91,7 @@ const defaultColor = {
     headMark: '#A9B8CC',
     quoteMark: '#4299E1',
     listMark: '#A0AEC0',
-    linkMark: '#A9B8CC',
+    linkMark: '#4299E1',
     empahsisMark: '#FC8181',
     codeMark: '#A0AEC0',
     codeText: '#000000',
@@ -112,7 +112,9 @@ export const defaultSyntaxHighlighting = HighlightStyle.define([
   },
   {
     tag: tags.link,
-    color: defaultColor.content.link
+    color: defaultColor.content.link,
+    textDecoration: 'underline',
+    fontWeight: 'bold'
   },
   {
     tag: tags.quote,

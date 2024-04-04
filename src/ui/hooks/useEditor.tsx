@@ -16,6 +16,7 @@ import { UpdateCacheContent } from '_window_type'
 import { inlineEmoji } from '../plugins/emoji-extension'
 import { blockquote } from '../plugins/block-quote-extension'
 import { prettierList } from '../plugins/list-extension'
+import { linkPlugin } from '../plugins/link-extension'
 
 interface Props {
   initialDoc?: string
@@ -111,7 +112,8 @@ export const useEditor = <T extends Element>(
         headNav(),
         inlineEmoji(),
         blockquote(),
-        prettierList()
+        prettierList(),
+        linkPlugin()
       ]
     })
 

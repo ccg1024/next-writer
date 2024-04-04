@@ -1,6 +1,6 @@
 // Making comunication with rederer process
 
-import { ipcMain, IpcMainEvent, IpcMainInvokeEvent } from 'electron'
+import { ipcMain, shell, IpcMainEvent, IpcMainInvokeEvent } from 'electron'
 import fs from 'fs'
 import path from 'path'
 import { ipcChannel } from '../config/ipc'
@@ -141,6 +141,16 @@ async function listener(_e: IpcMainEvent, req: IpcRequestData) {
   } else if (req.type === 'save-file') {
     const content = req.data.content
     if (typeof content === 'string') handleSave(null, content)
+  } else if (req.type === 'open-url-link') {
+    const url = req.data.url
+
+    if (typeof url !== 'string') return
+
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      shell.openExternal('http://' + url)
+      return
+    }
+    shell.openExternal(url)
   }
 }
 

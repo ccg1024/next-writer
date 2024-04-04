@@ -5,7 +5,7 @@ import CopyWebpackPlugin from 'copy-webpack-plugin'
 import { rules } from './webpack.rules'
 import { plugins } from './webpack.plugins'
 
-const assets = ['svg']
+const assets = ['svg', 'img']
 
 const copyPlugins = [
   new CopyWebpackPlugin({
