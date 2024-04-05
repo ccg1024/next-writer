@@ -13,61 +13,29 @@ import { emojiList } from '../libs/utils'
 
 const getEmojiByName = (name: string) => {
   if (name === 'joker') {
-    return emojiList[139]
+    return emojiList[134]
   } else if (name === 'smill' || /^h+$/.test(name)) {
-    return emojiList[140]
-  } else if (name === 'smill1') {
-    return emojiList[141]
-  } else if (name === 'smill2') {
-    return emojiList[142]
+    return emojiList[135]
   } else if (name === 'smillcry') {
-    return emojiList[143]
-  } else if (name === 'smill3') {
-    return emojiList[144]
-  } else if (name === 'smill4') {
-    return emojiList[145]
+    return emojiList[138]
   } else if (name === 'sweat') {
-    return emojiList[146]
-  } else if (name === 'smill5') {
-    return emojiList[147]
-  } else if (name === 'smillangle') {
-    return emojiList[148]
+    return emojiList[141]
   } else if (name === 'wink') {
-    return emojiList[149]
+    return emojiList[144]
   } else if (name === 'shy') {
-    return emojiList[150]
-  } else if (name === 'smillnorm') {
-    return emojiList[151]
-  } else if (name === 'smillnormr') {
-    return emojiList[152]
-  } else if (name === 'smilltricksy') {
-    return emojiList[153]
-  } else if (name === 'smilllove') {
-    return emojiList[156]
+    return emojiList[145]
   } else if (name === 'smillkiss') {
-    return emojiList[157]
-  } else if (name === 'smillkiss1') {
-    return emojiList[158]
-  } else if (name === 'smillkiss2') {
-    return emojiList[159]
-  } else if (name === 'smillkiss3') {
-    return emojiList[160]
+    return emojiList[152]
   } else if (name === 'tongue') {
-    return emojiList[161]
-  } else if (name === 'tongue1') {
-    return emojiList[162]
-  } else if (name === 'tongue2') {
-    return emojiList[163]
-  } else if (name === 'tongue3') {
-    return emojiList[164]
+    return emojiList[156]
   } else if (name === 'glasses') {
-    return emojiList[165]
+    return emojiList[160]
   } else if (name === 'cool') {
-    return emojiList[166]
+    return emojiList[161]
   } else if (name === 'thinking') {
-    return emojiList[174]
+    return emojiList[169]
   } else if (name === 'celebrate') {
-    return emojiList[136]
+    return emojiList[131]
   }
   return name
 }
