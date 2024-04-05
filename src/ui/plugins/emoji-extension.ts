@@ -101,7 +101,7 @@ class EmojiWidget extends WidgetType {
 
 // match emoji string or custom emoji name
 const regexExp =
-  /:\{(\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff]|\w+)\}:/gi
+  /:\{([\u231a-\u27ff\u2b50\u2b1b\u2b1c]\ufe0f|\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff]|\w+)\}:/gi
 
 const emojiMatcher = new MatchDecorator({
   regexp: regexExp,

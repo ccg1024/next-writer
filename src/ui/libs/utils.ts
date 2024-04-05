@@ -75,11 +75,6 @@ export const emojiList = [
   '\ud83d\udca4',
   '\ud83d\udc40',
   '\ud83d\udc83',
-  '\ud83d\udc83\ud83c\udffb',
-  '\ud83d\udc83\ud83c\udffc',
-  '\ud83d\udc83\ud83c\udffd',
-  '\ud83d\udc83\ud83c\udffe',
-  '\ud83d\udc83\ud83c\udfff',
   '\ud83d\udc54',
   '\ud83d\udc57',
   '\ud83d\udc59',
@@ -366,7 +361,6 @@ export const emojiList = [
   '\ud83d\udcad',
   '\ud83d\uddef',
   '\ud83c\udccf',
-  '\ud83c\udff3\ufe0f\u200d\ud83c\udf08',
   '\ud83e\udd53',
   '\ud83e\udd43',
   '\ud83c\udfa4',
@@ -441,8 +435,7 @@ export const emojiList = [
   '\ud83c\udf6a',
   '\ud83c\udf4a',
   '\ud83c\udff9',
-  '\ud83d\udc6f',
-  '\ud83d\udc6f\u200d\u2642\ufe0f'
+  '\ud83d\udc6f'
 ]
 
 export const noSelection = (state: EditorState) => {
