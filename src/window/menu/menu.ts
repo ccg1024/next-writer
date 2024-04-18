@@ -144,6 +144,28 @@ async function toggleFocusMode(m: MenuItem, win: BrowserWindow) {
   } as HomeChannel)
 }
 
+async function preview(m: MenuItem, win: BrowserWindow) {
+  if (!win) return
+
+  win.webContents.send(ipcChannel['main-to-render'].home_component, {
+    type: 'preview',
+    value: {
+      checked: m.checked
+    }
+  } as HomeChannel)
+}
+
+async function hideEditor(m: MenuItem, win: BrowserWindow) {
+  if (!win) return
+
+  win.webContents.send(ipcChannel['main-to-render'].home_component, {
+    type: 'hideEditor',
+    value: {
+      checked: m.checked
+    }
+  } as HomeChannel)
+}
+
 export default function createMenus(): MenuItemConstructorOptions[] {
   // const appname = app.name
   const isMac = process.platform === 'darwin'
@@ -216,6 +238,19 @@ export default function createMenus(): MenuItemConstructorOptions[] {
           click: toggleFocusMode,
           type: 'checkbox',
           checked: true
+        },
+        {
+          label: 'preview',
+          click: preview,
+          type: 'checkbox',
+          checked: false,
+          accelerator: isMac ? 'Cmd+Shift+p' : 'Ctrl+Shift+p'
+        },
+        {
+          label: 'hide editor',
+          click: hideEditor,
+          type: 'checkbox',
+          checked: false
         }
       ]
     },

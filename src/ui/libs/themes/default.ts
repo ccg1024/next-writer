@@ -50,7 +50,7 @@ export const defaultTheme = EditorView.theme({
     paddingTop: '50vh',
     paddingBottom: '50vh',
     wordBreak: 'break-all',
-    textAlign: 'justify',
+    textAlign: 'left',
     maxWidth: '600px',
     lineHeight: '1.5'
   },
@@ -79,29 +79,23 @@ export const defaultTheme = EditorView.theme({
 
 const defaultColor = {
   content: {
-    head: '#586EA5',
-    quote: '#839496',
-    emphasis: '#FD5455',
-    list: '#000000',
-    url: '#4299E1',
-    link: '#68D391',
-    inlineCode: '#4299E1'
+    head: 'var(--nw-theme-head-content)',
+    quote: 'var(--nw-theme-quote-content)',
+    emphasis: 'var(--nw-theme-emphasis-content)',
+    strong: 'var(--nw-theme-strong-content)',
+    list: 'var(--nw-theme-list-content)',
+    url: 'var(--nw-theme-url-content)',
+    link: 'var(--nw-theme-link-content)',
+    inlineCode: 'var(--nw-theme-inline-code-content)'
   },
   markers: {
-    headMark: '#A9B8CC',
-    quoteMark: '#4299E1',
-    listMark: '#A0AEC0',
-    linkMark: '#4299E1',
-    empahsisMark: '#FC8181',
-    codeMark: '#A0AEC0',
-    codeText: '#000000',
-    codeInfo: '#000000',
-    linkTitle: 'blue',
-    linkLabel: 'blue',
-    tableDelimiter: '#A0AEC0'
-  },
-  backgroundColor: {
-    inlineCode: '#EBF8FF'
+    headMark: 'var(--nw-theme-head-mark)',
+    quoteMark: 'var(--nw-theme-quote-mark)',
+    listMark: 'var(--nw-theme-list-mark)',
+    linkMark: 'var(--nw-theme-link-mark)',
+    codeMark: 'var(--nw-theme-code-mark)',
+    codeInfo: 'var(--nw-theme-code-info)',
+    tableDelimiter: 'var(--nw-theme-table-delimiter)'
   }
 }
 
@@ -128,7 +122,7 @@ export const defaultSyntaxHighlighting = HighlightStyle.define([
   {
     tag: tags.strong, // bold style
     fontWeight: 'bold',
-    color: defaultColor.content.emphasis
+    color: defaultColor.content.strong
   },
   {
     tag: tags.heading, // table head and title head 1 - 6
@@ -190,10 +184,6 @@ export const defaultSyntaxHighlighting = HighlightStyle.define([
     textDecoration: 'none'
   },
   {
-    tag: markTags.emphasisMark,
-    color: defaultColor.markers.empahsisMark
-  },
-  {
     tag: markTags.codeMark,
     color: defaultColor.markers.codeMark,
     fontFamily: 'var(--nw-editor-code-font-family)'
@@ -202,14 +192,6 @@ export const defaultSyntaxHighlighting = HighlightStyle.define([
     tag: markTags.codeInfo,
     color: defaultColor.markers.codeInfo
   },
-  // {
-  //   tag: markTags.linkTitle, // no characters found
-  //   colors: customColors.markers.linkTitle
-  // },
-  // {
-  //   tag: markTags.linkLabel, // no characters found
-  //   color: customColors.markers.linkLabel
-  // },
   {
     tag: markTags.url,
     color: defaultColor.content.url

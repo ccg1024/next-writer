@@ -1,0 +1,17 @@
+:root {
+  --nw-theme-head-content: #586ea5;
+  --nw-theme-quote-content: #839496;
+  --nw-theme-emphasis-content: #bf7060;
+  --nw-theme-strong-content: #fd5455;
+  --nw-theme-list-content: #000000;
+  --nw-theme-url-content: #4299e1;
+  --nw-theme-link-content: #68d391;
+  --nw-theme-inline-code-content: #4299e1;
+  --nw-theme-head-mark: #a9b8cc;
+  --nw-theme-quote-mark: #4299e1;
+  --nw-theme-list-mark: #a0aec0;
+  --nw-theme-link-mark: #4299e1;
+  --nw-theme-code-mark: #a0aec0;
+  --nw-theme-code-info: #000000;
+  --ne-theme-table-delimiter: #a0aec0;
+}

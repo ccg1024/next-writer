@@ -21,6 +21,7 @@ import { linkPlugin } from '../plugins/link-extension'
 interface Props {
   initialDoc?: string
   timeKey: string // Ensure the editor re-build when toggle file which content is same.
+  callback: (state: EditorState) => void
 }
 
 const ctl = {
@@ -69,6 +70,8 @@ export const useEditor = <T extends Element>(
               })
               window._next_writer_rendererConfig.modified = true
             }
+            // update doc state
+            props.callback(update.state)
           }
           if (
             update.selectionSet &&
@@ -77,12 +80,13 @@ export const useEditor = <T extends Element>(
           ) {
             // typewriter mode
             if (window._next_writer_rendererConfig.rendererPlugin.typewriter) {
-              const cursor = update.state.selection.ranges[0].from
-              setTimeout(() => {
-                update.view.dispatch({
-                  effects: EditorView.scrollIntoView(cursor, { y: 'center' })
+              const cursor = update.state.selection.main.from
+              update.view.dispatch({
+                effects: EditorView.scrollIntoView(cursor, {
+                  y: 'center',
+                  yMargin: 0
                 })
-              }, 0)
+              })
             }
           }
         }),
@@ -95,6 +99,19 @@ export const useEditor = <T extends Element>(
                 view.scrollDOM.scrollTop - window.innerHeight * 0.5
               const topBlockInfo = view.elementAtHeight(scrollTop)
               const line = view.state.doc.lineAt(topBlockInfo.from).number
+
+              // publish scroll info to preview component
+              let percent = 0
+              if (topBlockInfo.length > 0) {
+                const elementTop = topBlockInfo.top
+                const elementHeight = topBlockInfo.height
+                percent = (scrollTop - elementTop) / elementHeight
+              }
+              PubSub.publish('nw-preview-pubsub', {
+                type: 'sync-scroll',
+                data: { line, percent: percent >= 0 ? percent : 0 }
+              })
+              // public scroll info to head nav component
               PubSub.publish('nw-head-nav-pubsub', {
                 type: 'top-head-line',
                 data: { line }
@@ -127,7 +144,7 @@ export const useEditor = <T extends Element>(
     return () => {
       view.destroy()
     }
-  }, [initialDoc, props.timeKey])
+  }, [props.timeKey])
 
   return [containerRef, editorView]
 }

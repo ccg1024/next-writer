@@ -1,4 +1,11 @@
-import { FC, MouseEvent, useEffect, useLayoutEffect, useState } from 'react'
+import {
+  FC,
+  MouseEvent,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useState
+} from 'react'
 import PubSub from 'pubsub-js'
 import { useEditor } from '../hooks/useEditor'
 import { themePlugin } from '../libs/codemirror'
@@ -14,6 +21,7 @@ import { PubSubData } from 'src/types/renderer'
 import { EditorView } from '@codemirror/view'
 import { Post } from '../libs/utils'
 import { UpdateCacheContent } from '_window_type'
+import { EditorState } from '@codemirror/state'
 
 // NOTE: Just a simple txt for dev.
 const _testInitialDoc = `# Head 1
@@ -45,12 +53,19 @@ console.log(helloWorld())
 \`\`\`
 `
 
-const Editor: FC = (): JSX.Element => {
-  const [doc, setDoc] = useState<string>('')
+interface EditorProps {
+  initialDoc: string
+  onChange: (newDoc: string) => void
+}
+const Editor: FC<EditorProps> = (props): JSX.Element => {
   const [timeKey, setTimeKey] = useState<string>('')
+  const callback = useCallback((state: EditorState) => {
+    props.onChange(state.doc.toString())
+  }, [])
   const [containerRef, editorView] = useEditor<HTMLDivElement>({
-    initialDoc: doc,
-    timeKey
+    initialDoc: props.initialDoc,
+    timeKey,
+    callback
   })
 
   useLayoutEffect(() => {
@@ -131,7 +146,8 @@ const Editor: FC = (): JSX.Element => {
         })
       }
 
-      setDoc(value.content)
+      // setDoc(value.content)
+      props.onChange(value.content) // update new doc
       setTimeKey(new Date().toString()) // Make sure the editor re-build
       // update recent file list component
       PubSub.publish('nw-sidebar-pubsub', {

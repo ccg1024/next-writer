@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import Message from './message'
 import SideBar from './sidebar'
 import Editor from './editor'
@@ -6,17 +6,26 @@ import Drag from './drag'
 import { HomeChannel, CheckBoxValue } from '_common_type'
 
 import '../css/home.css'
+import '../css/theme.css'
 import { GlobalInput } from './input'
 import HeadNav from './headnav'
 import { Post } from '../libs/utils'
 import { WriterConfig } from 'src/types/renderer'
 import { VerticalBlur } from './blur'
 import FloatEmoji from './float-emoji'
+import Preview from './preview'
 
 const Home = () => {
   const [showSide, setShowSide] = useState<boolean>(true)
   const [showHeadNav, setShowHeadNav] = useState<boolean>(false)
   const [showFocus, setShowFocus] = useState<boolean>(true)
+  const [showPreview, setShowPreview] = useState(false)
+  const [hideEditor, setHideEditor] = useState(false)
+  const [doc, setDoc] = useState<string>('')
+
+  const onChange = useCallback((newDoc: string) => {
+    setDoc(newDoc)
+  }, [])
 
   const listenerMap = {
     hideSidebar: (data: HomeChannel) => {
@@ -42,6 +51,16 @@ const Home = () => {
       const { checked } = data.value as CheckBoxValue
 
       setShowFocus(checked)
+    },
+    preview: (data: HomeChannel) => {
+      const { checked } = data.value as CheckBoxValue
+
+      setShowPreview(checked)
+    },
+    hideEditor: (data: HomeChannel) => {
+      const { checked } = data.value as CheckBoxValue
+
+      setHideEditor(checked)
     }
   }
 
@@ -94,10 +113,14 @@ const Home = () => {
     <>
       <div id="home">
         <SideBar isVisible={showSide} />
-        <div className="home-container">
-          <Editor />
+        <div
+          className="home-container"
+          style={{ display: hideEditor ? 'none' : 'block' }}
+        >
+          <Editor initialDoc={doc} onChange={onChange} />
           {showFocus && <VerticalBlur />}
         </div>
+        <Preview doc={doc} visible={showPreview} hideEditor={hideEditor} />
         <HeadNav visible={showHeadNav} />
         {!showSide && <Drag />}
         <Message />

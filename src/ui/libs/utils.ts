@@ -441,3 +441,34 @@ export const emojiList = [
 export const noSelection = (state: EditorState) => {
   return state.selection.main.anchor === state.selection.main.head
 }
+
+export const debounce = function (
+  fn: (...args: unknown[]) => void,
+  delay = 1000
+) {
+  let timer: NodeJS.Timeout = null
+  return function (...args: unknown[]) {
+    clearTimeout(timer)
+    timer = setTimeout(() => {
+      // 确保调用返回函数的 this
+      // 与执行函数 fn 的 this
+      // 指向相同
+      fn.call(this, ...args)
+    }, delay)
+  }
+}
+
+export const throttle = function <T extends unknown[]>(
+  fn: (...args: T) => void,
+  delay = 1000
+) {
+  let timer: NodeJS.Timeout = null
+  return function (...args: T) {
+    if (timer) return
+
+    timer = setTimeout(() => {
+      fn.call(this, ...args)
+      timer = null
+    }, delay)
+  }
+}

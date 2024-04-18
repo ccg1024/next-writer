@@ -18,6 +18,8 @@ type NavItemProps = {
 }
 
 const NavItem = styled.div<NavItemProps>`
+  overflow: hidden;
+  text-overflow: ellipsis;
   text-wrap: nowrap;
   padding: 10px 5px;
   background-color: ${props =>
