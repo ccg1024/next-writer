@@ -232,29 +232,31 @@ function removeDeco(view: EditorView, decorations: DecorationSet) {
   if (curRange == undefined) return decorations
 
   const line = view.state.doc.lineAt(curRange[0].from).from
-  const cursor = view.state.selection.main.from
+  // const cursor = view.state.selection.main.from
 
   // no change in selection mode
-  if (!view.state.selection.main.empty) return decorations
+  // if (!view.state.selection.main.empty) return decorations
 
   return decorations.update({
-    filter: (from, to, v) => {
+    filter: (from, _to, v) => {
       if (v.spec.permanent) return true
 
-      if (
-        v.spec.type === 'inline-pair' &&
-        cursor >= v.spec.from &&
-        cursor <= v.spec.to
-      )
-        return false
+      if (view.state.doc.lineAt(from).from == line) return false
 
-      if (
-        v.spec.type === 'line-disable' &&
-        view.state.doc.lineAt(from).from == line
-      )
-        return false
-
-      if (cursor >= from && cursor <= to) return false
+      // if (
+      //   v.spec.type === 'inline-pair' &&
+      //   cursor >= v.spec.from &&
+      //   cursor <= v.spec.to
+      // )
+      //   return false
+      //
+      // if (
+      //   v.spec.type === 'line-disable' &&
+      //   view.state.doc.lineAt(from).from == line
+      // )
+      //   return false
+      //
+      // if (cursor >= from && cursor <= to) return false
 
       return true
     }
