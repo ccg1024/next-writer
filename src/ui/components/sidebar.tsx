@@ -8,12 +8,12 @@ import User from './user'
 import Filesystem from './filesystem'
 import Dividing from './dividing'
 import { RecentFileList } from './filelist'
-import { FileDescriptor, FileDescriptorContainer } from '_common_type'
-import { PubSubData } from 'src/types/renderer'
 
 import '../css/sidebar.css'
 import { GlobalMask } from './utils'
 import { AnimatePresence, motion } from 'framer-motion'
+import { css } from '@emotion/css'
+import { FileDescriptor, FileDescriptorContainer, PubSubData } from '_types'
 
 interface Props {
   isVisible: boolean
@@ -21,6 +21,7 @@ interface Props {
 
 const VerticalScrollBox = styled.div`
   overflow: auto;
+  padding-left: 10px;
 `
 
 const SideBar: FC<Props> = (props): JSX.Element => {
@@ -44,7 +45,7 @@ const SideBar: FC<Props> = (props): JSX.Element => {
           setFilelist(v =>
             v.includes(fileDescriptor.path) ? v : [...v, fileDescriptor.path]
           )
-          window._next_writer_rendererConfig.workPath = fileDescriptor.path
+          window._next_writer_rendererConfig.workpath = fileDescriptor.path
           PubSub.publish('nw-show-message', fileDescriptor.path)
         }
       }
@@ -57,19 +58,19 @@ const SideBar: FC<Props> = (props): JSX.Element => {
 
   // regist pubsub event
   useEffect(() => {
-    const tokenFuc = (_: string, data: PubSubData) => {
-      if (data.type === 'nw-sidebar-file-change') {
+    const tokenFuc = (_: string, payload: PubSubData) => {
+      if (payload.type === 'nw-sidebar-file-change') {
         if (!currentFile) return
 
         setRecentFiles(v => ({
           ...v,
           [currentFile]: {
             ...v[currentFile],
-            isChange: data.data === 'modified'
+            isChange: payload.data.status === 'modified'
           }
         }))
-      } else if (data.type === 'nw-sidebar-add-recent-file') {
-        const fileDescriptor = data.data as FileDescriptor
+      } else if (payload.type === 'nw-sidebar-add-recent-file') {
+        const fileDescriptor = payload.data as FileDescriptor
         setRecentFiles(v => ({
           ...v,
           [fileDescriptor.path]: fileDescriptor
@@ -96,14 +97,23 @@ const SideBar: FC<Props> = (props): JSX.Element => {
             ref={sidebarRef}
             className="sidebar-main"
             initial={{ width: 0 }}
-            animate={{ width: '200px' }}
+            animate={{ width: '220px' }}
             exit={{ width: 0 }}
             transition={{ duration: 0.25 }}
           >
+            <div
+              id="side-bar-dragable"
+              className={css(`
+                height: 30px;
+                flex-shrink: 0;
+                flex-grow: 0;
+                -webkit-app-region: drag
+              `)}
+            ></div>
             <BroadCast currentFile={currentFile} />
             <User />
             <VerticalScrollBox>
-              <Filesystem />
+              <Filesystem currentFile={currentFile} />
               <Dividing />
               <RecentFileList
                 filelist={filelist}
@@ -111,7 +121,7 @@ const SideBar: FC<Props> = (props): JSX.Element => {
                 currentFile={currentFile}
               />
             </VerticalScrollBox>
-            <Resizer parentRef={sidebarRef} minWidth={100} />
+            <Resizer parentRef={sidebarRef} minWidth={220} />
             <GlobalMask isMediaControl={true} />
           </motion.div>
         )}

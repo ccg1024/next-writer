@@ -1,32 +1,33 @@
 // Initial a codemirror editor
 // Find a new style to pass ref object: from youtube "devaslife"
 // @author: crazycodegame
-import { EditorState } from '@codemirror/state'
+import { Compartment, EditorState } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { useRef, useState, useLayoutEffect } from 'react'
 import PubSub from 'pubsub-js'
 import { editorDefaultExtensions } from '../libs/codemirror'
 import { hideMarkPlugin } from '../plugins/hide-marke-extension'
-// import { imgPreview, imgPreviewField } from '../plugins/img-preview-extension'
 import { codeBlockHighlight } from '../plugins/code-block-extension'
 import { images } from '../plugins/images-extension'
 import { headNav } from '../plugins/head-nav-extension'
 import { noSelection, Post } from '../libs/utils'
-import { UpdateCacheContent } from '_window_type'
+import { UpdateCacheContent } from '_types'
 import { inlineEmoji } from '../plugins/emoji-extension'
 import { blockquote } from '../plugins/block-quote-extension'
-import { prettierList } from '../plugins/list-extension'
 import { linkPlugin } from '../plugins/link-extension'
+import { ONE_WAY_CHANNEL } from 'src/config/ipc'
 
 interface Props {
   initialDoc?: string
-  timeKey: string // Ensure the editor re-build when toggle file which content is same.
+  timeKey: number // Ensure the editor re-build when toggle file which content is same.
   callback: (state: EditorState) => void
 }
 
 const ctl = {
   scrollTimer: null as NodeJS.Timeout
 }
+
+export const prettierListPlugin = new Compartment()
 
 export const useEditor = <T extends Element>(
   props: Props
@@ -45,22 +46,18 @@ export const useEditor = <T extends Element>(
           if (update.docChanged) {
             if (
               !window._next_writer_rendererConfig.modified &&
-              window._next_writer_rendererConfig.workPath !== ''
+              window._next_writer_rendererConfig.workpath !== ''
             ) {
               PubSub.publish('nw-sidebar-pubsub', {
                 type: 'nw-sidebar-file-change',
-                data: 'modified'
+                data: { status: 'modified' }
               })
-              // window.ipc._render_updateCache({
-              //   filePath: window._next_writer_rendererConfig.workPath,
-              //   isChange: true
-              // })
               Post(
-                'render-to-main',
+                ONE_WAY_CHANNEL,
                 {
                   type: 'update-cache',
                   data: {
-                    filePath: window._next_writer_rendererConfig.workPath,
+                    filePath: window._next_writer_rendererConfig.workpath,
                     isChange: true
                   } as UpdateCacheContent
                 },
@@ -79,7 +76,7 @@ export const useEditor = <T extends Element>(
             update.docChanged
           ) {
             // typewriter mode
-            if (window._next_writer_rendererConfig.rendererPlugin.typewriter) {
+            if (window._next_writer_rendererConfig.plugin.typewriter) {
               const cursor = update.state.selection.main.from
               update.view.dispatch({
                 effects: EditorView.scrollIntoView(cursor, {
@@ -121,15 +118,13 @@ export const useEditor = <T extends Element>(
           }
         }),
         ...editorDefaultExtensions,
-        // imgPreview(),
         codeBlockHighlight(),
         hideMarkPlugin,
-        // imgPreviewField
         images(),
         headNav(),
         inlineEmoji(),
         blockquote(),
-        prettierList(),
+        prettierListPlugin.of([]),
         linkPlugin()
       ]
     })

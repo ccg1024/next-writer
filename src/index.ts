@@ -34,7 +34,7 @@ global._next_writer_windowConfig = {
   rootWorkplatformInfo: { folders: [], files: [] },
   renderConfig: {},
   menuStatus: {
-    sideBarVisble: true
+    sideBarVisible: true
   }
 }
 
@@ -55,8 +55,8 @@ protocol.registerSchemesAsPrivileged([
 const createWindow = (): void => {
   // Create the browser window.
   const mainWindow = new BrowserWindow({
-    height: 500,
-    width: 1000,
+    height: 725,
+    width: 1180,
     minWidth: 500,
     minHeight: 400,
     frame: false,
@@ -84,7 +84,7 @@ const createWindow = (): void => {
   global._next_writer_windowConfig.win = mainWindow
   global._next_writer_windowConfig.renderConfig = rendererConfig
   global._next_writer_windowConfig.menuStatus = {
-    sideBarVisble: true
+    sideBarVisible: true
   }
   initialRootWorkplatform()
 

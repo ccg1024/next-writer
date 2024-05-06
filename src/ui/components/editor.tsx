@@ -4,61 +4,39 @@ import {
   useCallback,
   useEffect,
   useLayoutEffect,
+  useRef,
   useState
 } from 'react'
 import PubSub from 'pubsub-js'
-import { useEditor } from '../hooks/useEditor'
+import { useEditor, prettierListPlugin } from '../hooks/useEditor'
 import { themePlugin } from '../libs/codemirror'
 import { defaultLight } from '../libs/themes/default'
-import {
-  EditorChannel,
-  TypeWriterIpcValue,
-  ReadFileIpcValue
-} from '_common_type'
 
 import '../css/editor.css'
-import { PubSubData } from 'src/types/renderer'
 import { EditorView } from '@codemirror/view'
 import { Post } from '../libs/utils'
-import { UpdateCacheContent } from '_window_type'
 import { EditorState } from '@codemirror/state'
-
-// NOTE: Just a simple txt for dev.
-const _testInitialDoc = `# Head 1
-## Head 2
-### Head 3
-#### Head 4
-##### Head 5
-###### Head 6
-
-this is a content text, *italic*, **bold**, ***italic bold***. the \`code\`
-
-- list 1
-- list 2
-
-1. item1
-2. item2
-
-> some quote
-
-![img-preview](/Users/ccg/MySupport/CodePlace/creations/imarkdown/img/mac-dark.png 'preview')
-
-\`\`\`javascript
-function helloWorld() {
-  return 'hello World'
-}
-
-console.log(helloWorld())
-// /Users/ccg/MySupport/CodePlace/creations/imarkdown/img/mac-dark.png
-\`\`\`
-`
+import { prettierList } from '../plugins/list-extension'
+import {
+  IpcChannelData,
+  PubSubData,
+  ReadFileDescriptor,
+  UpdateCacheContent
+} from '_types'
+import { ONE_WAY_CHANNEL } from 'src/config/ipc'
 
 interface EditorProps {
   initialDoc: string
   onChange: (newDoc: string) => void
 }
+interface RefObj {
+  isFirstRender: boolean
+}
 const Editor: FC<EditorProps> = (props): JSX.Element => {
-  const [timeKey, setTimeKey] = useState<string>('')
+  const refFirst = useRef<RefObj>({
+    isFirstRender: true
+  })
+  const [timeKey, setTimeKey] = useState<number>(-1)
   const callback = useCallback((state: EditorState) => {
     props.onChange(state.doc.toString())
   }, [])
@@ -72,18 +50,23 @@ const Editor: FC<EditorProps> = (props): JSX.Element => {
     if (!editorView) return
     // initial editor theme
     editorView.dispatch({
-      effects: themePlugin.reconfigure(defaultLight)
+      effects: [themePlugin.reconfigure(defaultLight)]
     })
+    if (!refFirst.current.isFirstRender) {
+      editorView.dispatch({
+        effects: prettierListPlugin.reconfigure(prettierList())
+      })
+    }
   }, [editorView])
 
   useEffect(() => {
     if (!editorView) return
 
-    function pubsubListener(_: string, data: PubSubData) {
-      if (!data) return
+    function pubsubListener(_: string, payload: PubSubData) {
+      if (!payload) return
 
-      if (data.type === 'head-jump') {
-        const jumpPos = data.data as number
+      if (payload.type === 'head-jump') {
+        const jumpPos = payload.data.jumpPos as number
         editorView.dispatch({
           selection: { anchor: jumpPos, head: jumpPos },
           effects: EditorView.scrollIntoView(jumpPos, {
@@ -91,14 +74,19 @@ const Editor: FC<EditorProps> = (props): JSX.Element => {
             yMargin: 0
           })
         })
-      } else if (data.type === 'insert-emoji') {
+      } else if (payload.type === 'insert-emoji') {
         const cursor = editorView.state.selection.main.from
-        const emoji = data.data as string
+        const emoji = payload.data.emoji as string
         editorView.dispatch({
           changes: {
             from: cursor,
             insert: `:{${emoji}}:`
           }
+        })
+      } else if (payload.type === 'mount-prettier-list') {
+        refFirst.current.isFirstRender = false
+        editorView.dispatch({
+          effects: prettierListPlugin.reconfigure(prettierList())
         })
       }
     }
@@ -109,12 +97,12 @@ const Editor: FC<EditorProps> = (props): JSX.Element => {
     }
   }, [editorView])
 
-  const listener = (_: unknown, data: EditorChannel) => {
+  const listener = (_: unknown, data: IpcChannelData) => {
     if (data.type === 'typewriter') {
       // toggle typewriter mode
-      const value = data.value as TypeWriterIpcValue
-      if (!value.checked) {
-        window._next_writer_rendererConfig.rendererPlugin.typewriter = true
+      const { checked } = data.value
+      if (checked) {
+        window._next_writer_rendererConfig.plugin.typewriter = true
         // make scroll if editor is focused.
         if (editorView.hasFocus)
           editorView.dispatch({
@@ -124,19 +112,19 @@ const Editor: FC<EditorProps> = (props): JSX.Element => {
             )
           })
       } else {
-        window._next_writer_rendererConfig.rendererPlugin.typewriter = false
+        window._next_writer_rendererConfig.plugin.typewriter = false
       }
     } else if (data.type === 'readfile') {
-      const value = data.value as ReadFileIpcValue
+      const value = data.value as ReadFileDescriptor
 
       // upload cache before show new file content
-      if (window._next_writer_rendererConfig.workPath !== '') {
+      if (window._next_writer_rendererConfig.workpath !== '') {
         Post(
-          'render-to-main',
+          ONE_WAY_CHANNEL,
           {
             type: 'update-cache',
             data: {
-              filePath: window._next_writer_rendererConfig.workPath,
+              filePath: window._next_writer_rendererConfig.workpath,
               content: editorView.state.doc.toString()
             } as UpdateCacheContent
           },
@@ -148,18 +136,22 @@ const Editor: FC<EditorProps> = (props): JSX.Element => {
 
       // setDoc(value.content)
       props.onChange(value.content) // update new doc
-      setTimeKey(new Date().toString()) // Make sure the editor re-build
+      // Can not use toString(), which return seconds level of time
+      // if change file to fast, the editor will not re-build, and will
+      // cover next file cacha content with pre-file, if press save
+      // the data on the hard drive will also be overwritten incorrectly.
+      setTimeKey(new Date().valueOf()) // Make sure the editor re-build
       // update recent file list component
       PubSub.publish('nw-sidebar-pubsub', {
         type: 'nw-sidebar-add-recent-file',
         data: value.fileDescriptor
       })
       // update editor working path
-      window._next_writer_rendererConfig.workPath = value.fileDescriptor.path
+      window._next_writer_rendererConfig.workpath = value.fileDescriptor.path
       window._next_writer_rendererConfig.modified =
         value.fileDescriptor.isChange
     } else if (data.type === 'insertImage') {
-      const imgPath = data.value as string
+      const imgPath = data.value.imgPath as string
 
       if (!imgPath) return
 
@@ -176,7 +168,7 @@ const Editor: FC<EditorProps> = (props): JSX.Element => {
     } else if (data.type === 'writefile') {
       // window.ipc._render_saveFile(editorView.state.doc.toString())
       Post(
-        'render-to-main',
+        ONE_WAY_CHANNEL,
         {
           type: 'save-file',
           data: { content: editorView.state.doc.toString() }
@@ -189,14 +181,15 @@ const Editor: FC<EditorProps> = (props): JSX.Element => {
       window._next_writer_rendererConfig.modified = false
       PubSub.publish('nw-sidebar-pubsub', {
         type: 'nw-sidebar-file-change',
-        data: 'normal'
+        data: { status: 'normal' }
       })
       // if not a empty file save, publi a message
-      if (window._next_writer_rendererConfig.workPath !== '') {
-        PubSub.publish(
-          'nw-show-message',
-          window._next_writer_rendererConfig.workPath
-        )
+      if (window._next_writer_rendererConfig.workpath !== '') {
+        PubSub.publish('nw-show-message', {
+          data: {
+            message: window._next_writer_rendererConfig.workpath
+          }
+        })
       }
     }
   }

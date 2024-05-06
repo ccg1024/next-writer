@@ -1,9 +1,10 @@
+import PubSub from 'pubsub-js'
 import { FC, useEffect, useRef } from 'react'
 import { css } from '@emotion/css'
 import { TiUser, TiDocumentAdd, TiFolderAdd } from 'react-icons/ti'
 import { AnimateClickDiv, InlineFlex } from './utils'
 import { useHoverShow } from '../hooks/useHoverShow'
-import { PubSubData, RenderNewFileType } from 'src/types/renderer'
+import { PubSubData, RenderNewFileType } from '_types'
 
 const User: FC = (): JSX.Element => {
   const refUser = useRef<HTMLDivElement>(null)
@@ -24,12 +25,12 @@ const User: FC = (): JSX.Element => {
   }
 
   useEffect(() => {
-    function listener(_: string, data: PubSubData) {
-      if (!data) return
+    function listener(_: string, payload: PubSubData) {
+      if (!payload) return
 
-      if (data.type === 'nw-user-pubsub-reply') {
+      if (payload.type === 'nw-user-pubsub-reply') {
         // reply message
-        const replyData = data.data
+        const replyData = payload.data
 
         // send message to filesystem component
         PubSub.publish('nw-filesystem-pubsub', {

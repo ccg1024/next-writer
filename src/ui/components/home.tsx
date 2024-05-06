@@ -1,19 +1,22 @@
-import { useCallback, useEffect, useState } from 'react'
+import PubSub from 'pubsub-js'
+import { MouseEvent, useCallback, useEffect, useState } from 'react'
 import Message from './message'
 import SideBar from './sidebar'
 import Editor from './editor'
 import Drag from './drag'
-import { HomeChannel, CheckBoxValue } from '_common_type'
 
 import '../css/home.css'
 import '../css/theme.css'
 import { GlobalInput } from './input'
 import HeadNav from './headnav'
 import { Post } from '../libs/utils'
-import { WriterConfig } from 'src/types/renderer'
+import { HomeChannelType, IpcChannelData, PubSubData } from '_types'
 import { VerticalBlur } from './blur'
 import FloatEmoji from './float-emoji'
 import Preview from './preview'
+import Toolbar from './toolbar'
+import { TWO_WAY_CHANNEL } from 'src/config/ipc'
+import { HoverImage } from './image'
 
 const Home = () => {
   const [showSide, setShowSide] = useState<boolean>(true)
@@ -28,44 +31,34 @@ const Home = () => {
   }, [])
 
   const listenerMap = {
-    hideSidebar: (data: HomeChannel) => {
-      const { checked } = data.value as CheckBoxValue
-      setShowSide(!checked)
+    toggleSidebar: (data: IpcChannelData) => {
+      const { checked } = data.value
+      setShowSide(checked)
     },
-    toggleHeadNav: (data: HomeChannel) => {
-      const { checked } = data.value as CheckBoxValue
+    toggleHeadNav: (data: IpcChannelData) => {
+      const { checked } = data.value
       setShowHeadNav(checked)
     },
-    zenMode: (data: HomeChannel) => {
-      const root = document.getElementById('root') as HTMLDivElement
-      if (!root) {
-        console.log(
-          '[ERROR] can not get root element by id, when toggle zen mode'
-        )
-        return
-      }
-      const { checked } = data.value as CheckBoxValue
-      root.style.padding = checked ? '0px' : '10px'
-    },
-    focusMode: (data: HomeChannel) => {
-      const { checked } = data.value as CheckBoxValue
+    focusMode: (data: IpcChannelData) => {
+      const { checked } = data.value
 
       setShowFocus(checked)
     },
-    preview: (data: HomeChannel) => {
-      const { checked } = data.value as CheckBoxValue
+    preview: (data: IpcChannelData) => {
+      const { checked } = data.value
 
       setShowPreview(checked)
     },
-    hideEditor: (data: HomeChannel) => {
-      const { checked } = data.value as CheckBoxValue
+    hideEditor: (data: IpcChannelData) => {
+      const { checked } = data.value
 
       setHideEditor(checked)
     }
   }
 
-  const listener = (_: unknown, data: HomeChannel) => {
-    const cb = listenerMap[data.type]
+  const listener = (_: unknown, data: IpcChannelData) => {
+    const type = data.type as HomeChannelType
+    const cb = listenerMap[type]
     if (cb) cb(data)
   }
 
@@ -79,14 +72,20 @@ const Home = () => {
 
   useEffect(() => {
     // get render config
-    Post('render-to-main-to-render', {
+    Post(TWO_WAY_CHANNEL, {
       type: 'read-render-config'
     })
       .then(res => {
-        const config = res.data as WriterConfig
+        if (!res) return
+
+        const { renderConfig: config } = res.data
         const r = document.querySelector('body')
+
+        let fontSize = '16px'
+        let fontFamily = 'M PLUS Rounded 1c'
         if (config.editorFont) {
           r.style.setProperty('--nw-editor-font-family', config.editorFont)
+          fontFamily = config.editorFont
         }
         if (config.codeFont) {
           r.style.setProperty('--nw-editor-code-font-family', config.codeFont)
@@ -99,26 +98,62 @@ const Home = () => {
         }
         if (config.editorFontSize) {
           r.style.setProperty('--nw-editor-font-size', config.editorFontSize)
+          fontSize = config.editorFontSize
         }
-        // add transition on root.
-        const root = document.getElementById('root') as HTMLDivElement
-        if (root) root.classList.add('root-animation')
+        if (config.focusMode !== null || config.focusMode !== undefined) {
+          setShowFocus(config.focusMode)
+        }
+        window._next_writer_rendererConfig.plugin.typewriter =
+          !!config.typewriter
+        window._next_writer_rendererConfig.fontSize = fontSize
+        window._next_writer_rendererConfig.fontFamily = fontFamily
+        PubSub.publish('nw-editor-pubsub', {
+          type: 'mount-prettier-list'
+        } as PubSubData)
+      })
+      .catch(err => {
+        throw err
+      })
+
+    Post(TWO_WAY_CHANNEL, {
+      type: 'process-config'
+    })
+      .then(res => {
+        if (!res) return
+        const { root } = res.data
+        window._next_writer_rendererConfig.root = root
       })
       .catch(err => {
         throw err
       })
   }, [])
 
+  const homeContainerClick = (e: MouseEvent) => {
+    if (!e.target) return
+    const element = e.target as HTMLElement
+
+    if (element.tagName == 'IMG') {
+      const src = (element as HTMLImageElement).src
+      const payload: PubSubData = {
+        type: 'show-hover-image',
+        data: { src }
+      }
+      PubSub.publish('nw-hover-image-pubsub', payload)
+    }
+  }
+
   return (
     <>
       <div id="home">
         <SideBar isVisible={showSide} />
         <div
+          onClick={homeContainerClick}
           className="home-container"
           style={{ display: hideEditor ? 'none' : 'block' }}
         >
           <Editor initialDoc={doc} onChange={onChange} />
           {showFocus && <VerticalBlur />}
+          <Toolbar />
         </div>
         <Preview doc={doc} visible={showPreview} hideEditor={hideEditor} />
         <HeadNav visible={showHeadNav} />
@@ -127,6 +162,7 @@ const Home = () => {
         <FloatEmoji />
       </div>
       <GlobalInput />
+      <HoverImage />
     </>
   )
 }

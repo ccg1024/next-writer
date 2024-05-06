@@ -17,6 +17,12 @@ const theme = EditorView.baseTheme({
   },
   '.cm-content > .cm-quote-block-end': {
     paddingBottom: '5px'
+  },
+  '.cm-inner-quote': {
+    paddingLeft: '5px',
+    paddingRight: '5px',
+    display: 'inline-block',
+    boxSizing: 'border-box'
   }
 })
 
@@ -36,6 +42,13 @@ const addDeco = (view: EditorView) => {
               to: line.from,
               value: Decoration.line({
                 class: 'cm-quote-block'
+              })
+            })
+            deco.push({
+              from: line.from,
+              to: line.to,
+              value: Decoration.mark({
+                class: 'cm-inner-quote'
               })
             })
             pos = line.to + 1

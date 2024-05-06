@@ -162,7 +162,10 @@ export const images = (): Extension => {
       width: '90%',
       margin: 'auto',
       borderRadius: 'var(--nw-border-radius-md)',
-      boxShadow: 'var(--nw-box-shadow-md)'
+      boxShadow: 'var(--nw-box-shadow-md)',
+      '&:hover': {
+        cursor: 'pointer'
+      }
     },
     '.cm-video-preview': {
       width: '90%',

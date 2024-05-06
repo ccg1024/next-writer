@@ -4,7 +4,7 @@ import { css } from '@emotion/css'
 import useProcessor from '../hooks/useProcessor'
 
 import 'katex/dist/katex.css'
-import { PubSubData } from 'src/types/renderer'
+import { PubSubData } from '_types'
 
 interface PreviewProps {
   doc: string
@@ -43,14 +43,17 @@ const Preview: FC<PreviewProps> = props => {
   const refContainer = useRef<HTMLDivElement>(null)
   const refWrapper = useRef<HTMLDivElement>(null)
   const { doc } = props
-  const content = useProcessor(doc)
+  const content = useProcessor(doc, props.visible)
 
   useEffect(() => {
-    const listener = (_: string, data: PubSubData) => {
-      if (data.type == 'sync-scroll') {
+    const listener = (_: string, payload: PubSubData) => {
+      if (payload.type == 'sync-scroll') {
         if (!refContainer.current) return
 
-        const { line, percent } = data.data as { line: number; percent: number }
+        const { line, percent } = payload.data as {
+          line: number
+          percent: number
+        }
         const doms = refContainer.current.children
         const target = binarySearchDom(doms, line)
         if (!target) return

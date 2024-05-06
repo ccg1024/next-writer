@@ -1,3 +1,4 @@
+// NOTE: duplicate
 import { IpcRendererEvent } from 'electron'
 import { IpcRequestData, IpcResponseData } from '_common_type'
 
@@ -23,12 +24,12 @@ export interface ipc {
   ) => Promise<IpcResponseData>
 }
 
-declare global {
-  interface Window {
-    ipc: ipc
-    _next_writer_rendererConfig: RendererConfig
-  }
-}
+// declare global {
+//   interface Window {
+//     ipc: ipc
+//     _next_writer_rendererConfig: RendererConfig
+//   }
+// }
 
 export type RendererPlugin = {
   typewriter?: boolean
@@ -38,6 +39,9 @@ export type RendererConfig = {
   rendererPlugin: RendererPlugin
   workPath: string
   modified: boolean
+  root?: string
+  fontSize?: string
+  fontFamily?: string
 }
 
 export type FileStatus = readonly 'modified' | 'normal'
@@ -72,4 +76,6 @@ export type WriterConfig = {
   uiFont?: string
   uiFontSize?: string
   editorFontSize?: string
+  focusMode?: boolean
+  typewriter?: boolean
 }

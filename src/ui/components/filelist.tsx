@@ -3,8 +3,9 @@ import styled from '@emotion/styled'
 import { TiMediaRecord, TiDocumentText } from 'react-icons/ti'
 
 import { AnimatePresence, motion } from 'framer-motion'
-import { FileDescriptorContainer } from '_common_type'
 import { Post } from '../libs/utils'
+import { FileDescriptorContainer } from '_types'
+import { ONE_WAY_CHANNEL } from 'src/config/ipc'
 
 const ListBox = styled.div`
   margin: 10px 0;
@@ -52,7 +53,7 @@ export const RecentFileList: FC<Props> = props => {
   function cb(e: MouseEvent) {
     // window.ipc._render_openFile(e.currentTarget.id)
     Post(
-      'render-to-main',
+      ONE_WAY_CHANNEL,
       {
         type: 'open-recent-file',
         data: {

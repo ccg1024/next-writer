@@ -8,6 +8,7 @@ import {
   ViewUpdate,
   WidgetType
 } from '@codemirror/view'
+import { ONE_WAY_CHANNEL } from 'src/config/ipc'
 import { Post } from '../libs/utils'
 
 const theme = EditorView.baseTheme({
@@ -105,7 +106,7 @@ const plugin = ViewPlugin.fromClass(
 
         // some code to open url by system browser
         Post(
-          'render-to-main',
+          ONE_WAY_CHANNEL,
           {
             type: 'open-url-link',
             data: {

@@ -4,7 +4,7 @@ import { BrowserWindow, dialog, OpenDialogOptions } from 'electron'
 import path from 'path'
 import fs from 'fs'
 import { addCache, exitCache, getCache } from './cache'
-import { ReadFileIpcValue, RootWorkstationInfo } from '_common_type'
+import { ReadFileDescriptor, RootWorkstationInfo } from '_types'
 
 /**
  * Unifiling file path between windows system and macos/linux system
@@ -87,7 +87,7 @@ export async function createFileProcess(
  */
 export async function handleOpenFile(
   win: BrowserWindow
-): Promise<ReadFileIpcValue | null> {
+): Promise<ReadFileDescriptor | null> {
   const filePath = await openMarkdownFileProcess(win)
   if (!filePath) return null
 
@@ -109,7 +109,7 @@ export async function handleOpenFile(
  * */
 export async function constructFileData(
   filePath: string
-): Promise<ReadFileIpcValue> {
+): Promise<ReadFileDescriptor> {
   const content = await fs.promises.readFile(filePath, 'utf-8')
   // add cache
   addCache(filePath, {
@@ -123,7 +123,7 @@ export function generateReadFileIpcValue(
   filePath: string,
   content: string,
   isChange = false
-): ReadFileIpcValue {
+): ReadFileDescriptor {
   return {
     content: content,
     fileDescriptor: generateFileDescripter(filePath, isChange)
@@ -154,7 +154,7 @@ export async function handleCreateFile(win: BrowserWindow) {
 
 export async function constructVirtualFileData(
   filePath: string
-): Promise<ReadFileIpcValue> {
+): Promise<ReadFileDescriptor> {
   addCache(filePath, {
     isChange: false,
     content: ''

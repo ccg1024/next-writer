@@ -2,7 +2,7 @@ import { ensureSyntaxTree } from '@codemirror/language'
 import { Extension } from '@codemirror/state'
 import { EditorView, ViewPlugin, ViewUpdate } from '@codemirror/view'
 import PubSub from 'pubsub-js'
-import { HeadNav } from 'src/types/renderer'
+import { HeadNav } from '_types'
 
 const headNavPlugin = ViewPlugin.fromClass(
   class {

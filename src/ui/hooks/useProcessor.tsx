@@ -20,6 +20,7 @@ import { css } from '@emotion/css'
 import { useRunmode } from './useRunmode'
 import { Post } from '../libs/utils'
 import styled from '@emotion/styled'
+import { ONE_WAY_CHANNEL } from 'src/config/ipc'
 
 type PassNode = {
   position?: {
@@ -123,7 +124,7 @@ const Link: FC<HTMLLinkElement> = props => {
     const link = e.target as HTMLLinkElement
     if (link) {
       Post(
-        'render-to-main',
+        ONE_WAY_CHANNEL,
         {
           type: 'open-url-link',
           data: {
@@ -219,12 +220,12 @@ const production = {
   }
 }
 
-const useProcessor = (text: string) => {
+const useProcessor = (text: string, visible: boolean) => {
   const [content, setContent] = useState(createElement(Fragment))
 
   useEffect(() => {
     const _run = async () => {
-      const file = await unified()
+      unified()
         .use(remarkParse)
         .use(remarkGfm)
         .use(remarkMath)
@@ -233,11 +234,15 @@ const useProcessor = (text: string) => {
         // @ts-expect-error: the react types are missing.
         .use(rehypeReact, production)
         .process(text)
-      setContent(file.result)
+        .then(file => {
+          setContent(file.result)
+        })
     }
 
-    _run()
-  }, [text])
+    if (visible) {
+      _run()
+    }
+  }, [text, visible])
 
   return content
 }

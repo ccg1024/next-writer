@@ -1,16 +1,18 @@
 import { useEffect, useState } from 'react'
+import { TWO_WAY_CHANNEL } from 'src/config/ipc'
 import { Post } from '../libs/utils'
 
 export const useWorkStation = (rendererStation: string) => {
   const [station, setStation] = useState('')
 
   useEffect(() => {
-    Post('render-to-main-to-render', {
+    Post(TWO_WAY_CHANNEL, {
       type: 'read-current-workstation'
     })
       .then(res => {
-        const { data } = res
-        if (data) setStation(data as string)
+        if (!res) return
+        const { workPlatform } = res.data
+        if (workPlatform) setStation(workPlatform)
       })
       .catch(err => {
         throw err

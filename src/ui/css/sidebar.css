@@ -1,5 +1,5 @@
 .sidebar-main {
-  width: 200px;
+  width: 220px;
   height: 100%;
   position: relative;
   flex-shrink: 0;
@@ -22,7 +22,7 @@
 }
 
 .broadcast-main {
-  padding-top: 20px;
+  padding-left: 10px;
   padding-right: 10px;
   box-sizing: border-box;
   position: relative;
@@ -44,6 +44,7 @@
 .user-main {
   margin: 10px 0px;
   padding-right: 10px;
+  padding-left: 10px;
   box-sizing: border-box;
   position: relative;
 }

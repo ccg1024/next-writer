@@ -1,5 +1,5 @@
 import { EditorState } from '@codemirror/state'
-import { IpcRequestData } from '_common_type'
+import { IpcRequest } from '_types'
 
 export function reversePath(path: string, sep?: string) {
   const _sep = sep ? sep : '/'
@@ -13,14 +13,11 @@ export function reversePath(path: string, sep?: string) {
  * @param data Optional data sent by ipc request
  * @param single Specify whether it is one-way ipc communication
  * */
-export async function Post(
-  channel: string,
-  data: IpcRequestData,
-  single = false
-) {
+export async function Post(channel: string, data: IpcRequest, single = false) {
   // Make a Post response to main process
   if (single) {
-    return window.ipc._render_post(channel, data)
+    window.ipc._render_post(channel, data)
+    return null
   }
   return window.ipc._invoke_post(channel, data)
 }
@@ -471,4 +468,15 @@ export const throttle = function <T extends unknown[]>(
       timer = null
     }, delay)
   }
+}
+
+export function resolve2path(path1: string, path2: string) {
+  const p1 = path1.endsWith('/') ? path1 : `${path1}/`
+  const p2 = path2.startsWith('./')
+    ? path2.slice(2)
+    : path2.startsWith('/')
+      ? path2.slice(1)
+      : path2
+
+  return `${p1}${p2}`
 }

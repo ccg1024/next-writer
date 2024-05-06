@@ -14,3 +14,6 @@ export const ipcChannel = {
     _invoke_get_info: '_invoke_get_info'
   }
 }
+
+export const ONE_WAY_CHANNEL = 'render-to-main'
+export const TWO_WAY_CHANNEL = 'render-to-main-to-render'

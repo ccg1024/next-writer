@@ -3,12 +3,19 @@ import { TiFolder, TiDocument, TiFolderOpen } from 'react-icons/ti'
 import PubSub from 'pubsub-js'
 import { css } from '@emotion/css'
 import { AddEffect, InlineFlex } from './utils'
-import { PubSubData, RenderNewFileType } from 'src/types/renderer'
-import { getFileBaseName, Post } from '../libs/utils'
-import { RootWorkstationFolderInfo, RootWorkstationInfo } from '_common_type'
+import { getFileBaseName, Post, resolve2path } from '../libs/utils'
 import { useHoverShow } from '../hooks/useHoverShow'
+import {
+  PubSubData,
+  RenderNewFileType,
+  RootWorkstationFolderInfo
+} from '_types'
+import { ONE_WAY_CHANNEL, TWO_WAY_CHANNEL } from 'src/config/ipc'
 
-const Filesystem: FC = (): JSX.Element => {
+interface FilesystemProps {
+  currentFile: string
+}
+const Filesystem: FC<FilesystemProps> = (props): JSX.Element => {
   const [files, setFiles] = useState<Array<string>>([])
   const [folders, setFolders] = useState<Array<RootWorkstationFolderInfo>>([])
   const [showNest, setShowNest] = useState<{ [key: string]: boolean }>({})
@@ -20,13 +27,13 @@ const Filesystem: FC = (): JSX.Element => {
   }, [])
 
   function getFileExplorerInfo(parent?: string) {
-    Post('render-to-main-to-render', {
+    Post(TWO_WAY_CHANNEL, {
       type: 'read-root-workplatform-info'
     })
-      .then(value => {
-        if (!value.data) return
+      .then(res => {
+        if (!res || !res.data) return
 
-        const allInfo = value.data as RootWorkstationInfo
+        const { rootWrokplatformInfo: allInfo } = res.data
 
         setFiles(allInfo.files)
         setFolders(allInfo.folders)
@@ -48,8 +55,8 @@ const Filesystem: FC = (): JSX.Element => {
   }, [])
 
   useEffect(() => {
-    function listener(_: string, data: PubSubData) {
-      if (data.type === 'nw-filesystem-add') {
+    function listener(_: string, payload: PubSubData) {
+      if (payload.type === 'nw-filesystem-add') {
         // since success add file or folder
         // update state from main process
         // NOTE: since update foders data need recursive, it's not
@@ -61,7 +68,7 @@ const Filesystem: FC = (): JSX.Element => {
         //   // setFolders(v => [...v, fileDesc.pathName])
         //   console.log('the folder need recode')
         // }
-        const parent = (data.data as { [key: string]: string }).parent
+        const parent = payload.data.parent as string
         getFileExplorerInfo(parent)
       }
     }
@@ -81,12 +88,14 @@ const Filesystem: FC = (): JSX.Element => {
         parent="."
         showNest={showNest}
         setShowNest={callback}
+        currentFile={props.currentFile}
       />
     </div>
   )
 }
 
 interface RecursiveFileListProps {
+  currentFile: string
   folders: Array<RootWorkstationFolderInfo>
   files: Array<string>
   visible: boolean
@@ -128,6 +137,7 @@ const RecursiveFileList: FC<RecursiveFileListProps> = (props): JSX.Element => {
                   />
                   {folder.subfolders && (
                     <RecursiveFileList
+                      currentFile={props.currentFile}
                       folders={folder.subfolders.folders}
                       files={folder.subfolders.files}
                       visible={showNest[uniq]}
@@ -147,6 +157,7 @@ const RecursiveFileList: FC<RecursiveFileListProps> = (props): JSX.Element => {
                   key={uniq}
                   uniq={uniq}
                   filename={getFileBaseName(file)}
+                  currentFile={props.currentFile}
                 />
               )
             })}
@@ -159,6 +170,7 @@ const RecursiveFileList: FC<RecursiveFileListProps> = (props): JSX.Element => {
 type FilesystemFileItemProps = {
   uniq: string
   filename: string
+  currentFile: string
 }
 const FilesystemFileItem: FC<FilesystemFileItemProps> = props => {
   const { uniq, filename } = props
@@ -167,7 +179,7 @@ const FilesystemFileItem: FC<FilesystemFileItemProps> = props => {
     e.stopPropagation()
     // Make post request
     Post(
-      'render-to-main',
+      ONE_WAY_CHANNEL,
       {
         type: 'open-file',
         data: {
@@ -179,7 +191,23 @@ const FilesystemFileItem: FC<FilesystemFileItemProps> = props => {
   }
 
   return (
-    <div onClick={click} className="filesystem-item" id={uniq}>
+    <div
+      onClick={click}
+      className={css({
+        padding: '10px',
+        borderRadius: '5px',
+        position: 'relative',
+        backgroundColor:
+          props.currentFile ==
+          resolve2path(window._next_writer_rendererConfig.root, uniq)
+            ? 'var(--nw-color-blackAlpha-50)'
+            : 'unset',
+        ':hover': {
+          backgroundColor: 'var(--nw-color-blackAlpha-50)'
+        }
+      })}
+      id={uniq}
+    >
       <InlineFlex>
         <TiDocument className="fixed-flex-item" />
         <span className="text-hide">{filename}</span>

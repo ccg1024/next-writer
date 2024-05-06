@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { AnimateHoverBoxCoords } from './utils'
+import { PubSubData } from '_types'
 
 const MessBody = styled.div`
   padding: 10px;
@@ -18,9 +19,9 @@ const Message = () => {
   useEffect(() => {
     const token = PubSub.subscribe(
       'nw-show-message',
-      (_: string, data: string) => {
-        if (data) {
-          setMess(data)
+      (_: string, payload: PubSubData) => {
+        if (payload.data.message) {
+          setMess(payload.data.message as string)
           setVisible(true)
           setTimeout(() => {
             setVisible(false)

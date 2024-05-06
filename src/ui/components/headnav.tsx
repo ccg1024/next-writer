@@ -2,7 +2,7 @@ import PubSub from 'pubsub-js'
 import React, { useEffect, useState, FC } from 'react'
 import styled from '@emotion/styled'
 import { css } from '@emotion/css'
-import { HeadNav, PubSubData } from 'src/types/renderer'
+import { HeadNav, PubSubData } from '_types'
 import { AnimatePresence, motion } from 'framer-motion'
 
 // const HeadNavContainer = styled.div`
@@ -38,14 +38,15 @@ const HeadNav: FC<HeadNavProps> = props => {
   const [headers, setHeaders] = useState<Array<HeadNav>>([])
   const [section, setSection] = useState(1)
   useEffect(() => {
-    function listener(_: string, data: PubSubData) {
-      if (!data) return
-      if (data.type === 'heads-list') {
-        if (!data.data) return
-        const heads = (data.data as { [key: string]: HeadNav[] }).heads
+    function listener(_: string, payload: PubSubData) {
+      if (!payload) return
+      if (payload.type === 'heads-list') {
+        if (!payload.data) return
+        const heads = (payload.data as unknown as { [key: string]: HeadNav[] })
+          .heads
         setHeaders(heads)
-      } else if (data.type === 'top-head-line') {
-        const line = data.data as { [key: string]: number }
+      } else if (payload.type === 'top-head-line') {
+        const line = payload.data as { [key: string]: number }
         setSection(line.line)
       }
     }
@@ -61,7 +62,7 @@ const HeadNav: FC<HeadNavProps> = props => {
     if (!navitem.id) return
 
     const jumpPos = parseInt(navitem.id.split('-')[1])
-    PubSub.publish('nw-editor-pubsub', { type: 'head-jump', data: jumpPos })
+    PubSub.publish('nw-editor-pubsub', { type: 'head-jump', data: { jumpPos } })
   }
   function getActiveLine(
     headers: Array<HeadNav>,

@@ -1,5 +1,5 @@
 import fs from 'fs'
-import { RootWorkstationFolderInfo, RootWorkstationInfo } from '_common_type'
+import { RootWorkstationFolderInfo, RootWorkstationInfo } from '_types'
 import { writeDefaultConfig } from './file_process'
 
 type MessageType = 'info' | 'error'

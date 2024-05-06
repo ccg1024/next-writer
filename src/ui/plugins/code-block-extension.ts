@@ -15,11 +15,11 @@ import { RangeSetBuilder, Extension } from '@codemirror/state'
 import { ensureSyntaxTree } from '@codemirror/language'
 
 const baseTheme = EditorView.baseTheme({
-  '&light .cm-code-block': {
-    backgroundColor: '#cccccc22 !important',
+  '&light .cm-content > .cm-code-block': {
+    backgroundColor: '#cccccc22',
     fontFamily: 'var(--nw-editor-code-font-family)'
   },
-  '&dark .cm-code-block': {
+  '&dark .cm-content > .cm-code-block': {
     backgroundColor: 'RGBA(0, 0, 0, 0.24)'
   }
 })

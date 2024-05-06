@@ -12,15 +12,17 @@ import {
   writeRootWorkstationInfo
 } from './file_process'
 import { exitCache, getCache, updateCache } from './cache'
-import {
-  AddFileBody,
-  EditorChannel,
-  // InvokeInfoType,
-  IpcRequestData,
-  IpcResponseData
-} from '_common_type'
-import { CacheContent, UpdateCacheContent } from '_window_type'
 import { formatedMessage, updateWorkstationInfo } from './utils'
+import { handleToggleSidebar } from './menu/menu-callback'
+import {
+  AddFileItem,
+  IpcChannelData,
+  IpcRequest,
+  IpcResponse,
+  CacheContent,
+  UpdateCacheContent,
+  Obj
+} from '_types'
 
 async function handleOpenFileFromRenderer(_: unknown, filePath: string) {
   // check whether have cache
@@ -41,7 +43,7 @@ async function handleOpenFileFromRenderer(_: unknown, filePath: string) {
     {
       type: 'readfile',
       value: readFileIpcValue
-    } as EditorChannel
+    } as IpcChannelData
   )
 }
 
@@ -90,23 +92,14 @@ async function handleSave(_: unknown, content: string) {
   })
 }
 
-// In invoke handle, type: read-current-workstation
-// async function handleInvokeGetInfo(
-//   _e: IpcMainInvokeEvent,
-//   type: InvokeInfoType
-// ) {
-//   if (type === 'workstation') {
-//     return global._next_writer_windowConfig.workPlatform
-//   }
-// }
-
-async function listener(_e: IpcMainEvent, req: IpcRequestData) {
+async function listener(_e: IpcMainEvent, req: IpcRequest) {
   if (!req) return
 
   // From filesystem components
   if (req.type === 'open-file') {
     let readFileIpcValue = null
-    const filePath = req.data.filePath as string
+    const _data = req.data as Obj
+    const filePath = _data.filePath as string
     if (!filePath) throw new Error('The request data prop `filePath` is empty.')
     const root = global._next_writer_windowConfig.root
     const fullpath = filePath.startsWith('./')
@@ -129,20 +122,23 @@ async function listener(_e: IpcMainEvent, req: IpcRequestData) {
       {
         type: 'readfile',
         value: readFileIpcValue
-      } as EditorChannel
+      } as IpcChannelData
     )
   } else if (req.type === 'open-recent-file') {
     // From filelist components open recent file
-    const filePath = <string>req.data.filePath
+    const _data = req.data as Obj
+    const filePath = <string>_data.filePath
     if (filePath) handleOpenFileFromRenderer(null, filePath)
   } else if (req.type === 'update-cache') {
     const update = <UpdateCacheContent>req.data
     handleUpdateCache(null, update)
   } else if (req.type === 'save-file') {
-    const content = req.data.content
+    const _data = req.data as Obj
+    const content = _data.content
     if (typeof content === 'string') handleSave(null, content)
   } else if (req.type === 'open-url-link') {
-    const url = req.data.url
+    const _data = req.data as Obj
+    const url = _data.url
 
     if (typeof url !== 'string') return
 
@@ -151,13 +147,15 @@ async function listener(_e: IpcMainEvent, req: IpcRequestData) {
       return
     }
     shell.openExternal(url)
+  } else if (req.type === 'render-toggle-sidebar') {
+    handleToggleSidebar(global._next_writer_windowConfig.win)
   }
 }
 
 async function handler(
   _e: IpcMainInvokeEvent,
-  req: IpcRequestData
-): Promise<IpcResponseData> {
+  req: IpcRequest
+): Promise<IpcResponse> {
   if (!req) return
 
   const root = global._next_writer_windowConfig.root
@@ -167,7 +165,7 @@ async function handler(
   if (req.type === 'add-file-from-render') {
     // Add a new file/folder to root dir
 
-    const reqBody = req.data as AddFileBody
+    const reqBody = req.data as AddFileItem
 
     const subpath =
       reqBody.option === 'file' ? reqBody.path + '.md' : reqBody.path
@@ -197,44 +195,35 @@ async function handler(
     }
 
     return {
-      data: 'success'
+      data: { status: 'success' }
     }
   } else if (req.type === 'read-root-workplatform-info') {
     return {
-      data: global._next_writer_windowConfig.rootWorkplatformInfo
+      data: {
+        rootWrokplatformInfo:
+          global._next_writer_windowConfig.rootWorkplatformInfo
+      }
     }
   } else if (req.type === 'read-current-workstation') {
     return {
-      data: global._next_writer_windowConfig.workPlatform
+      data: { workPlatform: global._next_writer_windowConfig.workPlatform }
     }
   } else if (req.type === 'read-render-config') {
     return {
-      data: global._next_writer_windowConfig.renderConfig
+      data: { renderConfig: global._next_writer_windowConfig.renderConfig }
+    }
+  } else if (req.type === 'process-config') {
+    return {
+      data: { root: global._next_writer_windowConfig.root }
     }
   }
 }
 
 export function mountIPC() {
   // initial all ipc process to recieve message from renderer
-  // ipcMain.on(
-  //   ipcChannel['render-to-main']._render_open_file,
-  //   handleOpenFileFromRenderer
-  // )
-  // ipcMain.on(
-  //   ipcChannel['render-to-main']._render_update_cache,
-  //   handleUpdateCache
-  // )
-
-  // ipcMain.on(ipcChannel['render-to-main']._render_save_file, handleSave)
 
   // Superintendent listens
   ipcMain.on('render-to-main', listener)
-
-  // handle invoke ipc
-  // ipcMain.handle(
-  //   ipcChannel['invoke-channel']._invoke_get_info,
-  //   handleInvokeGetInfo
-  // )
 
   ipcMain.handle('render-to-main-to-render', handler)
 }

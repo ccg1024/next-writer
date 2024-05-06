@@ -1,3 +1,4 @@
+// NOTE: duplicate
 import type { BrowserWindow } from 'electron'
 import { RootWorkstationInfo } from '_common_type'
 
@@ -29,9 +30,9 @@ declare module '_window_type' {
   }
 }
 
-declare global {
-  namespace globalThis {
-    /* eslint-disable no-var */
-    var _next_writer_windowConfig: WindowConfig
-  }
-}
+// declare global {
+//   namespace globalThis {
+//     /* eslint-disable no-var */
+//     var _next_writer_windowConfig: WindowConfig
+//   }
+// }

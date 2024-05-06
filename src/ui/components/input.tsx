@@ -1,10 +1,11 @@
+import PubSub from 'pubsub-js'
 import React, { FC, useEffect, useRef, useState } from 'react'
 import styled from '@emotion/styled'
 import { css } from '@emotion/css'
 import { CloseIcon, Mask, Spinner } from './utils'
-import { PubSubData, RenderNewFileType } from 'src/types/renderer'
 import { fileAndFolderNameCheck, Post } from '../libs/utils'
-import { AddFileBody } from '_common_type'
+import { RenderNewFileType, AddFileItem, PubSubData } from '_types'
+import { TWO_WAY_CHANNEL } from 'src/config/ipc'
 
 const InputWraper = styled.div`
   padding: 10px;
@@ -73,17 +74,18 @@ export const GlobalInput: FC<GlobalInputProps> = (props): JSX.Element => {
 
     if (!replyInfo.current) throw 'the reply channel is empty'
 
-    const postData: AddFileBody = {
+    const postData: AddFileItem = {
       path: [replyInfo.current.pathPrefix, inputInfo].join('/'),
       option: replyInfo.current.pathType
     }
 
-    Post('render-to-main-to-render', {
+    Post(TWO_WAY_CHANNEL, {
       type: 'add-file-from-render',
       data: postData
     })
       .then(res => {
-        if (res.data !== 'success')
+        if (!res) return
+        if (res.data.status !== 'success')
           setError('The response body data not equal success')
 
         PubSub.publish(replyInfo.current.replyChannel, {
@@ -109,14 +111,14 @@ export const GlobalInput: FC<GlobalInputProps> = (props): JSX.Element => {
     setEditable(false)
   }
 
-  function pubsubListen(_: string, data: PubSubData) {
+  function pubsubListen(_: string, payload: PubSubData) {
     // Listen to other component messages
     // and return input information in form submit.
     // data.data represents the component that
     // sends the message and form will use is to reply message.
-    if (!data) return
+    if (!payload) return
 
-    const _data = data.data as RenderNewFileType
+    const _data = payload.data as RenderNewFileType
 
     replyInfo.current = _data
     // remove preview error

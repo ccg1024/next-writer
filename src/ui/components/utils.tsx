@@ -1,7 +1,13 @@
 import styled from '@emotion/styled'
 import { css } from '@emotion/css'
 import { AnimatePresence, motion } from 'framer-motion'
-import React, { FC, PropsWithChildren, ReactNode } from 'react'
+import React, {
+  FC,
+  PropsWithChildren,
+  ReactNode,
+  useEffect,
+  useRef
+} from 'react'
 import { createPortal } from 'react-dom'
 import { TiFolderAdd, TiDocumentAdd } from 'react-icons/ti'
 
@@ -176,6 +182,7 @@ export const CloseIcon: FC<CloseIconProps> = props => {
     height: var(--nw-size-md);
     position: relative;
     box-sizing: border-box;
+    outline: unset;
   `
   const horizon = css`
     box-sizing: border-box;
@@ -239,5 +246,51 @@ export const AddEffect: FC<AddEffectProps> = props => {
         ></AnimateClickDiv>
       </InlineFlex>
     </div>
+  )
+}
+
+export function Dialog(props: PropsWithChildren) {
+  const refDialog = useRef(null)
+
+  useEffect(() => {
+    if (!refDialog.current) return
+
+    const dialog = refDialog.current
+    dialog.showModal()
+  }, [])
+
+  const cls = css({
+    border: 'unset',
+    outline: 'unset',
+    borderRadius: 'var(--nw-border-radius-md)',
+    '&::backdrop': {
+      background: 'rgba(0, 0, 0, 0.25)'
+    }
+  })
+
+  const closeDialog = () => {
+    if (!refDialog.current) return
+
+    refDialog.current.close()
+  }
+  return (
+    <dialog ref={refDialog} className={cls}>
+      <div
+        style={{
+          position: 'absolute',
+          right: '0.5em',
+          top: '0.5em'
+        }}
+      >
+        <CloseIcon onClick={closeDialog} />
+      </div>
+      <div
+        style={{
+          padding: '1em'
+        }}
+      >
+        {props.children}
+      </div>
+    </dialog>
   )
 }

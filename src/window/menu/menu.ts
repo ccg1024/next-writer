@@ -11,7 +11,8 @@ import {
   handleOpenFile,
   openImageFileProcess
 } from '../file_process'
-import { EditorChannel, HomeChannel, TypeWriterIpcValue } from '_common_type'
+import { IpcChannelData } from '_types'
+import { handleToggleSidebar } from './menu-callback'
 
 // menu callback
 async function editorTypewriter(
@@ -20,18 +21,19 @@ async function editorTypewriter(
   _event: KeyboardEvent
 ) {
   if (!win) return
+  global._next_writer_windowConfig.renderConfig.typewriter = menuItem.checked
   win.webContents.send(ipcChannel['main-to-render'].editor_component, {
     type: 'typewriter',
     value: {
       checked: menuItem.checked
-    } as TypeWriterIpcValue
-  } as EditorChannel)
+    }
+  } as IpcChannelData)
 }
 
 async function openFile(_: unknown, win: BrowserWindow) {
   const readFileIpcValue = await handleOpenFile(win)
 
-  const editorChannelValue: EditorChannel = {
+  const editorChannelValue: IpcChannelData = {
     type: 'readfile',
     value: readFileIpcValue
   }
@@ -48,7 +50,7 @@ async function saveFile(_: unknown, win: BrowserWindow) {
   win.webContents.send(ipcChannel['main-to-render'].editor_component, {
     type: 'writefile',
     value: {}
-  } as EditorChannel)
+  } as IpcChannelData)
 }
 
 async function createFile(_: unknown, win: BrowserWindow) {
@@ -56,7 +58,7 @@ async function createFile(_: unknown, win: BrowserWindow) {
 
   if (!readFileIpcValue) return
 
-  const editorChannelValue: EditorChannel = {
+  const editorChannelValue: IpcChannelData = {
     type: 'readfile',
     value: readFileIpcValue
   }
@@ -78,29 +80,14 @@ async function insertImage(
 
   win.webContents.send(ipcChannel['main-to-render'].editor_component, {
     type: 'insertImage',
-    value: imgPath
-  } as EditorChannel)
+    value: {
+      imgPath
+    }
+  } as IpcChannelData)
 }
 
-async function toggleSideBar(
-  menuItem: MenuItem,
-  win: BrowserWindow,
-  _: unknown
-) {
-  if (!win) return
-
-  win.webContents.send(ipcChannel['main-to-render'].home_component, {
-    type: 'hideSidebar',
-    value: {
-      checked: menuItem.checked
-    }
-  } as HomeChannel)
-  win.setWindowButtonVisibility(!menuItem.checked)
-
-  if (win.isFullScreen()) {
-    win.setWindowButtonVisibility(true)
-  }
-  global._next_writer_windowConfig.menuStatus.sideBarVisble = !menuItem.checked
+async function toggleSideBar(_m: MenuItem, win: BrowserWindow, _: unknown) {
+  handleToggleSidebar(win)
 }
 
 async function toggleHeadNav(
@@ -115,33 +102,19 @@ async function toggleHeadNav(
     value: {
       checked: menuItem.checked
     }
-  } as HomeChannel)
-}
-
-async function toggleZenMode(
-  menuItem: MenuItem,
-  win: BrowserWindow,
-  _: unknown
-) {
-  if (!win) return
-
-  win.webContents.send(ipcChannel['main-to-render'].home_component, {
-    type: 'zenMode',
-    value: {
-      checked: menuItem.checked
-    }
-  } as HomeChannel)
+  } as IpcChannelData)
 }
 
 async function toggleFocusMode(m: MenuItem, win: BrowserWindow) {
   if (!win) return
 
+  global._next_writer_windowConfig.renderConfig.focusMode = m.checked
   win.webContents.send(ipcChannel['main-to-render'].home_component, {
     type: 'focusMode',
     value: {
       checked: m.checked
     }
-  } as HomeChannel)
+  } as IpcChannelData)
 }
 
 async function preview(m: MenuItem, win: BrowserWindow) {
@@ -152,7 +125,7 @@ async function preview(m: MenuItem, win: BrowserWindow) {
     value: {
       checked: m.checked
     }
-  } as HomeChannel)
+  } as IpcChannelData)
 }
 
 async function hideEditor(m: MenuItem, win: BrowserWindow) {
@@ -163,7 +136,7 @@ async function hideEditor(m: MenuItem, win: BrowserWindow) {
     value: {
       checked: m.checked
     }
-  } as HomeChannel)
+  } as IpcChannelData)
 }
 
 export default function createMenus(): MenuItemConstructorOptions[] {
@@ -213,10 +186,8 @@ export default function createMenus(): MenuItemConstructorOptions[] {
         { role: 'toggleDevTools' },
         { type: 'separator' },
         {
-          label: 'hide sidebar',
+          label: 'toggle sidebar',
           click: toggleSideBar,
-          type: 'checkbox',
-          checked: false,
           accelerator: isMac ? 'Cmd+Shift+s' : 'Ctrl+Shift+s'
         },
         {
@@ -227,17 +198,10 @@ export default function createMenus(): MenuItemConstructorOptions[] {
           accelerator: isMac ? 'Cmd+Shift+h' : 'Ctrl+Shift+h'
         },
         {
-          label: 'zen mode',
-          click: toggleZenMode,
-          type: 'checkbox',
-          checked: false,
-          accelerator: isMac ? 'Cmd+Option+z' : 'Ctrl+Alt+z'
-        },
-        {
           label: 'focus mode',
           click: toggleFocusMode,
           type: 'checkbox',
-          checked: true
+          checked: !!global._next_writer_windowConfig.renderConfig.focusMode
         },
         {
           label: 'preview',
@@ -261,10 +225,10 @@ export default function createMenus(): MenuItemConstructorOptions[] {
         { role: 'paste' },
         { type: 'separator' },
         {
-          label: 'close typewriter',
+          label: 'typewriter',
           click: editorTypewriter,
           type: 'checkbox',
-          checked: false
+          checked: !!global._next_writer_windowConfig.renderConfig.typewriter
         },
         { type: 'separator' },
         { label: 'insert image', click: insertImage }

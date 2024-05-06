@@ -19,13 +19,13 @@ export const defaultTheme = EditorView.theme({
     outline: 'none'
   },
   '&.cm-focused .cm-cursor': {
-    transition: 'left 40ms linear, top 40ms linear',
+    transition: 'left 80ms ease-out, top 80ms ease-out',
     borderLeft: '3.2px solid black'
   },
   '.cm-scroller': {
     fontFamily: 'var(--nw-editor-font-family)',
-    marginTop: '5px',
-    // overflow: 'unset'
+    marginTop: '20px',
+    marginBottom: '20px',
     padding: '0 10%',
     justifyContent: 'center'
   },
@@ -49,9 +49,8 @@ export const defaultTheme = EditorView.theme({
   '.cm-content': {
     paddingTop: '50vh',
     paddingBottom: '50vh',
-    wordBreak: 'break-all',
     textAlign: 'left',
-    maxWidth: '600px',
+    maxWidth: '580px',
     lineHeight: '1.5'
   },
   '.cm-activeLineGutter': {
@@ -198,7 +197,8 @@ export const defaultSyntaxHighlighting = HighlightStyle.define([
   },
   {
     tag: markTags.inlineCode,
-    color: defaultColor.content.inlineCode,
+    color: 'black',
+    padding: '0 4px',
     backgroundColor: 'rgba(175, 184, 193, 0.2)',
     borderRadius: 'var(--nw-border-radius-sm)',
     fontFamily: 'var(--nw-editor-code-font-family)'

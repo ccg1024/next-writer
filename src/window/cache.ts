@@ -1,5 +1,5 @@
 // cache system to reduce file operation.
-import { CacheContent } from '_window_type'
+import { CacheContent } from '_types'
 
 interface CacheManager {
   init: () => void

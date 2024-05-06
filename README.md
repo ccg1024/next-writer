@@ -23,3 +23,12 @@ $ npm start
 ```shell
 $ npm run make
 ```
+
+## feature
+
+- Align list: Align word-wrapped list content
+- Image preview: Provides image inline preview function
+- Typewriter mode
+- Hybrid mode: Hide some grammar marks, like Emphasis mark, StrongEmphasis mark, etc
+- Link interaction: Embedded interactive link button, click to have the default browser open the link
+- Full screen image: Embedded images can be displayed in full screen and provide zoom-in and zoom-out operations

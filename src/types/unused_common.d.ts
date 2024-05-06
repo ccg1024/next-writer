@@ -1,3 +1,4 @@
+// NOTE: duplicate
 declare module '_common_type' {
   type NormalObj = {
     [key: string]: string | boolean | number | null | undefined | object
@@ -9,9 +10,8 @@ declare module '_common_type' {
 
   export type HomeChannel = {
     type:
-      | readonly 'hideSidebar'
+      | readonly 'toggleSidebar'
       | 'toggleHeadNav'
-      | 'zenMode'
       | 'focusMode'
       | 'preview'
       | 'hideEditor'
