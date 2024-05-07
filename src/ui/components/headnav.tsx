@@ -102,7 +102,8 @@ const HeadNav: FC<HeadNavProps> = props => {
               width: '200px',
               overflowX: 'hidden',
               overflowY: 'auto',
-              flexShrink: 0
+              flexShrink: 0,
+              borderLeft: '1px solid #ccc'
             })}
             onClick={handleClick}
             initial={{ width: 0 }}

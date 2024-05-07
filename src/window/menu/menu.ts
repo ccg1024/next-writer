@@ -86,26 +86,24 @@ async function insertImage(
   } as IpcChannelData)
 }
 
-async function toggleSideBar(_m: MenuItem, win: BrowserWindow, _: unknown) {
+function toggleSideBar(_m: MenuItem, win: BrowserWindow, _: unknown) {
   handleToggleSidebar(win)
 }
 
-async function toggleHeadNav(
-  menuItem: MenuItem,
-  win: BrowserWindow,
-  _: unknown
-) {
+function toggleHeadNav(_m: MenuItem, win: BrowserWindow, _: unknown) {
   if (!win) return
 
+  const oldValue = !!global._next_writer_windowConfig.menuStatus.hideNavVisible
   win.webContents.send(ipcChannel['main-to-render'].home_component, {
     type: 'toggleHeadNav',
     value: {
-      checked: menuItem.checked
+      checked: !oldValue
     }
   } as IpcChannelData)
+  global._next_writer_windowConfig.menuStatus.hideNavVisible = !oldValue
 }
 
-async function toggleFocusMode(m: MenuItem, win: BrowserWindow) {
+function toggleFocusMode(m: MenuItem, win: BrowserWindow) {
   if (!win) return
 
   global._next_writer_windowConfig.renderConfig.focusMode = m.checked
@@ -117,26 +115,32 @@ async function toggleFocusMode(m: MenuItem, win: BrowserWindow) {
   } as IpcChannelData)
 }
 
-async function preview(m: MenuItem, win: BrowserWindow) {
+function preview(_m: MenuItem, win: BrowserWindow) {
   if (!win) return
 
+  const oldValue = !!global._next_writer_windowConfig.menuStatus.preview
   win.webContents.send(ipcChannel['main-to-render'].home_component, {
     type: 'preview',
     value: {
-      checked: m.checked
+      checked: !oldValue
     }
   } as IpcChannelData)
+  global._next_writer_windowConfig.menuStatus.preview = !oldValue
+  global._next_writer_windowConfig.menuStatus.livePreview = false
 }
 
-async function hideEditor(m: MenuItem, win: BrowserWindow) {
+function livePreview(_m: MenuItem, win: BrowserWindow) {
   if (!win) return
 
+  const oldValue = !!global._next_writer_windowConfig.menuStatus.livePreview
   win.webContents.send(ipcChannel['main-to-render'].home_component, {
-    type: 'hideEditor',
+    type: 'livePreview',
     value: {
-      checked: m.checked
+      checked: !oldValue
     }
   } as IpcChannelData)
+  global._next_writer_windowConfig.menuStatus.livePreview = !oldValue
+  global._next_writer_windowConfig.menuStatus.preview = false
 }
 
 export default function createMenus(): MenuItemConstructorOptions[] {
@@ -191,30 +195,24 @@ export default function createMenus(): MenuItemConstructorOptions[] {
           accelerator: isMac ? 'Cmd+Shift+s' : 'Ctrl+Shift+s'
         },
         {
-          label: 'show headNav',
+          label: 'toggle headNav',
           click: toggleHeadNav,
-          type: 'checkbox',
-          checked: false,
           accelerator: isMac ? 'Cmd+Shift+h' : 'Ctrl+Shift+h'
+        },
+        {
+          label: 'toggle preview',
+          click: preview,
+          accelerator: isMac ? 'Cmd+Shift+p' : 'Ctrl+Shift+p'
+        },
+        {
+          label: 'live preview',
+          click: livePreview
         },
         {
           label: 'focus mode',
           click: toggleFocusMode,
           type: 'checkbox',
           checked: !!global._next_writer_windowConfig.renderConfig.focusMode
-        },
-        {
-          label: 'preview',
-          click: preview,
-          type: 'checkbox',
-          checked: false,
-          accelerator: isMac ? 'Cmd+Shift+p' : 'Ctrl+Shift+p'
-        },
-        {
-          label: 'hide editor',
-          click: hideEditor,
-          type: 'checkbox',
-          checked: false
         }
       ]
     },

@@ -89,7 +89,7 @@ const Preview: FC<PreviewProps> = props => {
     boxSizing: 'border-box',
     wordBreak: 'break-all',
     backgroundColor: 'white',
-    borderRadius: 'var(--nw-border-radius-sm)'
+    borderLeft: '1px solid #ccc'
   })
   const inner = css({
     width: '80%',
@@ -99,15 +99,7 @@ const Preview: FC<PreviewProps> = props => {
   return (
     <>
       {props.visible && (
-        <div
-          className={styles}
-          id="preview"
-          style={{
-            marginLeft: props.hideEditor ? '0' : '10px',
-            boxShadow: props.hideEditor ? 'var(--nw-box-shadow-md)' : 'unset'
-          }}
-          ref={refWrapper}
-        >
+        <div className={styles} id="preview" ref={refWrapper}>
           <div ref={refContainer} className={inner}>
             {content}
           </div>

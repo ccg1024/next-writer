@@ -34,7 +34,10 @@ global._next_writer_windowConfig = {
   rootWorkplatformInfo: { folders: [], files: [] },
   renderConfig: {},
   menuStatus: {
-    sideBarVisible: true
+    sideBarVisible: true,
+    hideNavVisible: false,
+    preview: false,
+    livePreview: false
   }
 }
 
@@ -84,7 +87,10 @@ const createWindow = (): void => {
   global._next_writer_windowConfig.win = mainWindow
   global._next_writer_windowConfig.renderConfig = rendererConfig
   global._next_writer_windowConfig.menuStatus = {
-    sideBarVisible: true
+    sideBarVisible: true,
+    hideNavVisible: false,
+    preview: false,
+    livePreview: false
   }
   initialRootWorkplatform()
 

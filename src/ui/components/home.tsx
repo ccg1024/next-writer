@@ -47,12 +47,26 @@ const Home = () => {
     preview: (data: IpcChannelData) => {
       const { checked } = data.value
 
-      setShowPreview(checked)
+      if (checked) {
+        // just show preview
+        setShowPreview(true)
+        setHideEditor(true)
+        return
+      }
+
+      setShowPreview(false)
+      setHideEditor(false)
     },
-    hideEditor: (data: IpcChannelData) => {
+    livePreview: (data: IpcChannelData) => {
       const { checked } = data.value
 
-      setHideEditor(checked)
+      if (checked) {
+        setHideEditor(false)
+        setShowPreview(true)
+        return
+      }
+      setHideEditor(false)
+      setShowPreview(false)
     }
   }
 

@@ -24,7 +24,7 @@ const homeChannel = [
   'toggleHeadNav',
   'focusMode',
   'preview',
-  'hideEditor'
+  'livePreview'
 ] as const
 export type HomeChannelType = (typeof homeChannel)[number]
 
@@ -164,6 +164,9 @@ export type UpdateCacheContent = {
 
 export type MenuStatus = {
   sideBarVisible: boolean
+  hideNavVisible: boolean
+  preview: boolean
+  livePreview: boolean
 }
 
 export type WindowConfig = {

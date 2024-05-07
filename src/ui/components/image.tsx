@@ -4,6 +4,7 @@ import { css } from '@emotion/css'
 import { createPortal } from 'react-dom'
 import { TiZoomInOutline, TiZoomOutOutline } from 'react-icons/ti'
 import { PubSubData } from '_types'
+import { motion } from 'framer-motion'
 
 export const HoverImage: FC = () => {
   const [visible, setVisible] = useState(false)
@@ -38,7 +39,10 @@ export const HoverImage: FC = () => {
     refImag.current.width -= 100
   }
   const dom = visible && (
-    <div
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
       id="hover-image-container"
       className={css({
         position: 'fixed',
@@ -57,8 +61,7 @@ export const HoverImage: FC = () => {
           height: '100%',
           top: 0,
           left: 0,
-          backgroundColor: 'rgba(0,0,0,0.5)',
-          backdropFilter: 'blur(3px)'
+          backgroundColor: 'rgba(0,0,0,0.5)'
         })}
         onClick={() => setVisible(false)}
       ></div>
@@ -121,7 +124,7 @@ export const HoverImage: FC = () => {
           })}
         />
       </div>
-    </div>
+    </motion.div>
   )
   return createPortal(dom, document.body)
 }

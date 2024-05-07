@@ -10,7 +10,6 @@ import Dividing from './dividing'
 import { RecentFileList } from './filelist'
 
 import '../css/sidebar.css'
-import { GlobalMask } from './utils'
 import { AnimatePresence, motion } from 'framer-motion'
 import { css } from '@emotion/css'
 import { FileDescriptor, FileDescriptorContainer, PubSubData } from '_types'
@@ -122,7 +121,6 @@ const SideBar: FC<Props> = (props): JSX.Element => {
               />
             </VerticalScrollBox>
             <Resizer parentRef={sidebarRef} minWidth={220} />
-            <GlobalMask isMediaControl={true} />
           </motion.div>
         )}
       </AnimatePresence>

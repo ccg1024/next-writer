@@ -1,7 +1,7 @@
 {
   "name": "next-writer",
   "productName": "next-writer",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "A refectored version of the imarkdown project, focusing on hybrid editing mode",
   "main": ".webpack/main",
   "scripts": {

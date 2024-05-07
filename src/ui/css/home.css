@@ -16,6 +16,10 @@
   --nw-color-blackAlpha-200: rgba(0, 0, 0, 0.24);
   --nw-color-blackAlpha-300: rgba(0, 0, 0, 0.32);
   --nw-color-blackAlpha-400: rgba(0, 0, 0, 0.4);
+  --nw-color-gray-50: #f7fafc;
+  --nw-color-gray-100: #edf2f7;
+  --nw-color-gray-200: #e2e8f0;
+  --nw-color-gray-300: #cbd5e0;
   --nw-border-radius-sm: 5px;
   --nw-border-radius-md: 10px;
   --nw-border-radius-lg: 15px;
@@ -55,7 +59,7 @@
   box-sizing: border-box;
   position: relative;
   height: 100vh;
-  background-color: var(--nw-color-whiteAlpha-600);
+  /* background-color: var(--nw-color-whiteAlpha-600); */
   -webkit-app-region: drag;
 }
 
@@ -72,7 +76,8 @@
   flex-basis: 0;
   flex-shrink: 0;
   background-color: #ffffff;
-  box-shadow: 0px 0px 10px #878787;
+  /* box-shadow: 0px 0px 10px #878787; */
+  border-left: 1px solid #ccc;
   font-size: 16px;
   position: relative;
 }

@@ -8,18 +8,18 @@
   font-size: var(--nw-ui-font-size);
 }
 
-@media screen and (max-width: 700px) {
-  .sidebar-main {
-    position: absolute;
-    left: 0;
-    top: 0;
-    box-shadow: var(--nw-box-shadow-lg);
-    padding-left: 10px;
-    background-color: white;
-    z-index: 100;
-    border-radius: var(--nw-border-radius-sm);
-  }
-}
+/* @media screen and (max-width: 700px) { */
+/*   .sidebar-main { */
+/*     position: absolute; */
+/*     left: 0; */
+/*     top: 0; */
+/*     box-shadow: var(--nw-box-shadow-lg); */
+/*     padding-left: 10px; */
+/*     background-color: white; */
+/*     z-index: 100; */
+/*     border-radius: var(--nw-border-radius-sm); */
+/*   } */
+/* } */
 
 .broadcast-main {
   padding-left: 10px;
