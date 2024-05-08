@@ -1,10 +1,9 @@
-import PubSub from 'pubsub-js'
 import styled from '@emotion/styled'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { AnimateHoverBoxCoords } from './utils'
-import { PubSubData } from '_types'
+import { sub, unsub } from '../libs/pubsub'
 
 const MessBody = styled.div`
   padding: 10px;
@@ -17,23 +16,33 @@ const Message = () => {
   const [mess, setMess] = useState('')
 
   useEffect(() => {
-    const token = PubSub.subscribe(
-      'nw-show-message',
-      (_: string, payload: PubSubData) => {
-        if (payload.data.message) {
-          setMess(payload.data.message as string)
-          setVisible(true)
-          setTimeout(() => {
-            setVisible(false)
-          }, 3000)
-        }
+    // const token = PubSub.subscribe(
+    //   'nw-show-message',
+    //   (_: string, payload: PubSubData) => {
+    //     if (payload.data.message) {
+    //       setMess(payload.data.message as string)
+    //       setVisible(true)
+    //       setTimeout(() => {
+    //         setVisible(false)
+    //       }, 3000)
+    //     }
+    //   }
+    // )
+    const token = sub('nw-show-message', (_, payload) => {
+      if (payload.data.message) {
+        setMess(payload.data.message)
+        setVisible(true)
+        setTimeout(() => {
+          setVisible(false)
+        }, 3000)
       }
-    )
+    })
 
     return () => {
-      PubSub.unsubscribe(token)
+      // PubSub.unsubscribe(token)
+      unsub(token)
     }
-  })
+  }, [])
 
   const mssJSX = (
     <AnimateHoverBoxCoords x="right" y="top" yOffset={'20px'} xOffset={'10px'}>

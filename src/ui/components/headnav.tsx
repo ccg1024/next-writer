@@ -1,9 +1,9 @@
-import PubSub from 'pubsub-js'
 import React, { useEffect, useState, FC } from 'react'
 import styled from '@emotion/styled'
 import { css } from '@emotion/css'
-import { HeadNav, PubSubData } from '_types'
+import { HeadNav } from '_types'
 import { AnimatePresence, motion } from 'framer-motion'
+import { pub, sub, unsub } from '../libs/pubsub'
 
 // const HeadNavContainer = styled.div`
 //   width: 200px;
@@ -38,22 +38,34 @@ const HeadNav: FC<HeadNavProps> = props => {
   const [headers, setHeaders] = useState<Array<HeadNav>>([])
   const [section, setSection] = useState(1)
   useEffect(() => {
-    function listener(_: string, payload: PubSubData) {
+    // function listener(_: string, payload: PubSubData) {
+    //   if (!payload) return
+    //   if (payload.type === 'heads-list') {
+    //     if (!payload.data) return
+    //     const heads = (payload.data as unknown as { [key: string]: HeadNav[] })
+    //       .heads
+    //     setHeaders(heads)
+    //   } else if (payload.type === 'top-head-line') {
+    //     const line = payload.data as { [key: string]: number }
+    //     setSection(line.line)
+    //   }
+    // }
+    // const token = PubSub.subscribe('nw-head-nav-pubsub', listener)
+    const token = sub('nw-head-nav-pubsub', (_, payload) => {
       if (!payload) return
       if (payload.type === 'heads-list') {
         if (!payload.data) return
-        const heads = (payload.data as unknown as { [key: string]: HeadNav[] })
-          .heads
+        const heads = payload.data.heads
         setHeaders(heads)
       } else if (payload.type === 'top-head-line') {
-        const line = payload.data as { [key: string]: number }
+        const line = payload.data
         setSection(line.line)
       }
-    }
-    const token = PubSub.subscribe('nw-head-nav-pubsub', listener)
+    })
 
     return () => {
-      PubSub.unsubscribe(token)
+      // PubSub.unsubscribe(token)
+      unsub(token)
     }
   }, [])
 
@@ -62,7 +74,8 @@ const HeadNav: FC<HeadNavProps> = props => {
     if (!navitem.id) return
 
     const jumpPos = parseInt(navitem.id.split('-')[1])
-    PubSub.publish('nw-editor-pubsub', { type: 'head-jump', data: { jumpPos } })
+    // PubSub.publish('nw-editor-pubsub', { type: 'head-jump', data: { jumpPos } })
+    pub('nw-editor-pubsub', { type: 'head-jump', data: { jumpPos } })
   }
   function getActiveLine(
     headers: Array<HeadNav>,

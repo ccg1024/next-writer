@@ -1,11 +1,10 @@
-import PubSub from 'pubsub-js'
 import { css } from '@emotion/css'
 import { FC, MouseEvent, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import twemoji from 'twemoji'
 
 import { emojiList } from '../libs/utils'
-import { PubSubData } from '_types'
+import { pub, sub, unsub } from '../libs/pubsub'
 
 const Emoji = () => {
   const refEmoji = useRef<HTMLDivElement>(null)
@@ -60,10 +59,11 @@ const Emoji = () => {
     if (!['SPAN', 'IMG'].includes(target.tagName)) return
 
     const _emoji = target.getAttribute('alt')
-    PubSub.publish('nw-editor-pubsub', {
-      type: 'insert-emoji',
-      data: { emoji: _emoji }
-    })
+    // PubSub.publish('nw-editor-pubsub', {
+    //   type: 'insert-emoji',
+    //   data: { emoji: _emoji }
+    // })
+    pub('nw-editor-pubsub', { type: 'insert-emoji', data: { emoji: _emoji } })
   }
 
   return <div className={wrapCls} ref={refEmoji} onClick={click}></div>
@@ -82,27 +82,37 @@ const FloatEmoji: FC<FloatEmojiProps> = props => {
   })
 
   useEffect(() => {
-    const listener = (_: string, payload: PubSubData) => {
+    // const listener = (_: string, payload: PubSubData) => {
+    //   if (payload.type === 'close') {
+    //     setVisible(false)
+    //   } else if (payload.type === 'open') {
+    //     const pos = payload.data as { top: number; left: number }
+    //     setVisible(true)
+    //     setPosition(pos)
+    //   }
+    // }
+    // const token = PubSub.subscribe('nw-float-emoji-pubsub', listener)
+    const token = sub('nw-float-emoji-pubsub', (_, payload) => {
       if (payload.type === 'close') {
         setVisible(false)
       } else if (payload.type === 'open') {
-        const pos = payload.data as { top: number; left: number }
+        const { top, left } = payload.data
         setVisible(true)
-        setPosition(pos)
+        setPosition({ top, left })
       }
-    }
-    const token = PubSub.subscribe('nw-float-emoji-pubsub', listener)
+    })
 
     // add click close
     function clickClose() {
       setVisible(false)
     }
 
-    document.addEventListener('click', clickClose)
+    document.addEventListener('mousedown', clickClose)
 
     return () => {
-      PubSub.unsubscribe(token)
-      document.removeEventListener('click', clickClose)
+      // PubSub.unsubscribe(token)
+      unsub(token)
+      document.removeEventListener('mousedown', clickClose)
     }
   }, [])
 

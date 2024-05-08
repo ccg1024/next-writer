@@ -1,10 +1,9 @@
-import PubSub from 'pubsub-js'
 import { FC, useEffect, useRef, useState } from 'react'
 import { css } from '@emotion/css'
 import { createPortal } from 'react-dom'
 import { TiZoomInOutline, TiZoomOutOutline } from 'react-icons/ti'
-import { PubSubData } from '_types'
 import { motion } from 'framer-motion'
+import { sub, unsub } from '../libs/pubsub'
 
 export const HoverImage: FC = () => {
   const [visible, setVisible] = useState(false)
@@ -12,19 +11,29 @@ export const HoverImage: FC = () => {
   const refImag = useRef<HTMLImageElement>(null)
 
   useEffect(() => {
-    const func = (_: string, payload: PubSubData) => {
+    // const func = (_: string, payload: PubSubData) => {
+    //   if (!payload) return
+    //
+    //   if (payload.type === 'show-hover-image') {
+    //     if (!payload.data.src || typeof payload.data.src !== 'string') return
+    //     setSrc(payload.data.src)
+    //     setVisible(true)
+    //   }
+    // }
+    // const token = PubSub.subscribe('nw-hover-image-pubsub', func)
+    const token = sub('nw-hover-image-pubsub', (_, payload) => {
       if (!payload) return
 
       if (payload.type === 'show-hover-image') {
-        if (!payload.data.src || typeof payload.data.src !== 'string') return
+        if (!payload.data.src) return
         setSrc(payload.data.src)
         setVisible(true)
       }
-    }
-    const token = PubSub.subscribe('nw-hover-image-pubsub', func)
+    })
 
     return () => {
-      PubSub.unsubscribe(token)
+      unsub(token)
+      // PubSub.unsubscribe(token)
     }
   }, [])
 

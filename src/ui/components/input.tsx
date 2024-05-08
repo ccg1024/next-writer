@@ -1,11 +1,11 @@
-import PubSub from 'pubsub-js'
 import React, { FC, useEffect, useRef, useState } from 'react'
 import styled from '@emotion/styled'
 import { css } from '@emotion/css'
 import { CloseIcon, Mask, Spinner } from './utils'
 import { fileAndFolderNameCheck, Post } from '../libs/utils'
-import { RenderNewFileType, AddFileItem, PubSubData } from '_types'
+import { AddFileItem } from '_types'
 import { TWO_WAY_CHANNEL } from 'src/config/ipc'
+import { pub, sub, unsub, RenderNewFileType } from '../libs/pubsub'
 
 const InputWraper = styled.div`
   padding: 10px;
@@ -36,8 +36,6 @@ export const GlobalInput: FC<GlobalInputProps> = (props): JSX.Element => {
   const [_placehover, _setPlacehover] = useState('')
   const replyInfo = useRef<RenderNewFileType>({
     pathType: 'file',
-    replyType: '',
-    replyChannel: '',
     pathPrefix: '.'
   })
   const { placehover } = props
@@ -72,7 +70,8 @@ export const GlobalInput: FC<GlobalInputProps> = (props): JSX.Element => {
       return
     }
 
-    if (!replyInfo.current) throw 'the reply channel is empty'
+    if (!replyInfo.current || !replyInfo.current.replyChannel)
+      throw 'the reply channel is empty'
 
     const postData: AddFileItem = {
       path: [replyInfo.current.pathPrefix, inputInfo].join('/'),
@@ -88,14 +87,22 @@ export const GlobalInput: FC<GlobalInputProps> = (props): JSX.Element => {
         if (res.data.status !== 'success')
           setError('The response body data not equal success')
 
-        PubSub.publish(replyInfo.current.replyChannel, {
+        pub(replyInfo.current.replyChannel, {
           type: replyInfo.current.replyType,
           data: {
             pathType: replyInfo.current.pathType,
-            pathName: inputInfo,
+            pathName: inputInfo as string,
             parent: replyInfo.current.pathPrefix
           }
-        } as PubSubData)
+        })
+        // PubSub.publish(replyInfo.current.replyChannel, {
+        //   type: replyInfo.current.replyType,
+        //   data: {
+        //     pathType: replyInfo.current.pathType,
+        //     pathName: inputInfo,
+        //     parent: replyInfo.current.pathPrefix
+        //   }
+        // } as PubSubData)
         setVisible(false)
       })
       .catch(err => {
@@ -111,27 +118,42 @@ export const GlobalInput: FC<GlobalInputProps> = (props): JSX.Element => {
     setEditable(false)
   }
 
-  function pubsubListen(_: string, payload: PubSubData) {
-    // Listen to other component messages
-    // and return input information in form submit.
-    // data.data represents the component that
-    // sends the message and form will use is to reply message.
-    if (!payload) return
-
-    const _data = payload.data as RenderNewFileType
-
-    replyInfo.current = _data
-    // remove preview error
-    setError('')
-    setVisible(true)
-    _setPlacehover(_data.pathType === 'file' ? '文件名' : '文件夹名')
-  }
+  // function pubsubListen(_: string, payload: PubSubData) {
+  //   // Listen to other component messages
+  //   // and return input information in form submit.
+  //   // data.data represents the component that
+  //   // sends the message and form will use is to reply message.
+  //   if (!payload) return
+  //
+  //   const _data = payload.data as RenderNewFileType
+  //
+  //   replyInfo.current = _data
+  //   // remove preview error
+  //   setError('')
+  //   setVisible(true)
+  //   _setPlacehover(_data.pathType === 'file' ? '文件名' : '文件夹名')
+  // }
 
   useEffect(() => {
-    const token = PubSub.subscribe('nw-input-pubsub', pubsubListen)
+    // const token = PubSub.subscribe('nw-input-pubsub', pubsubListen)
+    const token = sub('nw-input-pubsub', (_, payload) => {
+      if (!payload) return
+      const { pathType, replyType, replyChannel, pathPrefix } = payload.data
+      replyInfo.current = {
+        pathType,
+        replyChannel,
+        replyType,
+        pathPrefix
+      }
+
+      setError('')
+      setVisible(true)
+      _setPlacehover(pathType === 'file' ? '文件名' : '文件夹名')
+    })
 
     return () => {
-      PubSub.unsubscribe(token)
+      unsub(token)
+      // PubSub.unsubscribe(token)
     }
   }, [])
 

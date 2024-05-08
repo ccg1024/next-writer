@@ -1,16 +1,12 @@
 import React, { FC, useCallback, useEffect, useRef, useState } from 'react'
 import { TiFolder, TiDocument, TiFolderOpen } from 'react-icons/ti'
-import PubSub from 'pubsub-js'
 import { css } from '@emotion/css'
 import { AddEffect, InlineFlex } from './utils'
 import { getFileBaseName, Post, resolve2path } from '../libs/utils'
 import { useHoverShow } from '../hooks/useHoverShow'
-import {
-  PubSubData,
-  RenderNewFileType,
-  RootWorkstationFolderInfo
-} from '_types'
+import { RootWorkstationFolderInfo } from '_types'
 import { ONE_WAY_CHANNEL, TWO_WAY_CHANNEL } from 'src/config/ipc'
+import { pub, sub, unsub } from '../libs/pubsub'
 
 interface FilesystemProps {
   currentFile: string
@@ -55,27 +51,34 @@ const Filesystem: FC<FilesystemProps> = (props): JSX.Element => {
   }, [])
 
   useEffect(() => {
-    function listener(_: string, payload: PubSubData) {
+    // function listener(_: string, payload: PubSubData) {
+    //   if (payload.type === 'nw-filesystem-add') {
+    //     // since success add file or folder
+    //     // update state from main process
+    //     // NOTE: since update foders data need recursive, it's not
+    //     // easy on setState fucntion
+    //     // const fileDesc = data.data as RenderNewFileReply
+    //     // if (fileDesc.pathType === 'file') {
+    //     //   setFiles(v => [...v, fileDesc.pathName])
+    //     // } else if (fileDesc.pathType === 'folder') {
+    //     //   // setFolders(v => [...v, fileDesc.pathName])
+    //     //   console.log('the folder need recode')
+    //     // }
+    //     const parent = payload.data.parent as string
+    //     getFileExplorerInfo(parent)
+    //   }
+    // }
+    // const token = PubSub.subscribe('nw-filesystem-pubsub', listener)
+    const token = sub('nw-filesystem-pubsub', (_, payload) => {
       if (payload.type === 'nw-filesystem-add') {
-        // since success add file or folder
-        // update state from main process
-        // NOTE: since update foders data need recursive, it's not
-        // easy on setState fucntion
-        // const fileDesc = data.data as RenderNewFileReply
-        // if (fileDesc.pathType === 'file') {
-        //   setFiles(v => [...v, fileDesc.pathName])
-        // } else if (fileDesc.pathType === 'folder') {
-        //   // setFolders(v => [...v, fileDesc.pathName])
-        //   console.log('the folder need recode')
-        // }
-        const parent = payload.data.parent as string
+        const parent = payload.data.parent
         getFileExplorerInfo(parent)
       }
-    }
-    const token = PubSub.subscribe('nw-filesystem-pubsub', listener)
+    })
 
     return () => {
-      PubSub.unsubscribe(token)
+      unsub(token)
+      // PubSub.unsubscribe(token)
     }
   }, [])
 
@@ -230,17 +233,26 @@ const FilesystemFolderItem: FC<FilesystemFolderItemProps> = props => {
     target: refFolder
   })
 
-  function clickAddEffect(type: string, prefix: string) {
+  function clickAddEffect(type: 'file' | 'folder', prefix: string) {
     return (e: React.MouseEvent) => {
       e.stopPropagation()
-      PubSub.publish('nw-input-pubsub', {
+      pub('nw-input-pubsub', {
+        type: '',
         data: {
           pathType: type,
           replyChannel: 'nw-filesystem-pubsub',
           replyType: 'nw-filesystem-add',
           pathPrefix: prefix
-        } as RenderNewFileType
+        }
       })
+      // PubSub.publish('nw-input-pubsub', {
+      //   data: {
+      //     pathType: type,
+      //     replyChannel: 'nw-filesystem-pubsub',
+      //     replyType: 'nw-filesystem-add',
+      //     pathPrefix: prefix
+      //   } as RenderNewFileType
+      // })
     }
   }
 

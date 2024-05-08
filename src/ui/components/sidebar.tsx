@@ -1,5 +1,4 @@
 import { FC, useEffect, useRef, useState } from 'react'
-import PubSub from 'pubsub-js'
 import styled from '@emotion/styled'
 
 import Resizer from './resizer'
@@ -12,7 +11,8 @@ import { RecentFileList } from './filelist'
 import '../css/sidebar.css'
 import { AnimatePresence, motion } from 'framer-motion'
 import { css } from '@emotion/css'
-import { FileDescriptor, FileDescriptorContainer, PubSubData } from '_types'
+import { FileDescriptor, FileDescriptorContainer } from '_types'
+import { pub, sub, unsub } from '../libs/pubsub'
 
 interface Props {
   isVisible: boolean
@@ -45,7 +45,11 @@ const SideBar: FC<Props> = (props): JSX.Element => {
             v.includes(fileDescriptor.path) ? v : [...v, fileDescriptor.path]
           )
           window._next_writer_rendererConfig.workpath = fileDescriptor.path
-          PubSub.publish('nw-show-message', fileDescriptor.path)
+          // PubSub.publish('nw-show-message', fileDescriptor.path)
+          pub('nw-show-message', {
+            type: '',
+            data: { message: fileDescriptor.path }
+          })
         }
       }
     )
@@ -57,7 +61,32 @@ const SideBar: FC<Props> = (props): JSX.Element => {
 
   // regist pubsub event
   useEffect(() => {
-    const tokenFuc = (_: string, payload: PubSubData) => {
+    // const tokenFuc = (_: string, payload: PubSubData) => {
+    //   if (payload.type === 'nw-sidebar-file-change') {
+    //     if (!currentFile) return
+    //
+    //     setRecentFiles(v => ({
+    //       ...v,
+    //       [currentFile]: {
+    //         ...v[currentFile],
+    //         isChange: payload.data.status === 'modified'
+    //       }
+    //     }))
+    //   } else if (payload.type === 'nw-sidebar-add-recent-file') {
+    //     const fileDescriptor = payload.data as FileDescriptor
+    //     setRecentFiles(v => ({
+    //       ...v,
+    //       [fileDescriptor.path]: fileDescriptor
+    //     }))
+    //     setCurrentFile(fileDescriptor.path)
+    //     setFilelist(v =>
+    //       v.includes(fileDescriptor.path) ? v : [...v, fileDescriptor.path]
+    //     )
+    //   }
+    // }
+    // regist pubsub listener
+    // const token = PubSub.subscribe('nw-sidebar-pubsub', tokenFuc)
+    const token = sub('nw-sidebar-pubsub', (_, payload) => {
       if (payload.type === 'nw-sidebar-file-change') {
         if (!currentFile) return
 
@@ -69,7 +98,11 @@ const SideBar: FC<Props> = (props): JSX.Element => {
           }
         }))
       } else if (payload.type === 'nw-sidebar-add-recent-file') {
-        const fileDescriptor = payload.data as FileDescriptor
+        const fileDescriptor: FileDescriptor = {
+          isChange: payload.data.isChange,
+          path: payload.data.path,
+          name: payload.data.name
+        }
         setRecentFiles(v => ({
           ...v,
           [fileDescriptor.path]: fileDescriptor
@@ -79,12 +112,11 @@ const SideBar: FC<Props> = (props): JSX.Element => {
           v.includes(fileDescriptor.path) ? v : [...v, fileDescriptor.path]
         )
       }
-    }
-    // regist pubsub listener
-    const token = PubSub.subscribe('nw-sidebar-pubsub', tokenFuc)
+    })
 
     return () => {
-      PubSub.unsubscribe(token)
+      // PubSub.unsubscribe(token)
+      unsub(token)
     }
   }, [currentFile])
 

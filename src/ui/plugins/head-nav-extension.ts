@@ -1,8 +1,8 @@
 import { ensureSyntaxTree } from '@codemirror/language'
 import { Extension } from '@codemirror/state'
 import { EditorView, ViewPlugin, ViewUpdate } from '@codemirror/view'
-import PubSub from 'pubsub-js'
 import { HeadNav } from '_types'
+import { pub } from '../libs/pubsub'
 
 const headNavPlugin = ViewPlugin.fromClass(
   class {
@@ -66,10 +66,14 @@ const headNavPlugin = ViewPlugin.fromClass(
         }
       })
       this.headNav = unchangedHead
-      PubSub.publish('nw-head-nav-pubsub', {
+      pub('nw-head-nav-pubsub', {
         type: 'heads-list',
         data: { heads: this.headNav }
       })
+      // PubSub.publish('nw-head-nav-pubsub', {
+      //   type: 'heads-list',
+      //   data: { heads: this.headNav }
+      // })
     }
   }
 )

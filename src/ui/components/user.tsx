@@ -1,10 +1,9 @@
-import PubSub from 'pubsub-js'
 import { FC, useEffect, useRef } from 'react'
 import { css } from '@emotion/css'
 import { TiUser, TiDocumentAdd, TiFolderAdd } from 'react-icons/ti'
 import { AnimateClickDiv, InlineFlex } from './utils'
 import { useHoverShow } from '../hooks/useHoverShow'
-import { PubSubData, RenderNewFileType } from '_types'
+import { pub, sub, unsub } from '../libs/pubsub'
 
 const User: FC = (): JSX.Element => {
   const refUser = useRef<HTMLDivElement>(null)
@@ -13,37 +12,58 @@ const User: FC = (): JSX.Element => {
     target: refUser
   })
 
-  function triggerInput(type: string) {
-    PubSub.publish('nw-input-pubsub', {
+  function triggerInput(type: 'file' | 'folder') {
+    pub('nw-input-pubsub', {
+      type: '',
       data: {
         pathType: type,
         replyChannel: 'nw-user-pubsub',
         replyType: 'nw-user-pubsub-reply',
         pathPrefix: '.'
-      } as RenderNewFileType
+      }
     })
+    // PubSub.publish('nw-input-pubsub', {
+    //   data: {
+    //     pathType: type,
+    //     replyChannel: 'nw-user-pubsub',
+    //     replyType: 'nw-user-pubsub-reply',
+    //     pathPrefix: '.'
+    //   } as RenderNewFileType
+    // })
   }
 
   useEffect(() => {
-    function listener(_: string, payload: PubSubData) {
+    // function listener(_: string, payload: PubSubData) {
+    //   if (!payload) return
+    //
+    //   if (payload.type === 'nw-user-pubsub-reply') {
+    //     // reply message
+    //     const replyData = payload.data
+    //
+    //     // send message to filesystem component
+    //     PubSub.publish('nw-filesystem-pubsub', {
+    //       type: 'nw-filesystem-add',
+    //       data: replyData
+    //     })
+    //   }
+    // }
+    // listen GlobalInput reply.
+    // const token = PubSub.subscribe('nw-user-pubsub', listener)
+    const token = sub('nw-user-pubsub', (_, payload) => {
       if (!payload) return
 
       if (payload.type === 'nw-user-pubsub-reply') {
-        // reply message
-        const replyData = payload.data
-
-        // send message to filesystem component
-        PubSub.publish('nw-filesystem-pubsub', {
+        const { parent } = payload.data
+        pub('nw-filesystem-pubsub', {
           type: 'nw-filesystem-add',
-          data: replyData
+          data: { parent }
         })
       }
-    }
-    // listen GlobalInput reply.
-    const token = PubSub.subscribe('nw-user-pubsub', listener)
+    })
 
     return () => {
-      PubSub.unsubscribe(token)
+      unsub(token)
+      // PubSub.unsubscribe(token)
     }
   }, [])
 

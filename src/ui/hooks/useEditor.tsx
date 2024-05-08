@@ -4,7 +4,6 @@
 import { Compartment, EditorState } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { useRef, useState, useLayoutEffect } from 'react'
-import PubSub from 'pubsub-js'
 import { editorDefaultExtensions } from '../libs/codemirror'
 import { hideMarkPlugin } from '../plugins/hide-marke-extension'
 import { codeBlockHighlight } from '../plugins/code-block-extension'
@@ -16,6 +15,7 @@ import { inlineEmoji } from '../plugins/emoji-extension'
 import { blockquote } from '../plugins/block-quote-extension'
 import { linkPlugin } from '../plugins/link-extension'
 import { ONE_WAY_CHANNEL } from 'src/config/ipc'
+import { pub } from '../libs/pubsub'
 
 interface Props {
   initialDoc?: string
@@ -48,10 +48,14 @@ export const useEditor = <T extends Element>(
               !window._next_writer_rendererConfig.modified &&
               window._next_writer_rendererConfig.workpath !== ''
             ) {
-              PubSub.publish('nw-sidebar-pubsub', {
+              pub('nw-sidebar-pubsub', {
                 type: 'nw-sidebar-file-change',
                 data: { status: 'modified' }
               })
+              // PubSub.publish('nw-sidebar-pubsub', {
+              //   type: 'nw-sidebar-file-change',
+              //   data: { status: 'modified' }
+              // })
               Post(
                 ONE_WAY_CHANNEL,
                 {
@@ -104,15 +108,23 @@ export const useEditor = <T extends Element>(
                 const elementHeight = topBlockInfo.height
                 percent = (scrollTop - elementTop) / elementHeight
               }
-              PubSub.publish('nw-preview-pubsub', {
+              pub('nw-preview-pubsub', {
                 type: 'sync-scroll',
                 data: { line, percent: percent >= 0 ? percent : 0 }
               })
+              // PubSub.publish('nw-preview-pubsub', {
+              //   type: 'sync-scroll',
+              //   data: { line, percent: percent >= 0 ? percent : 0 }
+              // })
               // public scroll info to head nav component
-              PubSub.publish('nw-head-nav-pubsub', {
+              pub('nw-head-nav-pubsub', {
                 type: 'top-head-line',
                 data: { line }
               })
+              // PubSub.publish('nw-head-nav-pubsub', {
+              //   type: 'top-head-line',
+              //   data: { line }
+              // })
               ctl.scrollTimer = null
             }, 500)
           }

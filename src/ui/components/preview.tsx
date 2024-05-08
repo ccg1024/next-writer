@@ -1,10 +1,9 @@
-import PubSub from 'pubsub-js'
 import { FC, useEffect, useRef } from 'react'
 import { css } from '@emotion/css'
 import useProcessor from '../hooks/useProcessor'
 
 import 'katex/dist/katex.css'
-import { PubSubData } from '_types'
+import { sub, unsub } from '../libs/pubsub'
 
 interface PreviewProps {
   doc: string
@@ -46,14 +45,40 @@ const Preview: FC<PreviewProps> = props => {
   const content = useProcessor(doc, props.visible)
 
   useEffect(() => {
-    const listener = (_: string, payload: PubSubData) => {
+    // const listener = (_: string, payload: PubSubData) => {
+    //   if (payload.type == 'sync-scroll') {
+    //     if (!refContainer.current) return
+    //
+    //     const { line, percent } = payload.data as {
+    //       line: number
+    //       percent: number
+    //     }
+    //     const doms = refContainer.current.children
+    //     const target = binarySearchDom(doms, line)
+    //     if (!target) return
+    //
+    //     let additional = target.offsetHeight * percent
+    //     // check whether is a block wrapper
+    //     if (target.dataset.end) {
+    //       const lines =
+    //         Number(target.dataset.end) - Number(target.dataset.start) + 1
+    //       const elementHeight = target.offsetHeight
+    //       const offsetStart = line - Number(target.dataset.start)
+    //       const lineHeight = elementHeight / lines
+    //       additional = lineHeight * offsetStart + lineHeight * percent
+    //     }
+    //     refWrapper.current.scrollTo({
+    //       top: target.offsetTop + additional,
+    //       behavior: 'auto'
+    //     })
+    //   }
+    // }
+    // const token = PubSub.subscribe('nw-preview-pubsub', listener)
+    const token = sub('nw-preview-pubsub', (_, payload) => {
       if (payload.type == 'sync-scroll') {
         if (!refContainer.current) return
 
-        const { line, percent } = payload.data as {
-          line: number
-          percent: number
-        }
+        const { line, percent } = payload.data
         const doms = refContainer.current.children
         const target = binarySearchDom(doms, line)
         if (!target) return
@@ -73,11 +98,11 @@ const Preview: FC<PreviewProps> = props => {
           behavior: 'auto'
         })
       }
-    }
-    const token = PubSub.subscribe('nw-preview-pubsub', listener)
+    })
 
     return () => {
-      PubSub.unsubscribe(token)
+      unsub(token)
+      // PubSub.unsubscribe(token)
     }
   }, [])
 

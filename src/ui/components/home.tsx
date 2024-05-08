@@ -1,4 +1,3 @@
-import PubSub from 'pubsub-js'
 import { MouseEvent, useCallback, useEffect, useState } from 'react'
 import Message from './message'
 import SideBar from './sidebar'
@@ -10,13 +9,14 @@ import '../css/theme.css'
 import { GlobalInput } from './input'
 import HeadNav from './headnav'
 import { Post } from '../libs/utils'
-import { HomeChannelType, IpcChannelData, PubSubData } from '_types'
+import { HomeChannelType, IpcChannelData } from '_types'
 import { VerticalBlur } from './blur'
 import FloatEmoji from './float-emoji'
 import Preview from './preview'
 import Toolbar from './toolbar'
 import { TWO_WAY_CHANNEL } from 'src/config/ipc'
 import { HoverImage } from './image'
+import { pub } from '../libs/pubsub'
 
 const Home = () => {
   const [showSide, setShowSide] = useState<boolean>(true)
@@ -121,9 +121,10 @@ const Home = () => {
           !!config.typewriter
         window._next_writer_rendererConfig.fontSize = fontSize
         window._next_writer_rendererConfig.fontFamily = fontFamily
-        PubSub.publish('nw-editor-pubsub', {
-          type: 'mount-prettier-list'
-        } as PubSubData)
+        pub('nw-editor-pubsub', { type: 'mount-prettier-list' })
+        // PubSub.publish('nw-editor-pubsub', {
+        //   type: 'mount-prettier-list'
+        // } as PubSubData)
       })
       .catch(err => {
         throw err
@@ -148,11 +149,12 @@ const Home = () => {
 
     if (element.tagName == 'IMG') {
       const src = (element as HTMLImageElement).src
-      const payload: PubSubData = {
-        type: 'show-hover-image',
-        data: { src }
-      }
-      PubSub.publish('nw-hover-image-pubsub', payload)
+      // const payload: PubSubData = {
+      //   type: 'show-hover-image',
+      //   data: { src }
+      // }
+      // PubSub.publish('nw-hover-image-pubsub', payload)
+      pub('nw-hover-image-pubsub', { type: 'show-hover-image', data: { src } })
     }
   }
 
