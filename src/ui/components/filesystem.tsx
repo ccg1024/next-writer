@@ -1,7 +1,14 @@
 import React, { FC, useCallback, useEffect, useRef, useState } from 'react'
-import { TiFolder, TiDocument, TiFolderOpen } from 'react-icons/ti'
+import {
+  TiChevronRight,
+  TiFolder,
+  TiDocumentText,
+  TiFolderOpen,
+  TiDocumentAdd,
+  TiFolderAdd
+} from 'react-icons/ti'
 import { css } from '@emotion/css'
-import { AddEffect, InlineFlex } from './utils'
+import { AnimateClickDiv, InlineFlex } from './utils'
 import { getFileBaseName, Post, resolve2path } from '../libs/utils'
 import { useHoverShow } from '../hooks/useHoverShow'
 import { RootWorkstationFolderInfo } from '_types'
@@ -157,7 +164,7 @@ const RecursiveFileList: FC<RecursiveFileListProps> = (props): JSX.Element => {
             props.folders.map(folder => {
               const uniq = props.parent + '/' + folder.name
               return (
-                <div id="recursive-menu-wrapper" key={uniq}>
+                <div data-id="recursive-menu-wrapper" key={uniq}>
                   <FilesystemFolderItem
                     uniq={uniq}
                     showNest={showNest[uniq]}
@@ -241,7 +248,7 @@ const FilesystemFileItem: FC<FilesystemFileItemProps> = props => {
       id={uniq}
     >
       <InlineFlex>
-        <TiDocument className="fixed-flex-item" />
+        <TiDocumentText className="fixed-flex-item" />
         <span className="text-hide">{filename}</span>
       </InlineFlex>
     </div>
@@ -292,15 +299,39 @@ const FilesystemFolderItem: FC<FilesystemFolderItemProps> = props => {
       id={uniq}
       onClick={props.onClick}
     >
-      <InlineFlex>
+      <InlineFlex flexGrow={1} overflow="hidden">
         {showNest ? (
-          <TiFolderOpen className="fixed-flex-item" />
+          <>
+            <TiChevronRight
+              className="fixed-flex-item"
+              style={{ transform: 'rotate(90deg)' }}
+            />
+            <TiFolderOpen
+              className="fixed-flex-item"
+              style={{ padding: '2px' }}
+            />
+          </>
         ) : (
-          <TiFolder className="fixed-flex-item" />
+          <>
+            <TiChevronRight className="fixed-flex-item" />
+            <TiFolder className="fixed-flex-item" style={{ padding: '2px' }} />
+          </>
         )}
         <span className="text-hide">{name}</span>
       </InlineFlex>
-      {addVisible && <AddEffect onClick={clickAddEffect} uniq={uniq} />}
+      {addVisible && (
+        <InlineFlex flexShrink={0}>
+          <AnimateClickDiv
+            onClick={clickAddEffect('file', uniq)}
+            child={<TiDocumentAdd className="icon-hover" />}
+          />
+          <AnimateClickDiv
+            onClick={clickAddEffect('folder', uniq)}
+            child={<TiFolderAdd className="icon-hover" />}
+          />
+        </InlineFlex>
+      )}
+      {/* {addVisible && <AddEffect onClick={clickAddEffect} uniq={uniq} />} */}
     </div>
   )
 }

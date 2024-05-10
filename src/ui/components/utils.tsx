@@ -106,12 +106,21 @@ export const AnimateHoverBox: FC<
   )
 }
 
-export const InlineFlex = styled.div`
+type InlineFlexProps = {
+  flexGrow?: number
+  flexShrink?: number
+  overflow?: string
+}
+export const InlineFlex = styled.div<InlineFlexProps>`
   display: flex;
   gap: 5px;
   align-items: center;
   line-height: 1;
   white-space: nowrap;
+  flex-grow: ${props => (props.flexGrow ? props.flexGrow : 0)};
+  flex-shrink: ${props =>
+    props.flexShrink != undefined ? props.flexShrink : 1};
+  overflow: ${props => (props.overflow ? props.overflow : 'unset')};
 `
 
 type AnimateClickDivProps = {
