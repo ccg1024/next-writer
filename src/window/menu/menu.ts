@@ -170,6 +170,10 @@ function syncWorkplatform(_: MenuItem, win: BrowserWindow) {
         })
     })
     .catch(err => {
+      win.webContents.send(ipcChannel['main-to-render'].sidebar_component, {
+        type: 'sidebar-sync-file-tree',
+        value: { manualStatus: 'rejected', err }
+      } as IpcChannelData)
       throw new err()
     })
 }

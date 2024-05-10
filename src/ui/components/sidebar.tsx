@@ -67,6 +67,16 @@ const SideBar: FC<Props> = (props): JSX.Element => {
             })
             return
           }
+          if (manualStatus === 'rejected') {
+            // if get some error, close global loading first
+            pub('nw-home-pubsub', {
+              type: 'toggle-global-loading',
+              data: { loading: false }
+            })
+            // NOTE: There permission denied on production enviroment
+            // this blog make some solution
+            // https://juejin.cn/s/electron%20mac%20%E6%9D%83%E9%99%90
+          }
           if (manualStatus === 'fulfilled') {
             const { files, folders } = payload.value
             pub('nw-filesystem-pubsub', {
