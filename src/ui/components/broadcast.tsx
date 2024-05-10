@@ -2,9 +2,10 @@ import { FC, useState } from 'react'
 import styled from '@emotion/styled'
 import { css } from '@emotion/css'
 import { TiDocumentText } from 'react-icons/ti'
-import { AnimateHoverBox, InlineFlex } from './utils'
+import { InlineFlex, Spinner } from './utils'
 import { useWorkStation } from '../hooks/useComponentEffect'
 import { reversePath } from '../libs/utils'
+import { AnimatePresence, motion } from 'framer-motion'
 
 interface Props {
   currentFile: string
@@ -12,16 +13,39 @@ interface Props {
 
 const BroadCast: FC<Props> = (props): JSX.Element => {
   const [showHover, setShowHover] = useState(false)
+  const {
+    station: workstation,
+    loading,
+    equal
+  } = useWorkStation(props.currentFile)
 
   function makeBroadcast(path: string) {
-    return path.split('/').reverse().join('/')
+    return path.split('/').reverse().join(' > ')
   }
   function toggleHover() {
     setShowHover(v => !v)
   }
   return (
     <div className="broadcast-main">
-      <div className="broadcast-content" onClick={toggleHover}>
+      <div
+        className={css({
+          padding: '10px',
+          backgroundColor: equal
+            ? 'var(--nw-color-blackAlpha-50)'
+            : 'var(--nw-color-redAlpha-600)',
+          borderRadius: '5px',
+          overflow: 'hidden',
+          whiteSpace: 'nowrap',
+          textOverflow: 'ellipsis',
+          userSelect: 'none',
+          ':hover': {
+            backgroundColor: equal
+              ? 'var(--nw-color-blackAlpha-100)'
+              : 'var(--nw-color-redAlpha-800)'
+          }
+        })}
+        onClick={toggleHover}
+      >
         <InlineFlex>
           <TiDocumentText className="fixed-flex-item" />
           <span className="text-hide">
@@ -31,22 +55,60 @@ const BroadCast: FC<Props> = (props): JSX.Element => {
           </span>
         </InlineFlex>
       </div>
-      <AnimateHoverBox
-        visible={showHover}
-        x="right"
-        y="top"
-        yOffset={'20px'}
-        nTranslate={'100%, 0'}
-        zIndex={100}
-      >
-        <WorkstationMonitor rendererStation={props.currentFile} />
-      </AnimateHoverBox>
+      <AnimatePresence initial={false} mode="wait">
+        {showHover && (
+          <motion.div
+            initial={{ right: '25px', opacity: 0 }}
+            animate={{ right: '5px', opacity: 1 }}
+            exit={{ right: '25px', opacity: 0 }}
+            className={css({
+              position: 'absolute',
+              zIndex: 100,
+              top: 0,
+              right: '5px',
+              transform: 'translateX(100%)',
+              backgroundColor: 'white',
+              boxShadow: 'var(--nw-box-shadow-md)',
+              padding: '10px',
+              borderRadius: 'var(--nw-border-radius-md)'
+            })}
+          >
+            <WorkstationMonitor
+              rendererStation={props.currentFile}
+              workstation={workstation}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+      {/* <AnimateHoverBox */}
+      {/*   visible={showHover} */}
+      {/*   x="right" */}
+      {/*   y="top" */}
+      {/*   yOffset={'20px'} */}
+      {/*   nTranslate={'100%, 0'} */}
+      {/*   zIndex={100} */}
+      {/* > */}
+      {/*   <WorkstationMonitor rendererStation={props.currentFile} /> */}
+      {/* </AnimateHoverBox> */}
+      {loading && (
+        <div
+          className={css({
+            position: 'absolute',
+            top: '50%',
+            right: '10px',
+            transform: 'translateY(-50%)'
+          })}
+        >
+          <Spinner />
+        </div>
+      )}
     </div>
   )
 }
 
 type WorkstationMonitorProps = {
   rendererStation: string
+  workstation: string
 }
 type BasicHeadProps = {
   head: string
@@ -74,8 +136,7 @@ const Ellipsis = styled.div`
 `
 
 const WorkstationMonitor: FC<WorkstationMonitorProps> = props => {
-  const { rendererStation } = props
-  const workstation = useWorkStation(rendererStation)
+  const { rendererStation, workstation } = props
 
   const mainer = workstation ? reversePath(workstation) : 'EMPTY'
   const renderer = rendererStation ? reversePath(rendererStation) : 'EMPTY'

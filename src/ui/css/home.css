@@ -16,6 +16,15 @@
   --nw-color-blackAlpha-200: rgba(0, 0, 0, 0.24);
   --nw-color-blackAlpha-300: rgba(0, 0, 0, 0.32);
   --nw-color-blackAlpha-400: rgba(0, 0, 0, 0.4);
+  --nw-color-redAlpha-50: rgba(229, 62, 62, 0.08);
+  --nw-color-redAlpha-100: rgba(229, 62, 62, 0.16);
+  --nw-color-redAlpha-200: rgba(229, 62, 62, 0.24);
+  --nw-color-redAlpha-300: rgba(229, 62, 62, 0.32);
+  --nw-color-redAlpha-400: rgba(229, 62, 62, 0.4);
+  --nw-color-redAlpha-500: rgba(229, 62, 62, 0.48);
+  --nw-color-redAlpha-600: rgba(229, 62, 62, 0.56);
+  --nw-color-redAlpha-700: rgba(229, 62, 62, 0.64);
+  --nw-color-redAlpha-800: rgba(229, 62, 62, 0.72);
   --nw-color-gray-50: #f7fafc;
   --nw-color-gray-100: #edf2f7;
   --nw-color-gray-200: #e2e8f0;
