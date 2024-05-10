@@ -11,7 +11,7 @@ import { RecentFileList } from './filelist'
 import '../css/sidebar.css'
 import { AnimatePresence, motion } from 'framer-motion'
 import { css } from '@emotion/css'
-import { FileDescriptor, FileDescriptorContainer } from '_types'
+import { FileDescriptor, FileDescriptorContainer, IpcChannelData } from '_types'
 import { pub, sub, unsub } from '../libs/pubsub'
 
 interface Props {
@@ -32,8 +32,14 @@ const SideBar: FC<Props> = (props): JSX.Element => {
   useEffect(() => {
     // ipc, when save a empty path file, this listener will be triggered
     const removeListener = window.ipc.listenSidebarChannel(
-      (_: unknown, fileDescriptor: FileDescriptor) => {
-        if (fileDescriptor) {
+      (_: unknown, payload: IpcChannelData) => {
+        if (payload.type === 'sidebar-save-empty') {
+          const value = payload.value as FileDescriptor
+          const fileDescriptor: FileDescriptor = {
+            isChange: value.isChange,
+            path: value.path,
+            name: value.name
+          }
           setRecentFiles(v => {
             return {
               ...v,
@@ -50,6 +56,24 @@ const SideBar: FC<Props> = (props): JSX.Element => {
             type: '',
             data: { message: fileDescriptor.path }
           })
+        } else if (payload.type === 'sidebar-sync-file-tree') {
+          // NOTE: sync sidebar file tree
+          const { manualStatus } = payload.value
+          if (manualStatus === 'pending') {
+            // show loading
+            pub('nw-home-pubsub', {
+              type: 'toggle-global-loading',
+              data: { loading: true }
+            })
+            return
+          }
+          if (manualStatus === 'fulfilled') {
+            const { files, folders } = payload.value
+            pub('nw-filesystem-pubsub', {
+              type: 'nw-sync-filesystem',
+              data: { files, folders }
+            })
+          }
         }
       }
     )

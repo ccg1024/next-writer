@@ -32,6 +32,9 @@ export function getDefaultAppDirectory() {
 }
 
 type UpdateWorkstationInfoType = 'file' | 'folder'
+/**
+ * Update global._next_writer_windowConfig.rootWorkplatformInfo
+ */
 export function updateWorkstationInfo(
   path: string,
   type: UpdateWorkstationInfoType

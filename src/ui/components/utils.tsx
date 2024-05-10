@@ -294,3 +294,43 @@ export function Dialog(props: PropsWithChildren) {
     </dialog>
   )
 }
+
+export const GlobalLoading = () => {
+  const dom = (
+    <div
+      className={css({
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: '100vw',
+        height: '100vh'
+      })}
+    >
+      <div
+        className={css({
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          backgroundColor: 'rgba(0, 0, 0, 0.5)'
+        })}
+      ></div>
+      <div
+        className={css({
+          position: 'relative',
+          top: '50%',
+          transform: 'translateY(-50%)',
+          margin: 'auto',
+          justifyContent: 'center',
+          alignItems: 'center',
+          display: 'flex'
+        })}
+      >
+        <Spinner />
+      </div>
+    </div>
+  )
+
+  return createPortal(dom, document.body)
+}

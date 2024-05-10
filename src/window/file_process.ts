@@ -4,7 +4,12 @@ import { BrowserWindow, dialog, OpenDialogOptions } from 'electron'
 import path from 'path'
 import fs from 'fs'
 import { addCache, exitCache, getCache } from './cache'
-import { ReadFileDescriptor, RootWorkstationInfo } from '_types'
+import {
+  FileDescriptor,
+  ReadFileDescriptor,
+  RootWorkstationFolderInfo,
+  RootWorkstationInfo
+} from '_types'
 
 /**
  * Unifiling file path between windows system and macos/linux system
@@ -130,7 +135,10 @@ export function generateReadFileIpcValue(
   }
 }
 
-export function generateFileDescripter(filePath: string, isChange = false) {
+export function generateFileDescripter(
+  filePath: string,
+  isChange = false
+): FileDescriptor {
   return {
     isChange: isChange,
     path: filePath,
@@ -231,6 +239,10 @@ export function readRootWorkstationInfo() {
   }
 }
 
+/**
+ * Write global._next_writer_windowConfig.rootWorkplatformInfo
+ * into .nwriter.info.json of next-wirter root folder
+ */
 export async function writeRootWorkstationInfo() {
   const root = global._next_writer_windowConfig.root
   const infoFileName = '.nwriter.info.json'
@@ -243,7 +255,56 @@ export async function writeRootWorkstationInfo() {
   }
 
   const infoData = global._next_writer_windowConfig.rootWorkplatformInfo
-  fs.promises.writeFile(infoPath, JSON.stringify(infoData)).catch(err => {
-    throw err
-  })
+  fs.promises
+    .writeFile(infoPath, JSON.stringify(infoData, null, 2))
+    .catch(err => {
+      throw err
+    })
+}
+
+/**
+ * Synchronize file tree, return a promise
+ */
+export function synchronizeFileTree() {
+  const fileTree: RootWorkstationInfo = {
+    folders: [],
+    files: []
+  }
+
+  const root = global._next_writer_windowConfig.root
+
+  if (!root) return Promise.reject('root path is empty')
+
+  return asyncFileTree(root, fileTree)
+}
+
+async function asyncFileTree(root: string, cache: RootWorkstationInfo) {
+  const files = await fs.promises.readdir(root)
+  const folders: Array<RootWorkstationFolderInfo> = []
+  const _files: Array<string> = []
+
+  for await (const file of files) {
+    const fullpath = path.resolve(root, file)
+    const stats = await fs.promises.stat(fullpath)
+
+    if (stats.isDirectory()) {
+      const tempFolders: RootWorkstationFolderInfo = {
+        name: file,
+        subfolders: {
+          folders: [],
+          files: []
+        }
+      }
+      await asyncFileTree(fullpath, tempFolders.subfolders)
+      folders.push(tempFolders)
+    } else {
+      if (file.startsWith('.')) continue
+      _files.push(file)
+    }
+  }
+
+  cache.folders = folders
+  cache.files = _files
+
+  return Promise.resolve(cache)
 }

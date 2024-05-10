@@ -72,7 +72,11 @@ async function handleSave(_: unknown, content: string) {
     // notify renderer to show new file information.
     global._next_writer_windowConfig.win.webContents.send(
       ipcChannel['main-to-render'].sidebar_component,
-      generateFileDescripter(newFile)
+      {
+        type: 'sidebar-save-empty',
+        value: { ...generateFileDescripter(newFile) }
+      } as IpcChannelData
+      // generateFileDescripter(newFile)
     )
   }
 

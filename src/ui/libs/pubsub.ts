@@ -1,6 +1,6 @@
 // Component communication middle layer
 import PubSub from 'pubsub-js'
-import { HeadNav } from '_types'
+import { HeadNav, RootWorkstationFolderInfo } from '_types'
 
 // Define main-channel and sub-channel of every component
 const channels = {
@@ -12,7 +12,7 @@ const channels = {
     'mount-prettier-list'
   ] as const,
   'nw-float-emoji-pubsub': ['open', 'close'] as const,
-  'nw-filesystem-pubsub': ['nw-filesystem-add'] as const,
+  'nw-filesystem-pubsub': ['nw-filesystem-add', 'nw-sync-filesystem'] as const,
   'nw-user-pubsub': ['nw-user-pubsub-reply'] as const,
   'nw-input-pubsub': [''] as const,
   'nw-hover-image-pubsub': ['show-hover-image'] as const,
@@ -22,7 +22,8 @@ const channels = {
     'nw-sidebar-file-change',
     'nw-sidebar-add-recent-file'
   ] as const,
-  'nw-preview-pubsub': ['sync-scroll'] as const
+  'nw-preview-pubsub': ['sync-scroll'] as const,
+  'nw-home-pubsub': ['toggle-global-loading'] as const
 }
 type Channels = typeof channels
 type ChannelName = keyof Channels
@@ -50,6 +51,8 @@ type DataUnit = {
   replyChannel: ChannelName
   replyType: ChannelAction<ChannelName>
   pathPrefix: string
+  files: Array<string>
+  folders: Array<RootWorkstationFolderInfo>
 
   // nw-hover-image-pubsub
   src: string
@@ -69,6 +72,9 @@ type DataUnit = {
 
   // nw-preview-pubsub
   percent: number
+
+  // nw-home-pubsub
+  loading: boolean
 }
 
 type ChannelData<T extends ChannelName> = {

@@ -16,7 +16,8 @@ import Preview from './preview'
 import Toolbar from './toolbar'
 import { TWO_WAY_CHANNEL } from 'src/config/ipc'
 import { HoverImage } from './image'
-import { pub } from '../libs/pubsub'
+import { pub, sub, unsub } from '../libs/pubsub'
+import { GlobalLoading } from './utils'
 
 const Home = () => {
   const [showSide, setShowSide] = useState<boolean>(true)
@@ -25,6 +26,7 @@ const Home = () => {
   const [showPreview, setShowPreview] = useState(false)
   const [hideEditor, setHideEditor] = useState(false)
   const [doc, setDoc] = useState<string>('')
+  const [loading, setLoading] = useState(false)
 
   const onChange = useCallback((newDoc: string) => {
     setDoc(newDoc)
@@ -143,6 +145,21 @@ const Home = () => {
       })
   }, [])
 
+  useEffect(() => {
+    const token = sub('nw-home-pubsub', (_, payload) => {
+      if (!payload) return
+
+      if (payload.type === 'toggle-global-loading') {
+        const { loading } = payload.data
+        setLoading(!!loading)
+      }
+    })
+
+    return () => {
+      unsub(token)
+    }
+  }, [])
+
   const homeContainerClick = (e: MouseEvent) => {
     if (!e.target) return
     const element = e.target as HTMLElement
@@ -179,6 +196,7 @@ const Home = () => {
       </div>
       <GlobalInput />
       <HoverImage />
+      {loading && <GlobalLoading />}
     </>
   )
 }

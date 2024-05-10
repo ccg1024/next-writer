@@ -8,6 +8,12 @@ import { RootWorkstationFolderInfo } from '_types'
 import { ONE_WAY_CHANNEL, TWO_WAY_CHANNEL } from 'src/config/ipc'
 import { pub, sub, unsub } from '../libs/pubsub'
 
+type GetFileExplorerInfoParam = {
+  parent?: string
+  pathName?: string
+  pathType?: 'file' | 'folder'
+  openFile?: boolean
+}
 interface FilesystemProps {
   currentFile: string
 }
@@ -22,7 +28,7 @@ const Filesystem: FC<FilesystemProps> = (props): JSX.Element => {
     }))
   }, [])
 
-  function getFileExplorerInfo(parent?: string) {
+  function getFileExplorerInfo(opt?: GetFileExplorerInfoParam) {
     Post(TWO_WAY_CHANNEL, {
       type: 'read-root-workplatform-info'
     })
@@ -34,11 +40,26 @@ const Filesystem: FC<FilesystemProps> = (props): JSX.Element => {
         setFiles(allInfo.files)
         setFolders(allInfo.folders)
 
-        if (parent) {
+        if (opt && opt.parent) {
           setShowNest(v => ({
             ...v,
-            [parent]: true
+            [opt.parent]: true
           }))
+        }
+
+        if (opt && opt.pathType === 'file' && opt.openFile) {
+          if (!opt.parent || !opt.pathName) return
+
+          Post(
+            ONE_WAY_CHANNEL,
+            {
+              type: 'open-file',
+              data: {
+                filePath: `${opt.parent}/${opt.pathName}.md`
+              }
+            },
+            true
+          )
         }
       })
       .catch(err => {
@@ -71,8 +92,16 @@ const Filesystem: FC<FilesystemProps> = (props): JSX.Element => {
     // const token = PubSub.subscribe('nw-filesystem-pubsub', listener)
     const token = sub('nw-filesystem-pubsub', (_, payload) => {
       if (payload.type === 'nw-filesystem-add') {
-        const parent = payload.data.parent
-        getFileExplorerInfo(parent)
+        const { parent, pathName, pathType } = payload.data
+        getFileExplorerInfo({ parent, pathName, pathType, openFile: true })
+      } else if (payload.type === 'nw-sync-filesystem') {
+        const { files, folders } = payload.data
+        pub('nw-home-pubsub', {
+          type: 'toggle-global-loading',
+          data: { loading: false }
+        })
+        setFiles(files)
+        setFolders(folders)
       }
     })
 

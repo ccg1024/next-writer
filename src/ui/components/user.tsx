@@ -53,10 +53,10 @@ const User: FC = (): JSX.Element => {
       if (!payload) return
 
       if (payload.type === 'nw-user-pubsub-reply') {
-        const { parent } = payload.data
+        // const { parent, pathName } = payload.data
         pub('nw-filesystem-pubsub', {
           type: 'nw-filesystem-add',
-          data: { parent }
+          data: { ...payload.data }
         })
       }
     })

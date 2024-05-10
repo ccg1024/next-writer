@@ -28,14 +28,20 @@ const homeChannel = [
 ] as const
 export type HomeChannelType = (typeof homeChannel)[number]
 
+// sidebar component
+const sidebarChannel = ['sidebar-save-empty', 'sidebar-sync-file-tree'] as const
+export type SidebarChannelType = (typeof sidebarChannel)[number]
+
 export type IpcChannelDataValue = {
   [key: string]: Primitive | Obj
+  manualStatus?: 'pending' | 'rejected' | 'fulfilled'
 } & Partial<ReadFileDescriptor> &
-  Partial<CheckBoxValue>
+  Partial<CheckBoxValue> &
+  Partial<RootWorkstationInfo>
 
 // For main to renderer ipc channel
 export type IpcChannelData = {
-  type: EditorChannelType | HomeChannelType
+  type: EditorChannelType | HomeChannelType | SidebarChannelType
   value?: IpcChannelDataValue
 }
 

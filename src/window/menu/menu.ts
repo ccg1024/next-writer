@@ -9,7 +9,9 @@ import { ipcChannel } from 'src/config/ipc'
 import {
   handleCreateFile,
   handleOpenFile,
-  openImageFileProcess
+  openImageFileProcess,
+  synchronizeFileTree,
+  writeRootWorkstationInfo
 } from '../file_process'
 import { IpcChannelData } from '_types'
 import { handleToggleSidebar } from './menu-callback'
@@ -143,6 +145,35 @@ function livePreview(_m: MenuItem, win: BrowserWindow) {
   global._next_writer_windowConfig.menuStatus.preview = false
 }
 
+function syncWorkplatform(_: MenuItem, win: BrowserWindow) {
+  if (!win) return
+
+  // send a empty message
+  win.webContents.send(ipcChannel['main-to-render'].sidebar_component, {
+    type: 'sidebar-sync-file-tree',
+    value: { manualStatus: 'pending' }
+  } as IpcChannelData)
+
+  synchronizeFileTree()
+    .then(fileTree => {
+      // update global variable
+      global._next_writer_windowConfig.rootWorkplatformInfo = fileTree
+      writeRootWorkstationInfo()
+        .then(() => {
+          win.webContents.send(ipcChannel['main-to-render'].sidebar_component, {
+            type: 'sidebar-sync-file-tree',
+            value: { ...fileTree, manualStatus: 'fulfilled' }
+          } as IpcChannelData)
+        })
+        .catch(err => {
+          throw err
+        })
+    })
+    .catch(err => {
+      throw new err()
+    })
+}
+
 export default function createMenus(): MenuItemConstructorOptions[] {
   // const appname = app.name
   const isMac = process.platform === 'darwin'
@@ -156,6 +187,11 @@ export default function createMenus(): MenuItemConstructorOptions[] {
               { role: 'about' },
               { type: 'separator' },
               { role: 'services' },
+              { type: 'separator' },
+              {
+                label: 'sync workplatform',
+                click: syncWorkplatform
+              },
               { type: 'separator' },
               { role: 'quit' }
             ] as MenuItemConstructorOptions[]
