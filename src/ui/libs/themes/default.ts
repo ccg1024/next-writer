@@ -51,7 +51,8 @@ export const defaultTheme = EditorView.theme({
     paddingBottom: '50vh',
     textAlign: 'left',
     maxWidth: '580px',
-    lineHeight: '1.5'
+    lineHeight: '1.5',
+    letterSpacing: '.1em'
   },
   '.cm-activeLineGutter': {
     backgroundColor: '#cccccc44'
