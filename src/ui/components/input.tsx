@@ -34,6 +34,7 @@ export const GlobalInput: FC<GlobalInputProps> = (props): JSX.Element => {
   const [loading, setLoading] = useState(false)
   const [editable, setEditable] = useState(true)
   const [_placehover, _setPlacehover] = useState('')
+  const [inputInfo, setInputInfo] = useState<string>(null)
   const replyInfo = useRef<RenderNewFileType>({
     pathType: 'file',
     pathPrefix: '.'
@@ -149,6 +150,7 @@ export const GlobalInput: FC<GlobalInputProps> = (props): JSX.Element => {
       setError('')
       setVisible(true)
       _setPlacehover(pathType === 'file' ? '文件名' : '文件夹名')
+      setInputInfo(`路径: ${pathPrefix.split('/').join(' > ')}`)
     })
 
     return () => {
@@ -168,12 +170,16 @@ export const GlobalInput: FC<GlobalInputProps> = (props): JSX.Element => {
                 width: 100%;
                 height: 20px;
                 display: flex;
-                justify-content: end;
-                &:hover {
-                  cursor: pointer;
-                }
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 10px;
               `}
             >
+              <div
+                style={{ lineHeight: 1, fontSize: '0.8em', paddingLeft: '2px' }}
+              >
+                {inputInfo}
+              </div>
               <CloseIcon onClick={() => setVisible(false)} />
             </div>
             <form onSubmit={onSubmit} className={formClass}>
@@ -183,6 +189,7 @@ export const GlobalInput: FC<GlobalInputProps> = (props): JSX.Element => {
                 className={inputClass}
                 name="globalInput"
                 disabled={!editable}
+                autoFocus
               />
               {loading && (
                 <Spinner

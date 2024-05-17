@@ -1,8 +1,11 @@
-import { FC } from 'react'
+import React, { FC } from 'react'
 
-const Dividing: FC = (): JSX.Element => {
+type NativeDivProps = React.HTMLAttributes<HTMLDivElement>
+const Dividing: FC<NativeDivProps> = (props): JSX.Element => {
+  const { className, ...rest } = props
+  const classes = `dividing-main ${className ?? ''}`
   return (
-    <div className="dividing-main">
+    <div className={classes} {...rest}>
       <hr className="dividing-content" />
     </div>
   )

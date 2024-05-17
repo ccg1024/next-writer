@@ -3,10 +3,9 @@ import {
   TiChevronRight,
   TiFolder,
   TiDocumentText,
-  TiFolderOpen,
-  TiDocumentAdd,
-  TiFolderAdd
+  TiFolderOpen
 } from 'react-icons/ti'
+import { VscEllipsis } from 'react-icons/vsc'
 import { css } from '@emotion/css'
 import { AnimateClickDiv, InlineFlex } from './utils'
 import { getFileBaseName, Post, resolve2path } from '../libs/utils'
@@ -154,6 +153,7 @@ const RecursiveFileList: FC<RecursiveFileListProps> = (props): JSX.Element => {
     <>
       {visible && (
         <div
+          data-id="recursive-file-list"
           className={
             css`
               padding-left: ${props.parent === '.' ? 'unset' : '10px'};
@@ -269,26 +269,49 @@ const FilesystemFolderItem: FC<FilesystemFolderItemProps> = props => {
     target: refFolder
   })
 
-  function clickAddEffect(type: 'file' | 'folder', prefix: string) {
+  // function clickAddEffect(type: 'file' | 'folder', prefix: string) {
+  //   return (e: React.MouseEvent) => {
+  //     e.stopPropagation()
+  //     pub('nw-input-pubsub', {
+  //       type: '',
+  //       data: {
+  //         pathType: type,
+  //         replyChannel: 'nw-filesystem-pubsub',
+  //         replyType: 'nw-filesystem-add',
+  //         pathPrefix: prefix
+  //       }
+  //     })
+  //     // PubSub.publish('nw-input-pubsub', {
+  //     //   data: {
+  //     //     pathType: type,
+  //     //     replyChannel: 'nw-filesystem-pubsub',
+  //     //     replyType: 'nw-filesystem-add',
+  //     //     pathPrefix: prefix
+  //     //   } as RenderNewFileType
+  //     // })
+  //   }
+  // }
+
+  // show sidebar-menu when click the icon
+  // the `type` is to control menu content, which is different
+  // between file item and folder item.
+  const showMenu = (uniq: string, type: 'file' | 'folder') => {
     return (e: React.MouseEvent) => {
       e.stopPropagation()
-      pub('nw-input-pubsub', {
-        type: '',
+      if (!e.currentTarget) return
+      const rect = e.currentTarget.getBoundingClientRect()
+      // Send message to show menu
+      const pathTokens = uniq.split('/')
+      pub('nw-sidebar-menu-pubsub', {
+        type: 'show-menu',
         data: {
+          coordsX: Math.floor(rect.x) + Math.floor(rect.width) + 10,
+          coordsY: Math.floor(rect.y),
           pathType: type,
-          replyChannel: 'nw-filesystem-pubsub',
-          replyType: 'nw-filesystem-add',
-          pathPrefix: prefix
+          filepath: uniq,
+          pathPrefix: pathTokens.slice(0, pathTokens.length - 1).join('/')
         }
       })
-      // PubSub.publish('nw-input-pubsub', {
-      //   data: {
-      //     pathType: type,
-      //     replyChannel: 'nw-filesystem-pubsub',
-      //     replyType: 'nw-filesystem-add',
-      //     pathPrefix: prefix
-      //   } as RenderNewFileType
-      // })
     }
   }
 
@@ -322,13 +345,21 @@ const FilesystemFolderItem: FC<FilesystemFolderItemProps> = props => {
       {addVisible && (
         <InlineFlex flexShrink={0}>
           <AnimateClickDiv
-            onClick={clickAddEffect('file', uniq)}
-            child={<TiDocumentAdd className="icon-hover" />}
+            onClick={showMenu(uniq, 'folder')}
+            child={
+              <VscEllipsis
+                style={{ transform: 'rotate(90deg)', cursor: 'pointer' }}
+              />
+            }
           />
-          <AnimateClickDiv
-            onClick={clickAddEffect('folder', uniq)}
-            child={<TiFolderAdd className="icon-hover" />}
-          />
+          {/* <AnimateClickDiv */}
+          {/*   onClick={clickAddEffect('file', uniq)} */}
+          {/*   child={<TiDocumentAdd className="icon-hover" />} */}
+          {/* /> */}
+          {/* <AnimateClickDiv */}
+          {/*   onClick={clickAddEffect('folder', uniq)} */}
+          {/*   child={<TiFolderAdd className="icon-hover" />} */}
+          {/* /> */}
         </InlineFlex>
       )}
       {/* {addVisible && <AddEffect onClick={clickAddEffect} uniq={uniq} />} */}

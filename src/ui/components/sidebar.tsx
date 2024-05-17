@@ -1,7 +1,6 @@
 import { FC, useEffect, useRef, useState } from 'react'
 import styled from '@emotion/styled'
 
-import Resizer from './resizer'
 import BroadCast from './broadcast'
 import User from './user'
 import Filesystem from './filesystem'
@@ -13,6 +12,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { css } from '@emotion/css'
 import { FileDescriptor, FileDescriptorContainer, IpcChannelData } from '_types'
 import { pub, sub, unsub } from '../libs/pubsub'
+import SidebarMenu from './sidebar-menu'
 
 interface Props {
   isVisible: boolean
@@ -186,7 +186,7 @@ const SideBar: FC<Props> = (props): JSX.Element => {
                 currentFile={currentFile}
               />
             </VerticalScrollBox>
-            <Resizer parentRef={sidebarRef} minWidth={220} />
+            <SidebarMenu />
           </motion.div>
         )}
       </AnimatePresence>

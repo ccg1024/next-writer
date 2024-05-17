@@ -23,7 +23,8 @@ const channels = {
     'nw-sidebar-add-recent-file'
   ] as const,
   'nw-preview-pubsub': ['sync-scroll'] as const,
-  'nw-home-pubsub': ['toggle-global-loading'] as const
+  'nw-home-pubsub': ['toggle-global-loading'] as const,
+  'nw-sidebar-menu-pubsub': ['show-menu', 'close-menu'] as const
 }
 type Channels = typeof channels
 type ChannelName = keyof Channels
@@ -75,6 +76,11 @@ type DataUnit = {
 
   // nw-home-pubsub
   loading: boolean
+
+  // nw-sidebar-menu-pubsub
+  coordsX: number
+  coordsY: number
+  filepath: string
 }
 
 type ChannelData<T extends ChannelName> = {

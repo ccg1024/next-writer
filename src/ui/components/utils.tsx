@@ -186,13 +186,16 @@ type CloseIconProps = {
 }
 
 export const CloseIcon: FC<CloseIconProps> = props => {
-  const wrapper = css`
-    width: var(--nw-size-md);
-    height: var(--nw-size-md);
-    position: relative;
-    box-sizing: border-box;
-    outline: unset;
-  `
+  const wrapper = css({
+    width: 'var(--nw-size-md)',
+    height: 'var(--nw-size-md)',
+    position: 'relative',
+    boxSizing: 'border-box',
+    outline: 'unset',
+    ':hover': {
+      cursor: 'pointer'
+    }
+  })
   const horizon = css`
     box-sizing: border-box;
     width: 100%;

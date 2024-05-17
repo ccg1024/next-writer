@@ -175,9 +175,17 @@ const Home = () => {
     }
   }
 
+  // global click event
+  const onClick = () => {
+    // close sidebar-menu
+    pub('nw-sidebar-menu-pubsub', {
+      type: 'close-menu'
+    })
+  }
+
   return (
     <>
-      <div id="home">
+      <div id="home" onClick={onClick}>
         <SideBar isVisible={showSide} />
         <div
           onClick={homeContainerClick}
