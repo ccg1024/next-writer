@@ -17,12 +17,14 @@ interface ImageWidgetParams {
 
 class ImageWidget extends WidgetType {
   readonly url
-  imgWidget: Element
+  imgWidget: HTMLImageElement
 
   constructor({ url }: ImageWidgetParams) {
     super()
 
     this.url = url
+    this.imgWidget = new Image()
+    this.imgWidget.src = `atom://${this.url}`
   }
 
   eq(imageWidget: ImageWidget) {
@@ -31,18 +33,18 @@ class ImageWidget extends WidgetType {
 
   toDOM() {
     const container = document.createElement('div')
-    const image = container.appendChild(document.createElement('img'))
-    this.imgWidget = image
+    const image = container.appendChild(this.imgWidget)
+    // this.imgWidget = image
 
     container.setAttribute('aria-hidden', 'true')
     container.setAttribute('class', 'cm-image-preview-box')
-    image.setAttribute('src', `atom://${this.url}`)
+    // image.setAttribute('src', `atom://${this.url}`)
     image.setAttribute('class', 'cm-image-preview')
 
     return container
   }
   get estimatedHeight(): number {
-    return this.imgWidget ? this.imgWidget.clientHeight : 300
+    return -1
   }
 }
 
