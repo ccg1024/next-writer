@@ -1,6 +1,6 @@
 import { FC, MouseEvent } from 'react'
 import styled from '@emotion/styled'
-import { TiMediaRecord, TiDocumentText } from 'react-icons/ti'
+import { TiDocumentText } from 'react-icons/ti'
 
 import { AnimatePresence, motion } from 'framer-motion'
 import { Post } from '../libs/utils'
@@ -18,28 +18,42 @@ const ListBox = styled.div`
 
 type ListItemProps = {
   isActive: boolean
+  isChange?: boolean
 }
 const ListItem = styled.div<ListItemProps>`
   display: flex;
   align-items: center;
   gap: 5px;
-  padding: 5px 10px;
-  border-radius: var(--nw-border-radius-md);
+  padding: 10px;
+  line-height: 1;
+  border-radius: 5px;
   background-color: ${props =>
-    props.isActive ? 'var(--nw-color-whiteAlpha-800)' : 'unset'};
+    props.isActive
+      ? props.isChange
+        ? 'var(--nw-color-redAlpha-400)'
+        : 'var(--nw-color-blackAlpha-100)'
+      : props.isChange
+        ? 'var(--nw-color-redAlpha-200)'
+        : 'unset'};
   box-shadow: ${props =>
-    props.isActive ? 'var(--nw-box-shadow-sm)' : 'unset'};
+    props.isActive
+      ? props.isChange
+        ? '0px 0px 5px var(--nw-color-redAlpha-400)'
+        : '0px 0px 5px #808080'
+      : 'unset'};
   user-select: none;
-  height: 1.5em;
-  line-height: 1.5em;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
   &:hover {
     background-color: ${props =>
       props.isActive
-        ? 'var(--nw-color-whiteAlpha-800)'
-        : 'var(--nw-color-blackAlpha-100)'};
+        ? props.isChange
+          ? 'var(--nw-color-redAlpha-400)'
+          : 'var(--nw-color-blackAlpha-100)'
+        : props.isChange
+          ? 'var(--nw-color-redAlpha-400)'
+          : 'var(--nw-color-blackAlpha-50)'};
   }
 `
 
@@ -78,21 +92,17 @@ export const RecentFileList: FC<Props> = props => {
               animate={{ x: 0, opacity: 1 }}
               exit={{ x: -10, opacity: 0 }}
               transition={{ duration: 0.5 }}
+              whileTap={{ scale: 0.8 }}
             >
               <ListItem
                 key={file.path}
                 id={file.path}
                 isActive={isActive}
                 onClick={isActive ? null : cb}
+                isChange={file.isChange}
               >
                 <TiDocumentText className="fixed-flex-item" />
                 <span className="text-hide">{file.name}</span>
-                {file.isChange && (
-                  <TiMediaRecord
-                    className="fixed-flex-item"
-                    style={{ marginLeft: 'auto', color: 'red' }}
-                  />
-                )}
               </ListItem>
             </motion.div>
           )
