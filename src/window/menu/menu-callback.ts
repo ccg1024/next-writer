@@ -13,10 +13,23 @@ export function handleToggleSidebar(win: BrowserWindow) {
       checked: !oldValue
     }
   } as IpcChannelData)
-  win.setWindowButtonVisibility(!oldValue)
-
-  if (win.isFullScreen()) {
-    win.setWindowButtonVisibility(true)
-  }
+  // win.setWindowButtonVisibility(!oldValue)
+  //
+  // if (win.isFullScreen()) {
+  //   win.setWindowButtonVisibility(true)
+  // }
   global._next_writer_windowConfig.menuStatus.sideBarVisible = !oldValue
+}
+
+export function handleToggleHeadNav(win: BrowserWindow) {
+  if (!win) return
+
+  const oldValue = !!global._next_writer_windowConfig.menuStatus.hideNavVisible
+  win.webContents.send(ipcChannel['main-to-render'].home_component, {
+    type: 'toggleHeadNav',
+    value: {
+      checked: !oldValue
+    }
+  } as IpcChannelData)
+  global._next_writer_windowConfig.menuStatus.hideNavVisible = !oldValue
 }

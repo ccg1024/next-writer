@@ -14,7 +14,7 @@ import {
   writeRootWorkstationInfo
 } from '../file_process'
 import { IpcChannelData } from '_types'
-import { handleToggleSidebar } from './menu-callback'
+import { handleToggleHeadNav, handleToggleSidebar } from './menu-callback'
 
 // menu callback
 async function editorTypewriter(
@@ -93,16 +93,7 @@ function toggleSideBar(_m: MenuItem, win: BrowserWindow, _: unknown) {
 }
 
 function toggleHeadNav(_m: MenuItem, win: BrowserWindow, _: unknown) {
-  if (!win) return
-
-  const oldValue = !!global._next_writer_windowConfig.menuStatus.hideNavVisible
-  win.webContents.send(ipcChannel['main-to-render'].home_component, {
-    type: 'toggleHeadNav',
-    value: {
-      checked: !oldValue
-    }
-  } as IpcChannelData)
-  global._next_writer_windowConfig.menuStatus.hideNavVisible = !oldValue
+  handleToggleHeadNav(win)
 }
 
 function toggleFocusMode(m: MenuItem, win: BrowserWindow) {

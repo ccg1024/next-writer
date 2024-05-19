@@ -1,12 +1,13 @@
 import styled from '@emotion/styled'
 import { css } from '@emotion/css'
 import { AnimatePresence, motion } from 'framer-motion'
-import { FC, useState } from 'react'
-import { TiThList } from 'react-icons/ti'
+import { FC, useRef, useState } from 'react'
+import { TiThList, TiArchive } from 'react-icons/ti'
 import { Post } from '../libs/utils'
 import { ONE_WAY_CHANNEL } from 'src/config/ipc'
 
 const ToolSpan = styled.span`
+  margin: 0 5px;
   padding: 2px;
   display: flex;
   :hover {
@@ -18,16 +19,26 @@ const ToolSpan = styled.span`
 
 const Toolbar: FC = () => {
   const [visible, setVisible] = useState(false)
+  const timer = useRef<NodeJS.Timeout>(null)
 
   const toggleSidebar = () => {
     // send message to main process
-    Post(
-      ONE_WAY_CHANNEL,
-      {
-        type: 'render-toggle-sidebar'
-      },
-      true
-    )
+    Post(ONE_WAY_CHANNEL, { type: 'render-toggle-sidebar' }, true)
+  }
+  const toggleHeadNav = () => {
+    // send message to main process
+    Post(ONE_WAY_CHANNEL, { type: 'render-toggle-headNav' }, true)
+  }
+  const cancleTimeout = () => {
+    if (timer.current) {
+      clearTimeout(timer.current)
+      timer.current = null
+    }
+  }
+  const registeTimeout = () => {
+    timer.current = setTimeout(() => {
+      setVisible(false)
+    }, 2000)
   }
   return (
     <>
@@ -45,27 +56,39 @@ const Toolbar: FC = () => {
       <AnimatePresence initial={false} mode="wait">
         {visible && (
           <motion.div
-            initial={{ right: -20, opacity: 0 }}
-            animate={{ right: 0, opacity: 1 }}
-            exit={{ right: -20, opacity: 0 }}
+            initial={{ top: -20, opacity: 0 }}
+            animate={{ top: 0, opacity: 1 }}
+            exit={{ top: -20, opacity: 0 }}
             className={css({
-              backgroundColor: '#EDF2F7',
-              width: '50px',
-              padding: '10px 0',
+              boxSizing: 'border-box',
+              backgroundColor: '#F7FAFC',
+              width: '100%',
+              padding: '5px',
               position: 'absolute',
-              top: '20px',
+              top: 0,
               right: 0,
               userSelect: 'none',
               display: 'flex',
-              flexDirection: 'column',
-              boxShadow: 'var(--nw-box-shadow-sm)',
               justifyContent: 'center',
-              alignItems: 'center'
+              alignItems: 'center',
+              borderBottom: '1px solid #ccc'
             })}
-            onMouseLeave={() => setVisible(false)}
+            onMouseLeave={registeTimeout}
+            onMouseEnter={cancleTimeout}
           >
+            <div
+              className={css({
+                lineHeight: 1,
+                margin: 'auto'
+              })}
+            >
+              {window._next_writer_rendererConfig.workpath || 'Untitled'}
+            </div>
             <ToolSpan onClick={toggleSidebar}>
               <TiThList />
+            </ToolSpan>
+            <ToolSpan onClick={toggleHeadNav}>
+              <TiArchive />
             </ToolSpan>
           </motion.div>
         )}

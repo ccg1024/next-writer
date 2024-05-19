@@ -13,7 +13,7 @@ import {
 } from './file_process'
 import { exitCache, getCache, updateCache } from './cache'
 import { formatedMessage, updateWorkstationInfo } from './utils'
-import { handleToggleSidebar } from './menu/menu-callback'
+import { handleToggleHeadNav, handleToggleSidebar } from './menu/menu-callback'
 import {
   AddFileItem,
   IpcChannelData,
@@ -153,6 +153,8 @@ async function listener(_e: IpcMainEvent, req: IpcRequest) {
     shell.openExternal(url)
   } else if (req.type === 'render-toggle-sidebar') {
     handleToggleSidebar(global._next_writer_windowConfig.win)
+  } else if (req.type === 'render-toggle-headNav') {
+    handleToggleHeadNav(global._next_writer_windowConfig.win)
   }
 }
 
