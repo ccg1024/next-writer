@@ -123,10 +123,7 @@ const Home = () => {
           !!config.typewriter
         window._next_writer_rendererConfig.fontSize = fontSize
         window._next_writer_rendererConfig.fontFamily = fontFamily
-        pub('nw-editor-pubsub', { type: 'mount-prettier-list' })
-        // PubSub.publish('nw-editor-pubsub', {
-        //   type: 'mount-prettier-list'
-        // } as PubSubData)
+        pub('nw-editor-pubsub', { type: 'mount-plugin-scheduler' })
       })
       .catch(err => {
         throw err

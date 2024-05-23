@@ -5,15 +5,11 @@ import { Compartment, EditorState } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { useRef, useState, useLayoutEffect } from 'react'
 import { editorDefaultExtensions } from '../libs/codemirror'
-import { hideMarkPlugin } from '../plugins/hide-marke-extension'
-import { codeBlockHighlight } from '../plugins/code-block-extension'
 import { images } from '../plugins/images-extension'
 import { headNav } from '../plugins/head-nav-extension'
 import { noSelection, Post } from '../libs/utils'
 import { UpdateCacheContent } from '_types'
 import { inlineEmoji } from '../plugins/emoji-extension'
-import { blockquote } from '../plugins/block-quote-extension'
-import { linkPlugin } from '../plugins/link-extension'
 import { ONE_WAY_CHANNEL } from 'src/config/ipc'
 import { pub } from '../libs/pubsub'
 
@@ -27,7 +23,8 @@ const ctl = {
   scrollTimer: null as NodeJS.Timeout
 }
 
-export const prettierListPlugin = new Compartment()
+export const viewSchedulerConfig = new Compartment()
+export const viewAtomicSchedulerConfig = new Compartment()
 
 export const useEditor = <T extends Element>(
   props: Props
@@ -52,10 +49,6 @@ export const useEditor = <T extends Element>(
                 type: 'nw-sidebar-file-change',
                 data: { status: 'modified' }
               })
-              // PubSub.publish('nw-sidebar-pubsub', {
-              //   type: 'nw-sidebar-file-change',
-              //   data: { status: 'modified' }
-              // })
               Post(
                 ONE_WAY_CHANNEL,
                 {
@@ -112,32 +105,21 @@ export const useEditor = <T extends Element>(
                 type: 'sync-scroll',
                 data: { line, percent: percent >= 0 ? percent : 0 }
               })
-              // PubSub.publish('nw-preview-pubsub', {
-              //   type: 'sync-scroll',
-              //   data: { line, percent: percent >= 0 ? percent : 0 }
-              // })
               // public scroll info to head nav component
               pub('nw-head-nav-pubsub', {
                 type: 'top-head-line',
                 data: { line }
               })
-              // PubSub.publish('nw-head-nav-pubsub', {
-              //   type: 'top-head-line',
-              //   data: { line }
-              // })
               ctl.scrollTimer = null
             }, 500)
           }
         }),
         ...editorDefaultExtensions,
-        codeBlockHighlight(),
-        hideMarkPlugin,
         images(),
         headNav(),
         inlineEmoji(),
-        blockquote(),
-        prettierListPlugin.of([]),
-        linkPlugin()
+        viewSchedulerConfig.of([]),
+        viewAtomicSchedulerConfig.of([])
       ]
     })
 

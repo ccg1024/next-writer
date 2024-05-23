@@ -9,7 +9,7 @@ const channels = {
     'writefile',
     'head-jump',
     'insert-emoji',
-    'mount-prettier-list'
+    'mount-plugin-scheduler'
   ] as const,
   'nw-float-emoji-pubsub': ['open', 'close'] as const,
   'nw-filesystem-pubsub': ['nw-filesystem-add', 'nw-sync-filesystem'] as const,

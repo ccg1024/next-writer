@@ -7,7 +7,11 @@ import {
   useRef,
   useState
 } from 'react'
-import { useEditor, prettierListPlugin } from '../hooks/useEditor'
+import {
+  useEditor,
+  viewSchedulerConfig,
+  viewAtomicSchedulerConfig
+} from '../hooks/useEditor'
 import { themePlugin } from '../libs/codemirror'
 import { defaultLight } from '../libs/themes/default'
 
@@ -15,10 +19,11 @@ import '../css/editor.css'
 import { EditorView } from '@codemirror/view'
 import { Post } from '../libs/utils'
 import { EditorState } from '@codemirror/state'
-import { prettierList } from '../plugins/list-extension'
 import { IpcChannelData, ReadFileDescriptor, UpdateCacheContent } from '_types'
 import { ONE_WAY_CHANNEL } from 'src/config/ipc'
 import { pub, sub, unsub } from '../libs/pubsub'
+import { viewScheduler } from '../plugins/viewScheduler'
+import { viewAtomicScheduler } from '../plugins/viewAtomicScheduler'
 
 interface EditorProps {
   initialDoc: string
@@ -49,7 +54,10 @@ const Editor: FC<EditorProps> = (props): JSX.Element => {
     })
     if (!refFirst.current.isFirstRender) {
       editorView.dispatch({
-        effects: prettierListPlugin.reconfigure(prettierList())
+        effects: [
+          viewSchedulerConfig.reconfigure(viewScheduler()),
+          viewAtomicSchedulerConfig.reconfigure(viewAtomicScheduler())
+        ]
       })
     }
   }, [editorView])
@@ -57,34 +65,6 @@ const Editor: FC<EditorProps> = (props): JSX.Element => {
   useEffect(() => {
     if (!editorView) return
 
-    // function pubsubListener(_: string, payload: PubSubData) {
-    //   if (!payload) return
-    //
-    //   if (payload.type === 'head-jump') {
-    //     const jumpPos = payload.data.jumpPos as number
-    //     editorView.dispatch({
-    //       selection: { anchor: jumpPos, head: jumpPos },
-    //       effects: EditorView.scrollIntoView(jumpPos, {
-    //         y: 'start',
-    //         yMargin: 0
-    //       })
-    //     })
-    //   } else if (payload.type === 'insert-emoji') {
-    //     const cursor = editorView.state.selection.main.from
-    //     const emoji = payload.data.emoji as string
-    //     editorView.dispatch({
-    //       changes: {
-    //         from: cursor,
-    //         insert: `:{${emoji}}:`
-    //       }
-    //     })
-    //   } else if (payload.type === 'mount-prettier-list') {
-    //     refFirst.current.isFirstRender = false
-    //     editorView.dispatch({
-    //       effects: prettierListPlugin.reconfigure(prettierList())
-    //     })
-    //   }
-    // }
     // const token = PubSub.subscribe('nw-editor-pubsub', pubsubListener)
     const token = sub('nw-editor-pubsub', (_, payload) => {
       if (!payload) return
@@ -107,16 +87,18 @@ const Editor: FC<EditorProps> = (props): JSX.Element => {
             insert: `:{${emoji}}:`
           }
         })
-      } else if (payload.type === 'mount-prettier-list') {
+      } else if (payload.type === 'mount-plugin-scheduler') {
         refFirst.current.isFirstRender = false
         editorView.dispatch({
-          effects: prettierListPlugin.reconfigure(prettierList())
+          effects: [
+            viewSchedulerConfig.reconfigure(viewScheduler()),
+            viewAtomicSchedulerConfig.reconfigure(viewAtomicScheduler())
+          ]
         })
       }
     })
     return () => {
       unsub(token)
-      // PubSub.unsubscribe(token)
     }
   }, [editorView])
 
@@ -169,10 +151,6 @@ const Editor: FC<EditorProps> = (props): JSX.Element => {
         type: 'nw-sidebar-add-recent-file',
         data: { ...value.fileDescriptor }
       })
-      // PubSub.publish('nw-sidebar-pubsub', {
-      //   type: 'nw-sidebar-add-recent-file',
-      //   data: value.fileDescriptor
-      // })
       // update editor working path
       window._next_writer_rendererConfig.workpath = value.fileDescriptor.path
       window._next_writer_rendererConfig.modified =
@@ -210,21 +188,12 @@ const Editor: FC<EditorProps> = (props): JSX.Element => {
         type: 'nw-sidebar-file-change',
         data: { status: 'normal' }
       })
-      // PubSub.publish('nw-sidebar-pubsub', {
-      //   type: 'nw-sidebar-file-change',
-      //   data: { status: 'normal' }
-      // })
       // if not a empty file save, publi a message
       if (window._next_writer_rendererConfig.workpath !== '') {
         pub('nw-show-message', {
           type: '',
           data: { message: window._next_writer_rendererConfig.workpath }
         })
-        // PubSub.publish('nw-show-message', {
-        //   data: {
-        //     message: window._next_writer_rendererConfig.workpath
-        //   }
-        // })
       }
     }
   }
@@ -247,10 +216,6 @@ const Editor: FC<EditorProps> = (props): JSX.Element => {
 
     const left = diffX >= rect.width / 2 ? e.clientX - 200 : e.clientX
     const top = diffY >= rect.height / 2 ? e.clientY - 200 : e.clientY
-    // PubSub.publish('nw-float-emoji-pubsub', {
-    //   type: 'open',
-    //   data: { top, left }
-    // })
     pub('nw-float-emoji-pubsub', { type: 'open', data: { top, left } })
 
     return false

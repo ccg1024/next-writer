@@ -52,7 +52,7 @@ export const defaultTheme = EditorView.theme({
     textAlign: 'left',
     maxWidth: '580px',
     lineHeight: '1.5',
-    letterSpacing: '.1em'
+    letterSpacing: 'var(--nw-letter-spacing)'
   },
   '.cm-activeLineGutter': {
     backgroundColor: '#cccccc44'
