@@ -10,7 +10,8 @@ import {
 import {
   useEditor,
   viewSchedulerConfig,
-  viewAtomicSchedulerConfig
+  viewAtomicSchedulerConfig,
+  standaloneSchedulerConfig
 } from '../hooks/useEditor'
 import { themePlugin } from '../libs/codemirror'
 import { defaultLight } from '../libs/themes/default'
@@ -24,6 +25,7 @@ import { ONE_WAY_CHANNEL } from 'src/config/ipc'
 import { pub, sub, unsub } from '../libs/pubsub'
 import { viewScheduler } from '../plugins/viewScheduler'
 import { viewAtomicScheduler } from '../plugins/viewAtomicScheduler'
+import { standaloneScheduler } from '../plugins/standaloneScheduler'
 
 interface EditorProps {
   initialDoc: string
@@ -56,7 +58,8 @@ const Editor: FC<EditorProps> = (props): JSX.Element => {
       editorView.dispatch({
         effects: [
           viewSchedulerConfig.reconfigure(viewScheduler()),
-          viewAtomicSchedulerConfig.reconfigure(viewAtomicScheduler())
+          viewAtomicSchedulerConfig.reconfigure(viewAtomicScheduler()),
+          standaloneSchedulerConfig.reconfigure(standaloneScheduler())
         ]
       })
     }
@@ -92,7 +95,8 @@ const Editor: FC<EditorProps> = (props): JSX.Element => {
         editorView.dispatch({
           effects: [
             viewSchedulerConfig.reconfigure(viewScheduler()),
-            viewAtomicSchedulerConfig.reconfigure(viewAtomicScheduler())
+            viewAtomicSchedulerConfig.reconfigure(viewAtomicScheduler()),
+            standaloneSchedulerConfig.reconfigure(standaloneScheduler())
           ]
         })
       }

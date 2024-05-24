@@ -5,11 +5,8 @@ import { Compartment, EditorState } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { useRef, useState, useLayoutEffect } from 'react'
 import { editorDefaultExtensions } from '../libs/codemirror'
-import { images } from '../plugins/images-extension'
-import { headNav } from '../plugins/head-nav-extension'
 import { noSelection, Post } from '../libs/utils'
 import { UpdateCacheContent } from '_types'
-import { inlineEmoji } from '../plugins/emoji-extension'
 import { ONE_WAY_CHANNEL } from 'src/config/ipc'
 import { pub } from '../libs/pubsub'
 
@@ -25,6 +22,7 @@ const ctl = {
 
 export const viewSchedulerConfig = new Compartment()
 export const viewAtomicSchedulerConfig = new Compartment()
+export const standaloneSchedulerConfig = new Compartment()
 
 export const useEditor = <T extends Element>(
   props: Props
@@ -115,11 +113,9 @@ export const useEditor = <T extends Element>(
           }
         }),
         ...editorDefaultExtensions,
-        images(),
-        headNav(),
-        inlineEmoji(),
         viewSchedulerConfig.of([]),
-        viewAtomicSchedulerConfig.of([])
+        viewAtomicSchedulerConfig.of([]),
+        standaloneSchedulerConfig.of([])
       ]
     })
 
