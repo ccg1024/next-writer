@@ -5,6 +5,7 @@ import Home from './components/home'
 window._next_writer_rendererConfig = {
   workpath: '', // The path to which the editor edits the file
   modified: false,
+  preview: false,
   plugin: {}
 }
 

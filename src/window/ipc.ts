@@ -1,5 +1,4 @@
 // Making comunication with rederer process
-
 import { ipcMain, shell, IpcMainEvent, IpcMainInvokeEvent } from 'electron'
 import fs from 'fs'
 import path from 'path'
@@ -9,10 +8,18 @@ import {
   constructFileData,
   createFileProcess,
   generateFileDescripter,
-  writeRootWorkstationInfo
+  writeRootWorkstationInfo,
+  addLibraryFile,
+  addLibrary
 } from './file_process'
 import { exitCache, getCache, updateCache } from './cache'
-import { formatedMessage, updateWorkstationInfo } from './utils'
+import {
+  formatedMessage,
+  getRelativePath,
+  syncWorkstationInfo,
+  updateWorkstationInfo,
+  updateWorkstationInfoWithWrite
+} from './utils'
 import { handleToggleHeadNav, handleToggleSidebar } from './menu/menu-callback'
 import {
   AddFileItem,
@@ -21,8 +28,10 @@ import {
   IpcResponse,
   CacheContent,
   UpdateCacheContent,
-  Obj
+  Obj,
+  FrontMatter
 } from '_types'
+import matter from 'gray-matter'
 
 async function handleOpenFileFromRenderer(_: unknown, filePath: string) {
   // check whether have cache
@@ -106,6 +115,7 @@ async function listener(_e: IpcMainEvent, req: IpcRequest) {
     const filePath = _data.filePath as string
     if (!filePath) throw new Error('The request data prop `filePath` is empty.')
     const root = global._next_writer_windowConfig.root
+    const isLibrary = filePath.startsWith('./')
     const fullpath = filePath.startsWith('./')
       ? path.resolve(root, filePath)
       : filePath
@@ -125,7 +135,7 @@ async function listener(_e: IpcMainEvent, req: IpcRequest) {
       ipcChannel['main-to-render'].editor_component,
       {
         type: 'readfile',
-        value: readFileIpcValue
+        value: { ...readFileIpcValue, isLibrary, reqPath: filePath }
       } as IpcChannelData
     )
   } else if (req.type === 'open-recent-file') {
@@ -155,6 +165,45 @@ async function listener(_e: IpcMainEvent, req: IpcRequest) {
     handleToggleSidebar(global._next_writer_windowConfig.win)
   } else if (req.type === 'render-toggle-headNav') {
     handleToggleHeadNav(global._next_writer_windowConfig.win)
+  } else if (req.type === 'save-library-file') {
+    // NOTE: This is a new type of 'save-file'
+    const content = req.data.content
+    if (typeof content !== 'string') {
+      throw new Error(
+        'The content property is not right on save-library-file channel'
+      )
+    }
+    const filePath = global._next_writer_windowConfig.workPlatform
+    updateCache(filePath, {
+      isChange: false,
+      content: content
+    })
+
+    // make a write stream
+    const writeStream = fs.createWriteStream(filePath, {
+      encoding: 'utf-8'
+    })
+    writeStream.write(content)
+    writeStream.end()
+
+    // update rootWorkplatformInfo
+    const nextFrontMatter = matter(content)
+    // update item that already exist
+    updateWorkstationInfoWithWrite(
+      filePath,
+      nextFrontMatter.data as FrontMatter
+    )
+    // sync stageWorkstationInfo
+    syncWorkstationInfo(getRelativePath(filePath))
+    // write stageWorkstationInfo to .nwriter.info.json
+    await writeRootWorkstationInfo().catch(err => {
+      throw err
+    })
+  } else if (req.type === 'update-library-front-matter') {
+    const filePath = global._next_writer_windowConfig.workPlatform
+    const state = req.data.state as keyof FrontMatter
+    const stateValue = req.data.stateValue as string
+    updateWorkstationInfoWithWrite(filePath, { [state]: stateValue })
   }
 }
 
@@ -221,6 +270,39 @@ async function handler(
   } else if (req.type === 'process-config') {
     return {
       data: { root: global._next_writer_windowConfig.root }
+    }
+  } else if (req.type === 'add-library-file') {
+    // NOTE: this is new type for `add-file-from-render` which using on `sidebar-component`
+    const library = req.data.library
+    if (typeof library !== 'string') {
+      throw new Error(`The 'library' is not right on 'add-library-file' ipc`)
+    }
+    const newLibraryFile = addLibraryFile(library)
+
+    return {
+      data: {
+        status: 'success',
+        libraryFile: newLibraryFile
+      }
+    }
+  } else if (req.type === 'add-library') {
+    const { library, newLibName } = req.data
+    if (typeof library !== 'string' || typeof newLibName !== 'string') {
+      throw new Error(`The 'library' is not right, on 'add-library-file' ipc`)
+    }
+    const formatLib = path.join(library, newLibName)
+    const result = addLibrary(
+      formatLib.startsWith('.') ? formatLib : `./${formatLib}`
+    )
+
+    if (result === -1) {
+      return Promise.reject(`[next-writer]: 库名[${formatLib}]已存在`)
+    }
+
+    return {
+      data: {
+        status: 'success'
+      }
     }
   }
 }

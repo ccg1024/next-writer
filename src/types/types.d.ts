@@ -52,7 +52,7 @@ export type CheckBoxValue = {
 // Common type for ipc request and response
 export type IpcRequest = {
   type: string
-  data?: Obj | Primitive
+  data?: Obj
 }
 export type IpcResponseData = {
   status?: string | number
@@ -60,6 +60,7 @@ export type IpcResponseData = {
   workPlatform?: string
   renderConfig?: WriterConfig & Obj
   root?: string
+  libraryFile?: string
 }
 export type IpcResponse = {
   data?: IpcResponseData
@@ -79,8 +80,14 @@ export type FileDescriptor = {
 export type FileDescriptorContainer = {
   [key: string]: FileDescriptor
 }
+export type FrontMatter = {
+  tittle: string
+  description: string
+}
+
 export type ReadFileDescriptor = {
   // Old name ReadFileIpcValue
+  frontMatter: Partial<FrontMatter>
   content: string
   fileDescriptor: FileDescriptor
 }
@@ -92,10 +99,16 @@ export type AddFileItem = {
 export type RootWorkstationFolderInfo = {
   name: string
   subfolders: RootWorkstationInfo
+  birthtime: string
 }
+export type FileState = {
+  name: string
+  mtime: string // 上次修改时间
+  birthtime: string // 文件创建时间
+} & Partial<FrontMatter>
 export type RootWorkstationInfo = {
   folders: Array<RootWorkstationFolderInfo>
-  files: Array<string>
+  files: Array<FileState>
 }
 
 // -----------------------------------------------
@@ -118,6 +131,7 @@ export type RendererPlugin = {
 export type RendererConfig = {
   workpath: string // Old name workPath
   modified: boolean
+  preview: boolean
   root?: string
   fontSize?: string
   fontFamily?: string
@@ -183,6 +197,7 @@ export type WindowConfig = {
   logPath: string
   configName: 'nwriter.json'
   rootWorkplatformInfo: RootWorkstationInfo
+  stageWorkplatformInfo: RootWorkstationInfo // store to .nwriter.info.json
   renderConfig: WriterConfig & Obj // Config from nwriter.json
   menuStatus: MenuStatus
 }

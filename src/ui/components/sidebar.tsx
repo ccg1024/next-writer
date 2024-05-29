@@ -13,6 +13,7 @@ import { css } from '@emotion/css'
 import { FileDescriptor, FileDescriptorContainer, IpcChannelData } from '_types'
 import { pub, sub, unsub } from '../libs/pubsub'
 import SidebarMenu from './sidebar-menu'
+import { useLibraryContext } from '../contexts/library-context'
 
 interface Props {
   isVisible: boolean
@@ -25,9 +26,10 @@ const VerticalScrollBox = styled.div`
 
 const SideBar: FC<Props> = (props): JSX.Element => {
   const [recentFiles, setRecentFiles] = useState<FileDescriptorContainer>({})
-  const [currentFile, setCurrentFile] = useState<string>('')
   const [filelist, setFilelist] = useState<string[]>([])
   const sidebarRef = useRef<HTMLDivElement>(null)
+
+  const { currentFile, setCurrentFile } = useLibraryContext()
 
   useEffect(() => {
     // ipc, when save a empty path file, this listener will be triggered
@@ -95,29 +97,6 @@ const SideBar: FC<Props> = (props): JSX.Element => {
 
   // regist pubsub event
   useEffect(() => {
-    // const tokenFuc = (_: string, payload: PubSubData) => {
-    //   if (payload.type === 'nw-sidebar-file-change') {
-    //     if (!currentFile) return
-    //
-    //     setRecentFiles(v => ({
-    //       ...v,
-    //       [currentFile]: {
-    //         ...v[currentFile],
-    //         isChange: payload.data.status === 'modified'
-    //       }
-    //     }))
-    //   } else if (payload.type === 'nw-sidebar-add-recent-file') {
-    //     const fileDescriptor = payload.data as FileDescriptor
-    //     setRecentFiles(v => ({
-    //       ...v,
-    //       [fileDescriptor.path]: fileDescriptor
-    //     }))
-    //     setCurrentFile(fileDescriptor.path)
-    //     setFilelist(v =>
-    //       v.includes(fileDescriptor.path) ? v : [...v, fileDescriptor.path]
-    //     )
-    //   }
-    // }
     // regist pubsub listener
     // const token = PubSub.subscribe('nw-sidebar-pubsub', tokenFuc)
     const token = sub('nw-sidebar-pubsub', (_, payload) => {
@@ -161,9 +140,9 @@ const SideBar: FC<Props> = (props): JSX.Element => {
           <motion.div
             ref={sidebarRef}
             className="sidebar-main"
-            initial={{ width: 0 }}
-            animate={{ width: '220px' }}
-            exit={{ width: 0 }}
+            initial={{ width: 0, opacity: 0 }}
+            animate={{ width: '220px', opacity: 1 }}
+            exit={{ width: 0, opacity: 0 }}
             transition={{ duration: 0.25 }}
           >
             <div
@@ -175,16 +154,12 @@ const SideBar: FC<Props> = (props): JSX.Element => {
                 -webkit-app-region: drag
               `)}
             ></div>
-            <BroadCast currentFile={currentFile} />
+            <BroadCast />
             <User />
             <VerticalScrollBox>
-              <Filesystem currentFile={currentFile} />
+              <Filesystem />
               <Dividing />
-              <RecentFileList
-                filelist={filelist}
-                recentFiles={recentFiles}
-                currentFile={currentFile}
-              />
+              <RecentFileList filelist={filelist} recentFiles={recentFiles} />
             </VerticalScrollBox>
             <SidebarMenu />
           </motion.div>

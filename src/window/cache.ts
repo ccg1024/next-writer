@@ -31,6 +31,12 @@ export const cacheManager: CacheManager = {
       ...this.cache[filePath],
       ...updateContent
     }
+
+    // modify close icon
+    if (!global._next_writer_windowConfig.win) return
+    global._next_writer_windowConfig.win.setDocumentEdited(
+      this.hasModifiedFile()
+    )
   },
   exitCache(filePath: string) {
     return this.cache[filePath] ? true : false

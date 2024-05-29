@@ -6,14 +6,15 @@ import { EditorView } from '@codemirror/view'
 import { useRef, useState, useLayoutEffect } from 'react'
 import { editorDefaultExtensions } from '../libs/codemirror'
 import { noSelection, Post } from '../libs/utils'
-import { UpdateCacheContent } from '_types'
+import { FileState, FrontMatter, UpdateCacheContent } from '_types'
 import { ONE_WAY_CHANNEL } from 'src/config/ipc'
 import { pub } from '../libs/pubsub'
 
 interface Props {
   initialDoc?: string
   timeKey: number // Ensure the editor re-build when toggle file which content is same.
-  callback: (state: EditorState) => void
+  getFileState: (state: keyof FileState) => string
+  setFileState: (state: keyof FileState, value: string) => void
 }
 
 const ctl = {
@@ -27,9 +28,12 @@ export const standaloneSchedulerConfig = new Compartment()
 export const useEditor = <T extends Element>(
   props: Props
 ): [React.MutableRefObject<T | null>, EditorView?] => {
-  const { initialDoc } = props
+  const { initialDoc, getFileState, setFileState } = props
   const [editorView, setEditorView] = useState<EditorView>(null)
   const containerRef = useRef<T>(null)
+  const refGetFileState = useRef<(state: keyof FrontMatter) => string>(null)
+
+  refGetFileState.current = getFileState
 
   useLayoutEffect(() => {
     if (!containerRef.current) return
@@ -39,6 +43,15 @@ export const useEditor = <T extends Element>(
       extensions: [
         EditorView.updateListener.of(update => {
           if (update.docChanged) {
+            // update state
+            const sliceDoc =
+              update.state.doc.length > 100
+                ? update.state.doc.sliceString(0, 100)
+                : update.state.doc.toString()
+            const oldDescription = refGetFileState.current('description')
+            if (sliceDoc !== oldDescription) {
+              setFileState('description', sliceDoc)
+            }
             if (
               !window._next_writer_rendererConfig.modified &&
               window._next_writer_rendererConfig.workpath !== ''
@@ -63,7 +76,15 @@ export const useEditor = <T extends Element>(
               window._next_writer_rendererConfig.modified = true
             }
             // update doc state
-            props.callback(update.state)
+            if (window._next_writer_rendererConfig.preview) {
+              pub('nw-preview-pubsub', {
+                type: 'sync-doc',
+                data: {
+                  doc: update.state.doc.toString(),
+                  timestamp: new Date().valueOf()
+                }
+              })
+            }
           }
           if (
             update.selectionSet &&
@@ -87,8 +108,7 @@ export const useEditor = <T extends Element>(
             // handle scroll
             if (ctl.scrollTimer || !view) return
             ctl.scrollTimer = setTimeout(() => {
-              const scrollTop =
-                view.scrollDOM.scrollTop - window.innerHeight * 0.5
+              const scrollTop = view.scrollDOM.scrollTop
               const topBlockInfo = view.elementAtHeight(scrollTop)
               const line = view.state.doc.lineAt(topBlockInfo.from).number
 

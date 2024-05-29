@@ -1,4 +1,4 @@
-import { FC, useEffect, useRef } from 'react'
+import { FC, useEffect, useRef, useState } from 'react'
 import { css } from '@emotion/css'
 import useProcessor from '../hooks/useProcessor'
 
@@ -6,7 +6,6 @@ import 'katex/dist/katex.css'
 import { sub, unsub } from '../libs/pubsub'
 
 interface PreviewProps {
-  doc: string
   visible: boolean
   hideEditor: boolean
 }
@@ -38,42 +37,19 @@ function binarySearchDom(
 
   return null
 }
+type PreviewStore = {
+  timestamp: number
+}
 const Preview: FC<PreviewProps> = props => {
+  const [doc, setDoc] = useState('')
   const refContainer = useRef<HTMLDivElement>(null)
   const refWrapper = useRef<HTMLDivElement>(null)
-  const { doc } = props
   const content = useProcessor(doc, props.visible)
 
   useEffect(() => {
-    // const listener = (_: string, payload: PubSubData) => {
-    //   if (payload.type == 'sync-scroll') {
-    //     if (!refContainer.current) return
-    //
-    //     const { line, percent } = payload.data as {
-    //       line: number
-    //       percent: number
-    //     }
-    //     const doms = refContainer.current.children
-    //     const target = binarySearchDom(doms, line)
-    //     if (!target) return
-    //
-    //     let additional = target.offsetHeight * percent
-    //     // check whether is a block wrapper
-    //     if (target.dataset.end) {
-    //       const lines =
-    //         Number(target.dataset.end) - Number(target.dataset.start) + 1
-    //       const elementHeight = target.offsetHeight
-    //       const offsetStart = line - Number(target.dataset.start)
-    //       const lineHeight = elementHeight / lines
-    //       additional = lineHeight * offsetStart + lineHeight * percent
-    //     }
-    //     refWrapper.current.scrollTo({
-    //       top: target.offsetTop + additional,
-    //       behavior: 'auto'
-    //     })
-    //   }
-    // }
-    // const token = PubSub.subscribe('nw-preview-pubsub', listener)
+    const previewStore: PreviewStore = {
+      timestamp: -1
+    }
     const token = sub('nw-preview-pubsub', (_, payload) => {
       if (payload.type == 'sync-scroll') {
         if (!refContainer.current) return
@@ -97,6 +73,12 @@ const Preview: FC<PreviewProps> = props => {
           top: target.offsetTop + additional,
           behavior: 'auto'
         })
+      } else if (payload.type === 'sync-doc') {
+        const { doc, timestamp } = payload.data
+
+        if (previewStore.timestamp > timestamp) return
+
+        setDoc(doc)
       }
     })
 
@@ -109,8 +91,8 @@ const Preview: FC<PreviewProps> = props => {
   const styles = css({
     flexGrow: 1,
     flexBasis: 0,
-    flexShrink: 0,
-    overflow: 'auto',
+    minWidth: 0,
+    overflow: 'hidden',
     boxSizing: 'border-box',
     wordBreak: 'break-all',
     backgroundColor: 'white',

@@ -1,5 +1,5 @@
 import { EditorState } from '@codemirror/state'
-import { IpcRequest } from '_types'
+import { FileState, IpcRequest, RootWorkstationFolderInfo } from '_types'
 
 export function reversePath(path: string, sep?: string) {
   const _sep = sep ? sep : '/'
@@ -479,4 +479,84 @@ export function resolve2path(path1: string, path2: string) {
       : path2
 
   return `${p1}${p2}`
+}
+
+function getFormatTime(time: Date) {
+  return `${time.getFullYear()}-${time.getMonth() + 1}-${time.getDate()}`
+}
+export function formatTime(): string
+export function formatTime(date: string): string
+export function formatTime(date?: string | number) {
+  if (!date) {
+    const time = new Date()
+    return getFormatTime(time)
+  }
+
+  return getFormatTime(new Date(date))
+}
+
+/**
+ * Gets the time distance from the last update.
+ *
+ * @param date timestamp for `new Date()`
+ * @returns time distance description.
+ */
+export function timeDistance(date: string): string
+export function timeDistance(date: number): string
+export function timeDistance(date: number | string): string {
+  const oldDate = typeof date === 'string' ? new Date(date).valueOf() : date
+  const current = new Date()
+  const diff = (current.valueOf() - oldDate) / 1000
+
+  if (diff < 60) return 'Seconds ago'
+
+  if (diff < 120) return 'A minute ago'
+
+  if (diff < 1800) return 'A few minute ago'
+
+  if (diff < 3600) return 'Half an hour ago'
+
+  if (diff < 7200) return 'An hour ago'
+
+  if (diff < 86400) return 'A few hours ago'
+
+  return 'A day ago'
+}
+
+export function getCurrentNote(notes: FileState[], relativeName: string) {
+  if (!notes) return null
+
+  const tokens = relativeName.split('/')
+  const currentName = tokens[tokens.length - 1]
+  for (let i = 0; i < notes.length; i++) {
+    if (notes[i].name === currentName) return notes[i]
+  }
+
+  return null
+}
+
+export function findFolderIndex(
+  folders: RootWorkstationFolderInfo[],
+  target: string
+) {
+  for (let i = 0; i < folders.length; i++) {
+    if (folders[i].name === target) return i
+  }
+
+  return -1
+}
+export function findFileIndex(files: FileState[], target: string) {
+  for (let i = 0; i < files.length; i++) {
+    if (files[i].name === target) return i
+  }
+  return -1
+}
+
+export function isValidFileName(fileName: string) {
+  if (!fileName || fileName.startsWith('.') || fileName.indexOf(' ') !== -1)
+    return false
+
+  const regex = /^[^\\/:*?"<>|]{1,255}$/
+
+  return regex.test(fileName)
 }

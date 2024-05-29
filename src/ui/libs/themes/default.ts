@@ -24,10 +24,17 @@ export const defaultTheme = EditorView.theme({
   },
   '.cm-scroller': {
     fontFamily: 'var(--nw-editor-font-family)',
-    marginTop: '20px',
+    // marginTop: '20px',
     marginBottom: '20px',
     padding: '0 10%',
     justifyContent: 'center'
+  },
+  '.cm-scroller::before': {
+    content: "''",
+    width: '100%',
+    position: 'absolute',
+    height: '2px',
+    backgroundColor: 'white'
   },
   '&.cm-editor': {
     // textAlign: 'left',
@@ -47,7 +54,7 @@ export const defaultTheme = EditorView.theme({
     padding: '0px'
   },
   '.cm-content': {
-    paddingTop: '50vh',
+    paddingTop: '0',
     paddingBottom: '50vh',
     textAlign: 'left',
     maxWidth: '580px',

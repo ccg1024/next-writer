@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { Post } from '../libs/utils'
 import { FileDescriptorContainer } from '_types'
 import { ONE_WAY_CHANNEL } from 'src/config/ipc'
+import { useLibraryContext } from '../contexts/library-context'
 
 const ListBox = styled.div`
   margin: 10px 0;
@@ -60,10 +61,10 @@ const ListItem = styled.div<ListItemProps>`
 interface Props {
   recentFiles: FileDescriptorContainer
   filelist: string[]
-  currentFile: string
 }
 
 export const RecentFileList: FC<Props> = props => {
+  const { currentFile } = useLibraryContext()
   function cb(e: MouseEvent) {
     // window.ipc._render_openFile(e.currentTarget.id)
     Post(
@@ -84,7 +85,7 @@ export const RecentFileList: FC<Props> = props => {
       <AnimatePresence initial={false}>
         {props.filelist.map(filePath => {
           const file = props.recentFiles[filePath]
-          const isActive = props.currentFile === file.path
+          const isActive = currentFile === file.path
           return (
             <motion.div
               key={file.path}

@@ -1,7 +1,6 @@
 import {
   FC,
   MouseEvent,
-  useCallback,
   useEffect,
   useLayoutEffect,
   useRef,
@@ -18,35 +17,42 @@ import { defaultLight } from '../libs/themes/default'
 
 import '../css/editor.css'
 import { EditorView } from '@codemirror/view'
-import { Post } from '../libs/utils'
-import { EditorState } from '@codemirror/state'
-import { IpcChannelData, ReadFileDescriptor, UpdateCacheContent } from '_types'
-import { ONE_WAY_CHANNEL } from 'src/config/ipc'
+import { IpcChannelData } from '_types'
 import { pub, sub, unsub } from '../libs/pubsub'
 import { viewScheduler } from '../plugins/viewScheduler'
 import { viewAtomicScheduler } from '../plugins/viewAtomicScheduler'
 import { standaloneScheduler } from '../plugins/standaloneScheduler'
+import { useLibraryContext } from '../contexts/library-context'
+import { ONE_WAY_CHANNEL } from 'src/config/ipc'
+import { Post } from '../libs/utils'
+import { AbsoluteFullEditLogo } from './logo'
 
-interface EditorProps {
-  initialDoc: string
-  onChange: (newDoc: string) => void
-}
 interface RefObj {
   isFirstRender: boolean
 }
-const Editor: FC<EditorProps> = (props): JSX.Element => {
+const Editor: FC = (): JSX.Element => {
+  const [initialDoc, setInitialDoc] = useState('')
   const refFirst = useRef<RefObj>({
     isFirstRender: true
   })
   const [timeKey, setTimeKey] = useState<number>(-1)
-  const callback = useCallback((state: EditorState) => {
-    props.onChange(state.doc.toString())
-  }, [])
+
+  const { currentFile, setCurrentFile, saveFile, getFileState, setFileState } =
+    useLibraryContext()
   const [containerRef, editorView] = useEditor<HTMLDivElement>({
-    initialDoc: props.initialDoc,
+    initialDoc,
     timeKey,
-    callback
+    getFileState,
+    setFileState
   })
+
+  // saveFile will update when state change in useLibraryContext
+  // but, the invoke place is in useEffect(() => {}, [editorView])
+  // so, when call saveFile in that place, just got the old state
+  // but why 'currentFile' is newest, not figure out.
+  // Using ref to link newest function, can solve this problem.
+  const refSaveFile = useRef<(doc: string) => void>(null)
+  refSaveFile.current = saveFile
 
   useLayoutEffect(() => {
     if (!editorView) return
@@ -99,6 +105,15 @@ const Editor: FC<EditorProps> = (props): JSX.Element => {
             standaloneSchedulerConfig.reconfigure(standaloneScheduler())
           ]
         })
+      } else if (payload.type === 'mount-preview') {
+        // publish current doc to preview component since it's visible
+        pub('nw-preview-pubsub', {
+          type: 'sync-doc',
+          data: {
+            doc: editorView.state.doc.toString(),
+            timestamp: new Date().valueOf()
+          }
+        })
       }
     })
     return () => {
@@ -124,10 +139,13 @@ const Editor: FC<EditorProps> = (props): JSX.Element => {
         window._next_writer_rendererConfig.plugin.typewriter = false
       }
     } else if (data.type === 'readfile') {
-      const value = data.value as ReadFileDescriptor
+      const { isLibrary, reqPath, ...value } = data.value
 
       // upload cache before show new file content
       if (window._next_writer_rendererConfig.workpath !== '') {
+        // workpath is a absolute path
+        // just cache doc content with out front-matter
+        // since when change library, context will lost current library data
         Post(
           ONE_WAY_CHANNEL,
           {
@@ -135,26 +153,35 @@ const Editor: FC<EditorProps> = (props): JSX.Element => {
             data: {
               filePath: window._next_writer_rendererConfig.workpath,
               content: editorView.state.doc.toString()
-            } as UpdateCacheContent
+            }
           },
           true
         ).catch(err => {
           throw err
         })
       }
-
-      // setDoc(value.content)
-      props.onChange(value.content) // update new doc
+      setInitialDoc(value.content)
+      if (window._next_writer_rendererConfig.preview) {
+        pub('nw-preview-pubsub', {
+          type: 'sync-doc',
+          data: { doc: value.content, timestamp: new Date().valueOf() }
+        })
+      }
       // Can not use toString(), which return seconds level of time
       // if change file to fast, the editor will not re-build, and will
       // cover next file cacha content with pre-file, if press save
       // the data on the hard drive will also be overwritten incorrectly.
       setTimeKey(new Date().valueOf()) // Make sure the editor re-build
       // update recent file list component
-      pub('nw-sidebar-pubsub', {
-        type: 'nw-sidebar-add-recent-file',
-        data: { ...value.fileDescriptor }
-      })
+      // NOTE: old sidebar component needed
+      // pub('nw-sidebar-pubsub', {
+      //   type: 'nw-sidebar-add-recent-file',
+      //   data: { ...value.fileDescriptor }
+      // })
+
+      if (isLibrary as boolean) {
+        setCurrentFile(reqPath as string)
+      }
       // update editor working path
       window._next_writer_rendererConfig.workpath = value.fileDescriptor.path
       window._next_writer_rendererConfig.modified =
@@ -175,23 +202,24 @@ const Editor: FC<EditorProps> = (props): JSX.Element => {
         }
       })
     } else if (data.type === 'writefile') {
+      refSaveFile.current(editorView.state.doc.toString())
       // window.ipc._render_saveFile(editorView.state.doc.toString())
-      Post(
-        ONE_WAY_CHANNEL,
-        {
-          type: 'save-file',
-          data: { content: editorView.state.doc.toString() }
-        },
-        true
-      ).catch(err => {
-        throw err
-      })
+      // Post(
+      //   ONE_WAY_CHANNEL,
+      //   {
+      //     type: 'save-file',
+      //     data: { content: editorView.state.doc.toString() }
+      //   },
+      //   true
+      // ).catch(err => {
+      //   throw err
+      // })
       // trigger modify save
       window._next_writer_rendererConfig.modified = false
-      pub('nw-sidebar-pubsub', {
-        type: 'nw-sidebar-file-change',
-        data: { status: 'normal' }
-      })
+      // pub('nw-sidebar-pubsub', {
+      //   type: 'nw-sidebar-file-change',
+      //   data: { status: 'normal' }
+      // })
       // if not a empty file save, publi a message
       if (window._next_writer_rendererConfig.workpath !== '') {
         pub('nw-show-message', {
@@ -226,12 +254,15 @@ const Editor: FC<EditorProps> = (props): JSX.Element => {
   }
 
   return (
-    <div
-      onContextMenu={openFloat}
-      id="editor-container"
-      className="hide-scroll-bar"
-      ref={containerRef}
-    ></div>
+    <>
+      <div
+        onContextMenu={openFloat}
+        id="editor-container"
+        className="hide-scroll-bar"
+        ref={containerRef}
+      ></div>
+      {!currentFile && <AbsoluteFullEditLogo />}
+    </>
   )
 }
 

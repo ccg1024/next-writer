@@ -5,6 +5,7 @@ import { FC, useRef, useState } from 'react'
 import { TiThList, TiArchive } from 'react-icons/ti'
 import { Post } from '../libs/utils'
 import { ONE_WAY_CHANNEL } from 'src/config/ipc'
+import { useLibraryContext } from '../contexts/library-context'
 
 const ToolSpan = styled.span`
   margin: 0 5px;
@@ -21,6 +22,7 @@ const Toolbar: FC = () => {
   const [visible, setVisible] = useState(false)
   const timer = useRef<NodeJS.Timeout>(null)
 
+  const { currentFile } = useLibraryContext()
   const toggleSidebar = () => {
     // send message to main process
     Post(ONE_WAY_CHANNEL, { type: 'render-toggle-sidebar' }, true)
@@ -82,7 +84,7 @@ const Toolbar: FC = () => {
                 margin: 'auto'
               })}
             >
-              {window._next_writer_rendererConfig.workpath || 'Untitled'}
+              {currentFile || 'Untitled'}
             </div>
             <ToolSpan onClick={toggleSidebar}>
               <TiThList />

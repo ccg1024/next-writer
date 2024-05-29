@@ -1,4 +1,4 @@
-import { app, protocol, BrowserWindow, net, Menu } from 'electron'
+import { app, protocol, BrowserWindow, net, Menu, dialog } from 'electron'
 import { mountIPC } from './window/ipc'
 import createMenus from './window/menu/menu'
 import { hasModifiedFile, initCacheAccessor } from './window/cache'
@@ -31,6 +31,7 @@ global._next_writer_windowConfig = {
   logPath: log,
   configName: 'nwriter.json',
   rootWorkplatformInfo: { folders: [], files: [] },
+  stageWorkplatformInfo: { folders: [], files: [] },
   renderConfig: {},
   menuStatus: {
     sideBarVisible: true,
@@ -142,6 +143,12 @@ app.whenReady().then(() => {
 
   // mount ipc
   mountIPC()
+})
+process.on('uncaughtException', err => {
+  dialog.showErrorBox('主进程错误', `发生一个未捕获异常: ${err.message}`)
+})
+process.on('unhandledRejection', reason => {
+  dialog.showErrorBox('主进程错误', `发生一个未捕获Promise异常: ${reason}`)
 })
 
 // Quit when all windows are closed, except on macOS. There, it's common

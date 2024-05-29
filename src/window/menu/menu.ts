@@ -32,7 +32,7 @@ async function editorTypewriter(
   } as IpcChannelData)
 }
 
-async function openFile(_: unknown, win: BrowserWindow) {
+async function _openFile(_: unknown, win: BrowserWindow) {
   const readFileIpcValue = await handleOpenFile(win)
 
   const editorChannelValue: IpcChannelData = {
@@ -55,7 +55,7 @@ async function saveFile(_: unknown, win: BrowserWindow) {
   } as IpcChannelData)
 }
 
-async function createFile(_: unknown, win: BrowserWindow) {
+async function _createFile(_: unknown, win: BrowserWindow) {
   const readFileIpcValue = await handleCreateFile(win)
 
   if (!readFileIpcValue) return
@@ -140,32 +140,36 @@ function syncWorkplatform(_: MenuItem, win: BrowserWindow) {
   if (!win) return
 
   // send a empty message
-  win.webContents.send(ipcChannel['main-to-render'].sidebar_component, {
-    type: 'sidebar-sync-file-tree',
-    value: { manualStatus: 'pending' }
-  } as IpcChannelData)
+  // win.webContents.send(ipcChannel['main-to-render'].sidebar_component, {
+  //   type: 'sidebar-sync-file-tree',
+  //   value: { manualStatus: 'pending' }
+  // } as IpcChannelData)
 
   synchronizeFileTree()
     .then(fileTree => {
       // update global variable
-      global._next_writer_windowConfig.rootWorkplatformInfo = fileTree
+      const temp = JSON.stringify(fileTree)
+      global._next_writer_windowConfig.rootWorkplatformInfo = JSON.parse(temp)
+      global._next_writer_windowConfig.stageWorkplatformInfo = JSON.parse(temp)
       writeRootWorkstationInfo()
         .then(() => {
-          win.webContents.send(ipcChannel['main-to-render'].sidebar_component, {
-            type: 'sidebar-sync-file-tree',
-            value: { ...fileTree, manualStatus: 'fulfilled' }
-          } as IpcChannelData)
+          // win.webContents.send(ipcChannel['main-to-render'].sidebar_component, {
+          //   type: 'sidebar-sync-file-tree',
+          //   value: { ...fileTree, manualStatus: 'fulfilled' }
+          // } as IpcChannelData)
+          app.relaunch()
+          app.exit()
         })
         .catch(err => {
           throw err
         })
     })
     .catch(err => {
-      win.webContents.send(ipcChannel['main-to-render'].sidebar_component, {
-        type: 'sidebar-sync-file-tree',
-        value: { manualStatus: 'rejected', err }
-      } as IpcChannelData)
-      throw new err()
+      // win.webContents.send(ipcChannel['main-to-render'].sidebar_component, {
+      //   type: 'sidebar-sync-file-tree',
+      //   value: { manualStatus: 'rejected', err }
+      // } as IpcChannelData)
+      throw err
     })
 }
 
@@ -179,68 +183,66 @@ export default function createMenus(): MenuItemConstructorOptions[] {
           {
             label: app.name,
             submenu: [
-              { role: 'about' },
+              { role: 'about', label: '关于' },
               { type: 'separator' },
-              { role: 'services' },
+              { role: 'services', label: '服务' },
               { type: 'separator' },
               {
-                label: 'sync workplatform',
+                label: '同步库',
                 click: syncWorkplatform
               },
               { type: 'separator' },
-              { role: 'quit' }
+              { role: 'quit', label: '关闭' }
             ] as MenuItemConstructorOptions[]
           }
         ]
       : []),
     {
-      label: 'File',
+      label: '文件',
       submenu: [
+        // {
+        //   label: 'open file',
+        //   click: openFile,
+        //   accelerator: isMac ? 'Cmd+o' : 'Ctrl+o'
+        // },
         {
-          label: 'open file',
-          click: openFile,
-          accelerator: isMac ? 'Cmd+o' : 'Ctrl+o'
-        },
-        {
-          label: 'save file',
+          label: '保存',
           click: saveFile,
           accelerator: isMac ? 'Cmd+s' : 'Ctrl+s'
-        },
-        {
-          label: 'creat file',
-          click: createFile,
-          accelerator: isMac ? 'Cmd+n' : 'Ctrl+n'
-        },
-        { type: 'separator' },
-        isMac ? { role: 'close' } : { role: 'quit' }
+        }
+        // {
+        //   label: 'creat file',
+        //   click: createFile,
+        //   accelerator: isMac ? 'Cmd+n' : 'Ctrl+n'
+        // },
       ]
     },
     {
-      label: 'View',
+      label: '视图',
       submenu: [
-        { role: 'toggleDevTools' },
+        { role: 'toggleDevTools', label: '调试' },
         { type: 'separator' },
         {
-          label: 'toggle sidebar',
+          label: '侧边栏',
           click: toggleSideBar,
           accelerator: isMac ? 'Cmd+Shift+s' : 'Ctrl+Shift+s'
         },
         {
-          label: 'toggle headNav',
+          label: '切换导航',
           click: toggleHeadNav,
           accelerator: isMac ? 'Cmd+Shift+h' : 'Ctrl+Shift+h'
         },
         {
-          label: 'toggle preview',
+          label: '切换预览',
           click: preview,
           accelerator: isMac ? 'Cmd+Shift+p' : 'Ctrl+Shift+p'
         },
         {
-          label: 'live preview',
+          label: '实时预览',
           click: livePreview
         },
         {
-          label: 'focus mode',
+          label: '专注模式',
           click: toggleFocusMode,
           type: 'checkbox',
           checked: !!global._next_writer_windowConfig.renderConfig.focusMode
@@ -248,24 +250,27 @@ export default function createMenus(): MenuItemConstructorOptions[] {
       ]
     },
     {
-      label: 'Edit',
+      label: '编辑',
       submenu: [
-        { role: 'copy' },
-        { role: 'paste' },
+        { role: 'copy', label: '复制' },
+        { role: 'paste', label: '粘贴' },
         { type: 'separator' },
         {
-          label: 'typewriter',
+          label: '打字机模式',
           click: editorTypewriter,
           type: 'checkbox',
           checked: !!global._next_writer_windowConfig.renderConfig.typewriter
         },
         { type: 'separator' },
-        { label: 'insert image', click: insertImage }
+        { label: '插入图片', click: insertImage }
       ]
     },
     {
-      label: 'Window',
-      submenu: [{ role: 'minimize' }, { role: 'zoom' }]
+      label: '窗口',
+      submenu: [
+        { role: 'minimize', label: '最小化' },
+        { role: 'zoom', label: '最大化' }
+      ]
     }
   ]
 }

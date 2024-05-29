@@ -1,8 +1,6 @@
-import { MouseEvent, useCallback, useEffect, useState } from 'react'
+import { MouseEvent, useEffect, useState } from 'react'
 import Message from './message'
-import SideBar from './sidebar'
 import Editor from './editor'
-import Drag from './drag'
 
 import '../css/home.css'
 import '../css/theme.css'
@@ -18,19 +16,20 @@ import { TWO_WAY_CHANNEL } from 'src/config/ipc'
 import { HoverImage } from './image'
 import { pub, sub, unsub } from '../libs/pubsub'
 import { GlobalLoading } from './utils'
+import DetailBar from './detail-bar'
+import LibraryProvider from '../contexts/library-context'
+import LibBar from './lib-bar'
+import FrontMatter from './front-matter'
+import Drag from './drag'
 
 const Home = () => {
   const [showSide, setShowSide] = useState<boolean>(true)
+  const [showDetail, _setShowDetail] = useState<boolean>(true)
   const [showHeadNav, setShowHeadNav] = useState<boolean>(false)
   const [showFocus, setShowFocus] = useState<boolean>(true)
   const [showPreview, setShowPreview] = useState(false)
   const [hideEditor, setHideEditor] = useState(false)
-  const [doc, setDoc] = useState<string>('')
   const [loading, setLoading] = useState(false)
-
-  const onChange = useCallback((newDoc: string) => {
-    setDoc(newDoc)
-  }, [])
 
   const listenerMap = {
     toggleSidebar: (data: IpcChannelData) => {
@@ -53,11 +52,14 @@ const Home = () => {
         // just show preview
         setShowPreview(true)
         setHideEditor(true)
+        window._next_writer_rendererConfig.preview = true
+        pub('nw-editor-pubsub', { type: 'mount-preview' })
         return
       }
 
       setShowPreview(false)
       setHideEditor(false)
+      window._next_writer_rendererConfig.preview = false
     },
     livePreview: (data: IpcChannelData) => {
       const { checked } = data.value
@@ -65,10 +67,13 @@ const Home = () => {
       if (checked) {
         setHideEditor(false)
         setShowPreview(true)
+        window._next_writer_rendererConfig.preview = true
+        pub('nw-editor-pubsub', { type: 'mount-preview' })
         return
       }
       setHideEditor(false)
       setShowPreview(false)
+      window._next_writer_rendererConfig.preview = false
     }
   }
 
@@ -183,22 +188,27 @@ const Home = () => {
   return (
     <>
       <div id="home" onClick={onClick}>
-        <SideBar isVisible={showSide} />
-        <div
-          onClick={homeContainerClick}
-          className="home-container"
-          style={{ display: hideEditor ? 'none' : 'block' }}
-        >
-          <Editor initialDoc={doc} onChange={onChange} />
-          {showFocus && <VerticalBlur />}
-          <Toolbar />
-        </div>
-        <Preview doc={doc} visible={showPreview} hideEditor={hideEditor} />
+        <LibraryProvider>
+          {/* <SideBar isVisible={showSide} /> */}
+          <LibBar visible={showSide} />
+          {showDetail && <DetailBar />}
+          <div
+            onClick={homeContainerClick}
+            className="home-container"
+            style={{ display: hideEditor ? 'none' : 'flex' }}
+          >
+            <FrontMatter />
+            <Editor />
+            {showFocus && <VerticalBlur />}
+            <Toolbar />
+          </div>
+        </LibraryProvider>
+        <Preview visible={showPreview} hideEditor={hideEditor} />
         <HeadNav visible={showHeadNav} />
-        {!showSide && <Drag />}
         <Message />
         <FloatEmoji />
       </div>
+      {!showSide && !showDetail && <Drag />}
       <GlobalInput />
       <HoverImage />
       {loading && <GlobalLoading />}

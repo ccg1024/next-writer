@@ -6,18 +6,12 @@ import { InlineFlex, Spinner } from './utils'
 import { useWorkStation } from '../hooks/useComponentEffect'
 import { reversePath } from '../libs/utils'
 import { AnimatePresence, motion } from 'framer-motion'
+import { useLibraryContext } from '../contexts/library-context'
 
-interface Props {
-  currentFile: string
-}
-
-const BroadCast: FC<Props> = (props): JSX.Element => {
+const BroadCast: FC = (): JSX.Element => {
   const [showHover, setShowHover] = useState(false)
-  const {
-    station: workstation,
-    loading,
-    equal
-  } = useWorkStation(props.currentFile)
+  const { currentFile } = useLibraryContext()
+  const { station: workstation, loading, equal } = useWorkStation(currentFile)
 
   function makeBroadcast(path: string) {
     return path.split('/').reverse().join(' > ')
@@ -49,9 +43,7 @@ const BroadCast: FC<Props> = (props): JSX.Element => {
         <InlineFlex>
           <TiDocumentText className="fixed-flex-item" />
           <span className="text-hide">
-            {props.currentFile
-              ? makeBroadcast(props.currentFile)
-              : 'Next Writer'}
+            {currentFile ? makeBroadcast(currentFile) : 'Next Writer'}
           </span>
         </InlineFlex>
       </div>
@@ -74,7 +66,7 @@ const BroadCast: FC<Props> = (props): JSX.Element => {
             })}
           >
             <WorkstationMonitor
-              rendererStation={props.currentFile}
+              rendererStation={currentFile}
               workstation={workstation}
             />
           </motion.div>

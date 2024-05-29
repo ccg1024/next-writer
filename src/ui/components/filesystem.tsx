@@ -10,9 +10,10 @@ import { css } from '@emotion/css'
 import { AnimateClickDiv, InlineFlex } from './utils'
 import { getFileBaseName, Post, resolve2path } from '../libs/utils'
 import { useHoverShow } from '../hooks/useHoverShow'
-import { RootWorkstationFolderInfo } from '_types'
+import { FileState, RootWorkstationFolderInfo } from '_types'
 import { ONE_WAY_CHANNEL, TWO_WAY_CHANNEL } from 'src/config/ipc'
 import { pub, sub, unsub } from '../libs/pubsub'
+import { useLibraryContext } from '../contexts/library-context'
 
 type GetFileExplorerInfoParam = {
   parent?: string
@@ -20,11 +21,8 @@ type GetFileExplorerInfoParam = {
   pathType?: 'file' | 'folder'
   openFile?: boolean
 }
-interface FilesystemProps {
-  currentFile: string
-}
-const Filesystem: FC<FilesystemProps> = (props): JSX.Element => {
-  const [files, setFiles] = useState<Array<string>>([])
+const Filesystem: FC = (): JSX.Element => {
+  const [files, setFiles] = useState<Array<FileState>>([])
   const [folders, setFolders] = useState<Array<RootWorkstationFolderInfo>>([])
   const [showNest, setShowNest] = useState<{ [key: string]: boolean }>({})
   const callback = useCallback((prop: string) => {
@@ -78,23 +76,6 @@ const Filesystem: FC<FilesystemProps> = (props): JSX.Element => {
   }, [])
 
   useEffect(() => {
-    // function listener(_: string, payload: PubSubData) {
-    //   if (payload.type === 'nw-filesystem-add') {
-    //     // since success add file or folder
-    //     // update state from main process
-    //     // NOTE: since update foders data need recursive, it's not
-    //     // easy on setState fucntion
-    //     // const fileDesc = data.data as RenderNewFileReply
-    //     // if (fileDesc.pathType === 'file') {
-    //     //   setFiles(v => [...v, fileDesc.pathName])
-    //     // } else if (fileDesc.pathType === 'folder') {
-    //     //   // setFolders(v => [...v, fileDesc.pathName])
-    //     //   console.log('the folder need recode')
-    //     // }
-    //     const parent = payload.data.parent as string
-    //     getFileExplorerInfo(parent)
-    //   }
-    // }
     // const token = PubSub.subscribe('nw-filesystem-pubsub', listener)
     const token = sub('nw-filesystem-pubsub', (_, payload) => {
       if (payload.type === 'nw-filesystem-add') {
@@ -126,16 +107,14 @@ const Filesystem: FC<FilesystemProps> = (props): JSX.Element => {
         parent="."
         showNest={showNest}
         setShowNest={callback}
-        currentFile={props.currentFile}
       />
     </div>
   )
 }
 
 interface RecursiveFileListProps {
-  currentFile: string
   folders: Array<RootWorkstationFolderInfo>
-  files: Array<string>
+  files: Array<FileState>
   visible: boolean
   parent: string
   showNest: { [key: string]: boolean }
@@ -176,7 +155,6 @@ const RecursiveFileList: FC<RecursiveFileListProps> = (props): JSX.Element => {
                   />
                   {folder.subfolders && (
                     <RecursiveFileList
-                      currentFile={props.currentFile}
                       folders={folder.subfolders.folders}
                       files={folder.subfolders.files}
                       visible={showNest[uniq]}
@@ -195,8 +173,7 @@ const RecursiveFileList: FC<RecursiveFileListProps> = (props): JSX.Element => {
                 <FilesystemFileItem
                   key={uniq}
                   uniq={uniq}
-                  filename={getFileBaseName(file)}
-                  currentFile={props.currentFile}
+                  filename={getFileBaseName(file.name)}
                 />
               )
             })}
@@ -209,10 +186,10 @@ const RecursiveFileList: FC<RecursiveFileListProps> = (props): JSX.Element => {
 type FilesystemFileItemProps = {
   uniq: string
   filename: string
-  currentFile: string
 }
 const FilesystemFileItem: FC<FilesystemFileItemProps> = props => {
   const { uniq, filename } = props
+  const { currentFile } = useLibraryContext()
 
   function click(e: React.MouseEvent) {
     e.stopPropagation()
@@ -237,7 +214,7 @@ const FilesystemFileItem: FC<FilesystemFileItemProps> = props => {
         borderRadius: '5px',
         position: 'relative',
         backgroundColor:
-          props.currentFile ==
+          currentFile ==
           resolve2path(window._next_writer_rendererConfig.root, uniq)
             ? 'var(--nw-color-blackAlpha-50)'
             : 'unset',
@@ -268,29 +245,6 @@ const FilesystemFolderItem: FC<FilesystemFolderItemProps> = props => {
   const addVisible = useHoverShow<HTMLDivElement>({
     target: refFolder
   })
-
-  // function clickAddEffect(type: 'file' | 'folder', prefix: string) {
-  //   return (e: React.MouseEvent) => {
-  //     e.stopPropagation()
-  //     pub('nw-input-pubsub', {
-  //       type: '',
-  //       data: {
-  //         pathType: type,
-  //         replyChannel: 'nw-filesystem-pubsub',
-  //         replyType: 'nw-filesystem-add',
-  //         pathPrefix: prefix
-  //       }
-  //     })
-  //     // PubSub.publish('nw-input-pubsub', {
-  //     //   data: {
-  //     //     pathType: type,
-  //     //     replyChannel: 'nw-filesystem-pubsub',
-  //     //     replyType: 'nw-filesystem-add',
-  //     //     pathPrefix: prefix
-  //     //   } as RenderNewFileType
-  //     // })
-  //   }
-  // }
 
   // show sidebar-menu when click the icon
   // the `type` is to control menu content, which is different
