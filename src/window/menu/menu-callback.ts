@@ -2,6 +2,18 @@ import { BrowserWindow } from 'electron'
 import { ipcChannel } from 'src/config/ipc'
 import { IpcChannelData } from '_types'
 
+export function handleToggleMideBar(win: BrowserWindow) {
+  if (!win) return
+
+  const oldValue = !!global._next_writer_windowConfig.menuStatus.mideBarVisible
+  win.webContents.send(ipcChannel['main-to-render'].home_component, {
+    type: 'toggleMidebar',
+    value: {
+      checked: !oldValue
+    }
+  })
+  global._next_writer_windowConfig.menuStatus.mideBarVisible = !oldValue
+}
 export function handleToggleSidebar(win: BrowserWindow) {
   if (!win) return
 

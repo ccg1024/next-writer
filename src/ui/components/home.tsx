@@ -24,7 +24,7 @@ import Drag from './drag'
 
 const Home = () => {
   const [showSide, setShowSide] = useState<boolean>(true)
-  const [showDetail, _setShowDetail] = useState<boolean>(true)
+  const [showDetail, setShowDetail] = useState<boolean>(true)
   const [showHeadNav, setShowHeadNav] = useState<boolean>(false)
   const [showFocus, setShowFocus] = useState<boolean>(true)
   const [showPreview, setShowPreview] = useState(false)
@@ -35,6 +35,10 @@ const Home = () => {
     toggleSidebar: (data: IpcChannelData) => {
       const { checked } = data.value
       setShowSide(checked)
+    },
+    toggleMidebar: (data: IpcChannelData) => {
+      const { checked } = data.value
+      setShowDetail(checked)
     },
     toggleHeadNav: (data: IpcChannelData) => {
       const { checked } = data.value
@@ -192,7 +196,7 @@ const Home = () => {
         <LibraryProvider>
           {/* <SideBar isVisible={showSide} /> */}
           <LibBar visible={showSide} />
-          {showDetail && <DetailBar />}
+          {showDetail && <DetailBar isLibBarVisible={showSide} />}
           <div
             onClick={homeContainerClick}
             className="home-container"

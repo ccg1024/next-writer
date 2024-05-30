@@ -2,7 +2,6 @@ import React, { useEffect, useState, FC } from 'react'
 import styled from '@emotion/styled'
 import { css } from '@emotion/css'
 import { HeadNav } from '_types'
-import { AnimatePresence, motion } from 'framer-motion'
 import { pub, sub, unsub } from '../libs/pubsub'
 
 // const HeadNavContainer = styled.div`
@@ -108,42 +107,36 @@ const HeadNav: FC<HeadNavProps> = props => {
   }, [jumpPos, props.visible])
   return (
     <>
-      <AnimatePresence initial={false}>
-        {props.visible && (
-          <motion.div
-            className={css({
-              width: '200px',
-              overflowX: 'hidden',
-              overflowY: 'auto',
-              flexShrink: 0,
-              borderLeft: '1px solid #ccc'
-            })}
-            onClick={handleClick}
-            initial={{ width: 0 }}
-            animate={{ width: '200px' }}
-            exit={{ width: 0 }}
-            transition={{ duration: 0.25 }}
-          >
-            {headers.map((header, idx) => {
-              const { title, level, jumpPos, number } = header
-              const regularTitle = title.replace(/^(#+\s*)/, '')
-              return (
-                <NavItem
-                  id={`navitem-${jumpPos}`}
-                  key={idx}
-                  isActive={number === activeLine}
-                  style={{
-                    marginLeft: `${10 * (level - 1)}px`,
-                    color: regularTitle ? 'unset' : 'gray'
-                  }}
-                >
-                  {regularTitle ? regularTitle : '[empty]'}
-                </NavItem>
-              )
-            })}
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {props.visible && (
+        <div
+          className={css({
+            width: '200px',
+            overflowX: 'hidden',
+            overflowY: 'auto',
+            flexShrink: 0,
+            borderLeft: '1px solid #ccc'
+          })}
+          onClick={handleClick}
+        >
+          {headers.map((header, idx) => {
+            const { title, level, jumpPos, number } = header
+            const regularTitle = title.replace(/^(#+\s*)/, '')
+            return (
+              <NavItem
+                id={`navitem-${jumpPos}`}
+                key={idx}
+                isActive={number === activeLine}
+                style={{
+                  marginLeft: `${10 * (level - 1)}px`,
+                  color: regularTitle ? 'unset' : 'gray'
+                }}
+              >
+                {regularTitle ? regularTitle : '[empty]'}
+              </NavItem>
+            )
+          })}
+        </div>
+      )}
     </>
   )
 }

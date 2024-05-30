@@ -14,7 +14,11 @@ import {
   writeRootWorkstationInfo
 } from '../file_process'
 import { IpcChannelData } from '_types'
-import { handleToggleHeadNav, handleToggleSidebar } from './menu-callback'
+import {
+  handleToggleHeadNav,
+  handleToggleMideBar,
+  handleToggleSidebar
+} from './menu-callback'
 
 // menu callback
 async function editorTypewriter(
@@ -90,6 +94,10 @@ async function insertImage(
 
 function toggleSideBar(_m: MenuItem, win: BrowserWindow, _: unknown) {
   handleToggleSidebar(win)
+}
+
+function toggleMideBar(_m: MenuItem, win: BrowserWindow) {
+  handleToggleMideBar(win)
 }
 
 function toggleHeadNav(_m: MenuItem, win: BrowserWindow, _: unknown) {
@@ -226,6 +234,11 @@ export default function createMenus(): MenuItemConstructorOptions[] {
           label: '侧边栏',
           click: toggleSideBar,
           accelerator: isMac ? 'Cmd+Shift+s' : 'Ctrl+Shift+s'
+        },
+        {
+          label: '详情栏',
+          click: toggleMideBar,
+          accelerator: isMac ? 'Cmd+Shift+d' : 'Ctrl+Shift+d'
         },
         {
           label: '切换导航',

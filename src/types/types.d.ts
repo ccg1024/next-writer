@@ -21,6 +21,7 @@ export type EditorChannelType = (typeof editorChannel)[number]
 // Home component
 const homeChannel = [
   'toggleSidebar',
+  'toggleMidebar',
   'toggleHeadNav',
   'focusMode',
   'preview',
@@ -185,6 +186,7 @@ export type UpdateCacheContent = {
 
 export type MenuStatus = {
   sideBarVisible: boolean
+  mideBarVisible: boolean
   hideNavVisible: boolean
   preview: boolean
   livePreview: boolean

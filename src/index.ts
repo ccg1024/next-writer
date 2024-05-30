@@ -35,6 +35,7 @@ global._next_writer_windowConfig = {
   renderConfig: {},
   menuStatus: {
     sideBarVisible: true,
+    mideBarVisible: true,
     hideNavVisible: false,
     preview: false,
     livePreview: false
@@ -88,6 +89,7 @@ const createWindow = (): void => {
   global._next_writer_windowConfig.renderConfig = rendererConfig
   global._next_writer_windowConfig.menuStatus = {
     sideBarVisible: true,
+    mideBarVisible: true,
     hideNavVisible: false,
     preview: false,
     livePreview: false

@@ -21,6 +21,11 @@ import {
 import { AbsoluteFullNoteLogo } from './logo'
 import { Spinner } from './utils'
 
+type NativeDivAttributes = React.HTMLAttributes<HTMLDivElement>
+type PaddingProps = {
+  paddingTop?: string
+}
+
 interface InterActiveInputProps {
   lib: string
   close: () => void
@@ -172,7 +177,8 @@ const InterActiveIconWrapper: FC<
     </div>
   )
 }
-const DetailBarTopRight: FC = (): JSX.Element => {
+const DetailBarTopRight: FC<PaddingProps> = (props): JSX.Element => {
+  const { paddingTop } = props
   const { currentLibrary, getLibrary, openLibFile } = useLibraryContext()
   const refShouldAdd = useRef<boolean>(true)
   const addLibraryFile = () => {
@@ -208,10 +214,11 @@ const DetailBarTopRight: FC = (): JSX.Element => {
         top: 50%;
         right: 0;
         transform: translateY(-50%);
-        padding: 20px 10px 10px 10px;
+        padding: 5px;
         box-sizing: border-box;
         font-size: 20px;
         -webkit-app-region: no-drag;
+        padding-top: ${paddingTop ? paddingTop : '5px'};
       `}
     >
       <InterActiveIconWrapper onClick={addLibraryFile}>
@@ -220,7 +227,8 @@ const DetailBarTopRight: FC = (): JSX.Element => {
     </div>
   )
 }
-const DetailBarTopLeft: FC = (): JSX.Element => {
+const DetailBarTopLeft: FC<PaddingProps> = (props): JSX.Element => {
+  const { paddingTop } = props
   const [showInput, setShowInput] = useState(false)
   const { currentLibrary, specialLibs } = useLibraryContext()
   const token = currentLibrary ? currentLibrary.split('/') : null
@@ -236,10 +244,11 @@ const DetailBarTopLeft: FC = (): JSX.Element => {
         top: 50%;
         left: 0;
         transform: translateY(-50%);
-        padding: 20px 10px 10px 10px;
+        padding: 5px;
         box-sizing: border-box;
         font-size: 20px;
         -webkit-app-region: no-drag;
+        padding-top: ${paddingTop ? paddingTop : '5px'};
       `}
     >
       {visible && (
@@ -270,25 +279,29 @@ const DetailBarTopTitle: FC<PropsWithChildren> = ({
   )
 }
 
-const DetailBarTop: FC = (): JSX.Element => {
+const DetailBarTop: FC<NativeDivAttributes & PaddingProps> = (
+  props
+): JSX.Element => {
+  const { className, paddingTop, ...rest } = props
   const { currentLibrary } = useLibraryContext()
   const tokens = currentLibrary ? currentLibrary.split('/') : ['库']
+  const cls = css`
+    padding: 5px;
+    -webkit-app-region: drag;
+    position: relative;
+    border-bottom: 1px solid #ccc;
+    padding-top: ${paddingTop ? paddingTop : '5px'};
+  `
+  const classes = className ? `${cls} ${className}` : cls
   return (
     <>
       {currentLibrary && (
-        <div
-          className={css`
-            padding: 20px 10px 10px 10px;
-            -webkit-app-region: drag;
-            position: relative;
-            border-bottom: 1px solid #ccc;
-          `}
-        >
+        <div className={classes} {...rest}>
           <DetailBarTopTitle>
             {tokens && tokens[tokens.length - 1]}
           </DetailBarTopTitle>
-          <DetailBarTopRight />
-          <DetailBarTopLeft />
+          <DetailBarTopRight paddingTop={paddingTop} />
+          <DetailBarTopLeft paddingTop={paddingTop} />
         </div>
       )}
     </>
@@ -299,7 +312,6 @@ interface DetailBarWrapperProps {
 }
 const DetailBarWrapper: FC<DetailBarWrapperProps> = (props): JSX.Element => {
   const { children } = props
-  const { currentLibrary } = useLibraryContext()
   return (
     <div
       className={css({
@@ -313,24 +325,21 @@ const DetailBarWrapper: FC<DetailBarWrapperProps> = (props): JSX.Element => {
         position: 'relative'
       })}
     >
-      <DetailBarTop />
-      <div
-        className={css({
-          flexGrow: 1,
-          overflow: 'auto'
-        })}
-      >
-        {children}
-      </div>
-      {!currentLibrary && (
-        <AbsoluteFullNoteLogo
-          className={css({
-            fontSize: '20vh !important',
-            backgroundColor: '#F5F5F5 !important',
-            color: 'var(--nw-color-gray-200) !important'
-          })}
-        />
-      )}
+      {children}
+    </div>
+  )
+}
+const DetailBarBodyWrapper: FC<PropsWithChildren> = props => {
+  const { children } = props
+
+  return (
+    <div
+      className={css({
+        flexGrow: 1,
+        overflow: 'auto'
+      })}
+    >
+      {children}
     </div>
   )
 }
@@ -394,7 +403,11 @@ const NoteItem: FC<NoteItemProps> = (props): JSX.Element => {
   )
 }
 
-const DetailBar: FC = (): JSX.Element => {
+interface DetailBarProps {
+  isLibBarVisible: boolean
+}
+const DetailBar: FC<DetailBarProps> = (props): JSX.Element => {
+  const { isLibBarVisible } = props
   const { library, currentLibrary, currentFile, openLibFile } =
     useLibraryContext()
 
@@ -416,26 +429,38 @@ const DetailBar: FC = (): JSX.Element => {
   const notes = getNotes(library, currentLibrary)
   return (
     <DetailBarWrapper>
-      {notes &&
-        notes.map(note => {
-          const fullpath = `${currentLibrary}/${note.name}`
-          const isActive = currentFile === fullpath
-          return (
-            <NoteItem
-              key={fullpath}
-              name={note.tittle}
-              mtime={note.mtime}
-              description={note.description}
-              data-id={fullpath}
-              onClick={isActive ? null : openLibFile(fullpath)}
-              className={css({
-                backgroundColor: isActive
-                  ? 'var(--nw-color-blackAlpha-50)'
-                  : 'unset'
-              })}
-            />
-          )
-        })}
+      <DetailBarTop paddingTop={isLibBarVisible ? null : '20px'} />
+      <DetailBarBodyWrapper>
+        {notes &&
+          notes.map(note => {
+            const fullpath = `${currentLibrary}/${note.name}`
+            const isActive = currentFile === fullpath
+            return (
+              <NoteItem
+                key={fullpath}
+                name={note.tittle}
+                mtime={note.mtime}
+                description={note.description}
+                data-id={fullpath}
+                onClick={isActive ? null : openLibFile(fullpath)}
+                className={css({
+                  backgroundColor: isActive
+                    ? 'var(--nw-color-blackAlpha-50)'
+                    : 'unset'
+                })}
+              />
+            )
+          })}
+      </DetailBarBodyWrapper>
+      {!currentLibrary && (
+        <AbsoluteFullNoteLogo
+          className={css({
+            fontSize: '20vh !important',
+            backgroundColor: '#F5F5F5 !important',
+            color: 'var(--nw-color-gray-200) !important'
+          })}
+        />
+      )}
     </DetailBarWrapper>
   )
 }
