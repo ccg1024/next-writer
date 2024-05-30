@@ -35,7 +35,8 @@ const InterActiveInput: FC<InterActiveInputProps> = (props): JSX.Element => {
     top: 0,
     left: 0,
     width: '100%',
-    height: '100%'
+    height: '100%',
+    zIndex: 150
   })
   const maskCls = css({
     position: 'absolute',
