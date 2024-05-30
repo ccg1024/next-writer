@@ -57,6 +57,7 @@ class HideMarksPlugin implements ScheduleUnit {
   }
 
   processDecorationUnit: ProcessDecorationUnit = (view, node) => {
+    if (!window._next_writer_rendererConfig.plugin.hideMarks) return []
     const workInDecos: Range<Decoration>[] = []
     const line = view.state.doc.lineAt(node.from)
     if (this.headings.includes(node.name)) {
@@ -101,7 +102,8 @@ class HideMarksPlugin implements ScheduleUnit {
     syntaxTreeChanged
   ) => {
     const shouldUpdate =
-      update.docChanged || update.viewportChanged || syntaxTreeChanged
+      window._next_writer_rendererConfig.plugin.hideMarks &&
+      (update.docChanged || update.viewportChanged || syntaxTreeChanged)
     if (shouldUpdate) {
       this.stageDecos = []
     }
@@ -115,6 +117,7 @@ class HideMarksPlugin implements ScheduleUnit {
     update,
     decorations
   ) => {
+    if (!window._next_writer_rendererConfig.plugin.hideMarks) return decorations
     const curRange = update.view.state.selection.ranges
     if (curRange == undefined) return decorations
 

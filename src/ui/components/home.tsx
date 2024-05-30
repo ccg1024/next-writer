@@ -126,6 +126,7 @@ const Home = () => {
         }
         window._next_writer_rendererConfig.plugin.typewriter =
           !!config.typewriter
+        window._next_writer_rendererConfig.plugin.hideMarks = !!config.hideMarks
         window._next_writer_rendererConfig.fontSize = fontSize
         window._next_writer_rendererConfig.fontFamily = fontFamily
         pub('nw-editor-pubsub', { type: 'mount-plugin-scheduler' })

@@ -126,6 +126,7 @@ export interface ipc {
 
 export type RendererPlugin = {
   typewriter?: boolean
+  hideMarks?: boolean
 }
 
 export type RendererConfig = {
