@@ -341,6 +341,7 @@ const NoteItemWrapper: FC<
   const cls = css({
     padding: '10px',
     userSelect: 'none',
+    borderBottom: '1px solid #ccc',
     ':hover': {
       backgroundColor: 'var(--nw-color-blackAlpha-50)'
     }
