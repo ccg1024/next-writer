@@ -1,4 +1,5 @@
 import { css } from '@emotion/css'
+import { motion } from 'framer-motion'
 import {
   FC,
   PropsWithChildren,
@@ -9,6 +10,7 @@ import {
 } from 'react'
 import { createPortal } from 'react-dom'
 import { TiEdit, TiFolderAdd } from 'react-icons/ti'
+import { VscLibrary } from 'react-icons/vsc'
 import { TWO_WAY_CHANNEL } from 'src/config/ipc'
 import { RootWorkstationInfo } from '_types'
 import { useLibraryContext } from '../contexts/library-context'
@@ -24,6 +26,35 @@ import { Spinner } from './utils'
 type NativeDivAttributes = React.HTMLAttributes<HTMLDivElement>
 type PaddingProps = {
   paddingTop?: string
+}
+
+interface InterActiveInputButtonProps {
+  onClick?: () => void
+  backgroundColor?: string
+  children?: ReactNode
+  type?: 'button' | 'submit' | 'reset'
+}
+const InterActiveInputButton: FC<InterActiveInputButtonProps> = props => {
+  const cls = css({
+    padding: '10px 15px',
+    backgroundColor: props.backgroundColor ? props.backgroundColor : '#ccc',
+    borderRadius: '5px',
+    border: 'none',
+    letterSpacing: '.1em',
+    ':hover': {
+      cursor: 'pointer'
+    }
+  })
+  return (
+    <motion.button
+      className={cls}
+      whileTap={{ scale: 0.8 }}
+      onClick={props.onClick ? props.onClick : null}
+      type={props.type ? props.type : 'button'}
+    >
+      {props.children}
+    </motion.button>
+  )
 }
 
 interface InterActiveInputProps {
@@ -124,10 +155,48 @@ const InterActiveInput: FC<InterActiveInputProps> = (props): JSX.Element => {
         setLoading(false)
       })
   }
+  const header = (
+    <div
+      className={css({
+        paddingBottom: '10px',
+        marginBottom: '20px',
+        borderBottom: '1px solid #ccc',
+        fontSize: '20px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '10px',
+        fontWeight: 'bold',
+        color: 'GrayText'
+      })}
+    >
+      <VscLibrary />
+      添加新库
+    </div>
+  )
+  const footer = (
+    <div
+      className={css({
+        padding: '10px',
+        boxSizing: 'border-box',
+        borderTop: '1px solid #ccc',
+        marginTop: '20px',
+        display: 'flex',
+        justifyContent: 'right',
+        gap: '10px',
+        paddingBottom: '0px'
+      })}
+    >
+      <InterActiveInputButton onClick={close}>取消</InterActiveInputButton>
+      <InterActiveInputButton backgroundColor="#4299e1" type="submit">
+        确认
+      </InterActiveInputButton>
+    </div>
+  )
   const dom = (
     <div className={cls}>
       <div className={maskCls} onClick={close}></div>
       <form className={formCls} onSubmit={onSubmit}>
+        {header}
         <input
           className={inputCls}
           autoFocus
@@ -155,6 +224,7 @@ const InterActiveInput: FC<InterActiveInputProps> = (props): JSX.Element => {
             })}
           />
         )}
+        {footer}
       </form>
     </div>
   )
@@ -229,7 +299,7 @@ const DetailBarTopRight: FC<PaddingProps> = (props): JSX.Element => {
 }
 const DetailBarTopLeft: FC<PaddingProps> = (props): JSX.Element => {
   const { paddingTop } = props
-  const [showInput, setShowInput] = useState(false)
+  const [showInput, setShowInput] = useState(true)
   const { currentLibrary, specialLibs } = useLibraryContext()
   const token = currentLibrary ? currentLibrary.split('/') : null
   const certifacation = token ? token[token.length - 1] : null
