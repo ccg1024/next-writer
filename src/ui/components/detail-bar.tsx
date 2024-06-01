@@ -299,7 +299,7 @@ const DetailBarTopRight: FC<PaddingProps> = (props): JSX.Element => {
 }
 const DetailBarTopLeft: FC<PaddingProps> = (props): JSX.Element => {
   const { paddingTop } = props
-  const [showInput, setShowInput] = useState(true)
+  const [showInput, setShowInput] = useState(false)
   const { currentLibrary, specialLibs } = useLibraryContext()
   const token = currentLibrary ? currentLibrary.split('/') : null
   const certifacation = token ? token[token.length - 1] : null
@@ -442,7 +442,10 @@ const NoteItemTitle: FC<PropsWithChildren> = ({ children }): JSX.Element => {
     </header>
   )
 }
-const NoteItemInfo: FC<PropsWithChildren> = ({ children }): JSX.Element => {
+const NoteItemInfo: FC<PropsWithChildren & NativeDivAttributes> = (
+  props
+): JSX.Element => {
+  const { children, className: _, ...rest } = props
   return (
     <div
       className={css({
@@ -452,6 +455,7 @@ const NoteItemInfo: FC<PropsWithChildren> = ({ children }): JSX.Element => {
         whiteSpace: 'nowrap',
         overflow: 'hidden'
       })}
+      {...rest}
     >
       {children}
     </div>
@@ -467,7 +471,9 @@ const NoteItem: FC<NoteItemProps> = (props): JSX.Element => {
   return (
     <NoteItemWrapper {...rest}>
       <NoteItemTitle>{name ? name : 'untitled'}</NoteItemTitle>
-      <NoteItemInfo>{timeDistance(mtime)}</NoteItemInfo>
+      <NoteItemInfo style={{ color: 'var(--nw-color-gray-500)' }}>
+        {timeDistance(mtime)}
+      </NoteItemInfo>
       <NoteItemInfo>{description ? description : '<empty>'}</NoteItemInfo>
     </NoteItemWrapper>
   )

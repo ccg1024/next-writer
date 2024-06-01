@@ -486,6 +486,7 @@ function getFormatTime(time: Date) {
 }
 export function formatTime(): string
 export function formatTime(date: string): string
+export function formatTime(date: number): string
 export function formatTime(date?: string | number) {
   if (!date) {
     const time = new Date()
@@ -508,19 +509,15 @@ export function timeDistance(date: number | string): string {
   const current = new Date()
   const diff = (current.valueOf() - oldDate) / 1000
 
-  if (diff < 60) return 'Seconds ago'
+  if (diff < 60) return 'seconds ago'
 
-  if (diff < 120) return 'A minute ago'
+  // greater than 1 minute less than 1 hour
 
-  if (diff < 1800) return 'A few minute ago'
+  if (diff < 3600) return `${Math.floor(diff / 60)} minute ago`
 
-  if (diff < 3600) return 'Half an hour ago'
+  if (diff < 86400) return `${Math.floor(diff / (60 * 60))} hour ago`
 
-  if (diff < 7200) return 'An hour ago'
-
-  if (diff < 86400) return 'A few hours ago'
-
-  return 'A day ago'
+  return getFormatTime(new Date(oldDate))
 }
 
 export function getCurrentNote(notes: FileState[], relativeName: string) {
