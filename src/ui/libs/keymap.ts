@@ -1,6 +1,11 @@
 import { syntaxTree } from '@codemirror/language'
 import { EditorSelection } from '@codemirror/state'
 import { EditorView, KeyBinding } from '@codemirror/view'
+import { unified } from 'unified'
+import remarkStringify from 'remark-stringify'
+import remarkGfm from 'remark-gfm'
+import remarkParse from 'remark-parse'
+import stringWidth from 'string-width'
 
 const insert = (view: EditorView, text: string, move = 0) => {
   if (!view || !view.hasFocus || !text) return false
@@ -115,11 +120,40 @@ const moveForward = (view: EditorView) => {
   }
   return true
 }
+const formatSelection = (view: EditorView) => {
+  if (!view.state.selection.main.empty) {
+    const { from, to } = view.state.selection.main
+    const text = view.state.doc.sliceString(from, to)
+    const file = unified()
+      .use(remarkParse)
+      .use(remarkGfm, { stringLength: stringWidth })
+      .use(remarkStringify)
+      .processSync(text)
+
+    const replaceText = file.value.toString().slice(0, file.value.length - 1)
+    view.dispatch(
+      view.state.changeByRange(range => {
+        return {
+          range: EditorSelection.range(
+            range.from,
+            range.from + replaceText.length
+          ),
+          changes: [
+            { from: range.from, to: range.to, insert: '' },
+            { from: range.from, insert: replaceText }
+          ]
+        }
+      })
+    )
+  }
+  return true
+}
 
 export const nextWriterKeymap: readonly KeyBinding[] = [
   { key: 'Ctrl-b', run: insertBold },
   { key: 'Ctrl-i', run: insertItalic },
   { key: 'Ctrl-k', run: insertCode },
   { key: 'Ctrl-Shift-k', run: insertBlockCode },
-  { key: 'Ctrl-f', run: moveForward }
+  { key: 'Ctrl-f', run: moveForward },
+  { key: 'Ctrl-p', run: formatSelection }
 ]

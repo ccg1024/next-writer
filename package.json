@@ -73,6 +73,8 @@
     "remark-math": "^6.0.0",
     "remark-parse": "^11.0.0",
     "remark-rehype": "^11.1.0",
+    "remark-stringify": "^11.0.0",
+    "string-width": "^7.1.0",
     "style-mod": "^4.1.2",
     "twemoji": "^14.0.2",
     "unified": "^11.0.4"
