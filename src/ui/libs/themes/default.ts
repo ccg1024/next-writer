@@ -54,9 +54,9 @@ export const defaultTheme = EditorView.theme({
     padding: '0px'
   },
   '.cm-content': {
-    paddingTop: '0',
+    paddingTop: 'var(--nw-editor-content-padding)',
     paddingBottom: '50vh',
-    textAlign: 'left',
+    textAlign: 'var(--nw-editor-text-align)',
     maxWidth: '580px',
     lineHeight: '1.5',
     letterSpacing: 'var(--nw-letter-spacing)'

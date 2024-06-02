@@ -26,6 +26,12 @@ import { useLibraryContext } from '../contexts/library-context'
 import { ONE_WAY_CHANNEL } from 'src/config/ipc'
 import { Post } from '../libs/utils'
 import { AbsoluteFullEditLogo } from './logo'
+import {
+  insertBlockCode,
+  insertBold,
+  insertCode,
+  insertItalic
+} from '../libs/keymap'
 
 interface RefObj {
   isFirstRender: boolean
@@ -114,6 +120,38 @@ const Editor: FC = (): JSX.Element => {
             timestamp: new Date().valueOf()
           }
         })
+      } else if (payload.type === 'toolbar-event') {
+        // some toolbar-event handler
+        const { eventName } = payload.data
+        switch (eventName) {
+          case 'insert-bold':
+            insertBold(editorView, { autoFocus: true })
+            break
+          case 'insert-italic':
+            insertItalic(editorView, { autoFocus: true })
+            break
+          case 'insert-inline-code':
+            insertCode(editorView, { autoFocus: true })
+            break
+          case 'insert-code-block':
+            insertBlockCode(editorView, { autoFocus: true })
+            break
+          case 'align-left':
+            document
+              .querySelector('body')
+              .style.setProperty('--nw-editor-text-align', 'left')
+            break
+          case 'align-justify':
+            document
+              .querySelector('body')
+              .style.setProperty('--nw-editor-text-align', 'justify')
+            break
+          case 'align-right':
+            document
+              .querySelector('body')
+              .style.setProperty('--nw-editor-text-align', 'right')
+            break
+        }
       }
     })
     return () => {
@@ -127,6 +165,9 @@ const Editor: FC = (): JSX.Element => {
       const { checked } = data.value
       if (checked) {
         window._next_writer_rendererConfig.plugin.typewriter = true
+        document
+          .querySelector('body')
+          .style.setProperty('--nw-editor-content-padding', '50vh')
         // make scroll if editor is focused.
         if (editorView.hasFocus)
           editorView.dispatch({
@@ -137,6 +178,16 @@ const Editor: FC = (): JSX.Element => {
           })
       } else {
         window._next_writer_rendererConfig.plugin.typewriter = false
+        document
+          .querySelector('body')
+          .style.setProperty('--nw-editor-content-padding', '0px')
+        if (editorView.hasFocus)
+          editorView.dispatch({
+            effects: EditorView.scrollIntoView(
+              editorView.state.selection.main.from,
+              { y: 'start', yMargin: 0 }
+            )
+          })
       }
     } else if (data.type === 'readfile') {
       const { isLibrary, reqPath, ...value } = data.value

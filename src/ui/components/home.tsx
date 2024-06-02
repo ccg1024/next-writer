@@ -30,6 +30,7 @@ const Home = () => {
   const [showPreview, setShowPreview] = useState(false)
   const [hideEditor, setHideEditor] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [isTypewriter, setIsTypewriter] = useState(false)
 
   const listenerMap = {
     toggleSidebar: (data: IpcChannelData) => {
@@ -43,6 +44,10 @@ const Home = () => {
     toggleHeadNav: (data: IpcChannelData) => {
       const { checked } = data.value
       setShowHeadNav(checked)
+    },
+    typewriter: (data: IpcChannelData) => {
+      const { checked } = data.value
+      setIsTypewriter(checked)
     },
     focusMode: (data: IpcChannelData) => {
       const { checked } = data.value
@@ -202,10 +207,14 @@ const Home = () => {
             className="home-container"
             style={{ display: hideEditor ? 'none' : 'flex' }}
           >
-            <FrontMatter />
+            {!isTypewriter && (
+              <>
+                <Toolbar />
+                <FrontMatter />
+              </>
+            )}
             <Editor />
             {showFocus && <VerticalBlur />}
-            <Toolbar />
           </div>
         </LibraryProvider>
         <Preview visible={showPreview} hideEditor={hideEditor} />
@@ -213,7 +222,7 @@ const Home = () => {
         <Message />
         <FloatEmoji />
       </div>
-      {!showSide && !showDetail && <Drag />}
+      {!showSide && !showDetail && isTypewriter && <Drag />}
       <GlobalInput />
       <HoverImage />
       {loading && <GlobalLoading />}

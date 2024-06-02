@@ -7,6 +7,10 @@ import remarkGfm from 'remark-gfm'
 import remarkParse from 'remark-parse'
 import stringWidth from 'string-width'
 
+type InsertOption = {
+  autoFocus?: boolean
+}
+
 const insert = (view: EditorView, text: string, move = 0) => {
   if (!view || !view.hasFocus || !text) return false
 
@@ -29,8 +33,11 @@ const inlineMarkToggle = (opt: {
   text: string
   offset: number
   markName: string
+  opt?: InsertOption
 }) => {
   const { view, text, offset, markName } = opt
+  if (opt.opt?.autoFocus) view.focus()
+
   if (view.state.selection.main.empty)
     return insert(view, text.repeat(2), offset)
 
@@ -67,34 +74,49 @@ const inlineMarkToggle = (opt: {
   )
   return true
 }
-const insertBold = (view: EditorView) => {
+
+export const insertBold = (view: EditorView, opt?: InsertOption) => {
   return inlineMarkToggle({
     view,
     text: '**',
     offset: 2,
-    markName: 'StrongEmphasis'
+    markName: 'StrongEmphasis',
+    opt
   })
 }
 
-const insertItalic = (view: EditorView) => {
+export const insertItalic = (view: EditorView, opt?: InsertOption) => {
   return inlineMarkToggle({
     view,
     text: '*',
     offset: 1,
-    markName: 'Emphasis'
+    markName: 'Emphasis',
+    opt
   })
 }
 
-const insertCode = (view: EditorView) => {
+export const insertCode = (view: EditorView, opt?: InsertOption) => {
   return inlineMarkToggle({
     view,
     text: '`',
     offset: 1,
-    markName: 'InlineCode'
+    markName: 'InlineCode',
+    opt
   })
 }
 
-const insertBlockCode = (view: EditorView) => {
+export const insertBlockCode = (view: EditorView, opt?: InsertOption) => {
+  if (opt?.autoFocus) view.focus()
+
+  const cursor = view.state.selection.main.from
+  const line = view.state.doc.lineAt(cursor)
+  if (line.text.length > 0) {
+    view.dispatch({
+      selection: { anchor: line.to }
+    })
+    return insert(view, '\n\n```\n```', 5)
+  }
+
   return insert(view, '```\n```', 3)
 }
 

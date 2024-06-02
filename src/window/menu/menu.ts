@@ -1,4 +1,4 @@
-import { app } from 'electron'
+import { app, Menu } from 'electron'
 import type {
   MenuItemConstructorOptions,
   MenuItem,
@@ -34,6 +34,35 @@ async function editorTypewriter(
       checked: menuItem.checked
     }
   } as IpcChannelData)
+
+  // send focus-mode message
+  const isShow = menuItem.checked
+    ? !!global._next_writer_windowConfig.renderConfig.focusMode
+    : false
+  win.webContents.send(ipcChannel['main-to-render'].home_component, {
+    type: 'focusMode',
+    value: {
+      checked: isShow
+    }
+  } as IpcChannelData)
+  win.webContents.send(ipcChannel['main-to-render'].home_component, {
+    type: 'typewriter',
+    value: {
+      checked: menuItem.checked
+    }
+  } as IpcChannelData)
+
+  const menu = Menu.getApplicationMenu()
+  const editorMenuItem = menu.items.find(item => item.label === '编辑')
+  if (!editorMenuItem) return
+
+  const focusModeMenuItem = editorMenuItem.submenu?.items.find(
+    item => item.label === '专注模式'
+  )
+  if (focusModeMenuItem) {
+    focusModeMenuItem.enabled = menuItem.checked
+    Menu.setApplicationMenu(menu)
+  }
 }
 
 async function _openFile(_: unknown, win: BrowserWindow) {
@@ -253,12 +282,6 @@ export default function createMenus(): MenuItemConstructorOptions[] {
         {
           label: '实时预览',
           click: livePreview
-        },
-        {
-          label: '专注模式',
-          click: toggleFocusMode,
-          type: 'checkbox',
-          checked: !!global._next_writer_windowConfig.renderConfig.focusMode
         }
       ]
     },
@@ -273,6 +296,13 @@ export default function createMenus(): MenuItemConstructorOptions[] {
           click: editorTypewriter,
           type: 'checkbox',
           checked: !!global._next_writer_windowConfig.renderConfig.typewriter
+        },
+        {
+          label: '专注模式',
+          click: toggleFocusMode,
+          enabled: !!global._next_writer_windowConfig.renderConfig.typewriter,
+          type: 'checkbox',
+          checked: !!global._next_writer_windowConfig.renderConfig.focusMode
         },
         { type: 'separator' },
         { label: '插入图片', click: insertImage }

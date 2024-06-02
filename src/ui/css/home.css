@@ -49,6 +49,8 @@
   --nw-editor-font-size: 16px;
   --nw-head-nav-item-color: #4299e1;
   --nw-letter-spacing: 0.1em;
+  --nw-editor-text-align: left;
+  --nw-editor-content-padding: 0px;
 }
 
 @keyframes animation-rotate {

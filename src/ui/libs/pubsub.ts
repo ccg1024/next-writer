@@ -10,7 +10,8 @@ const channels = {
     'head-jump',
     'insert-emoji',
     'mount-plugin-scheduler',
-    'mount-preview'
+    'mount-preview',
+    'toolbar-event'
   ] as const,
   'nw-float-emoji-pubsub': ['open', 'close'] as const,
   'nw-filesystem-pubsub': ['nw-filesystem-add', 'nw-sync-filesystem'] as const,
@@ -41,6 +42,7 @@ type DataUnit = {
   // nw-editor-pubsub
   jumpPos: number
   emoji: string
+  eventName: string
 
   // nw-float-emoji-pubsub
   top: number

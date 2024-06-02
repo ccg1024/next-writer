@@ -25,7 +25,8 @@ const homeChannel = [
   'toggleHeadNav',
   'focusMode',
   'preview',
-  'livePreview'
+  'livePreview',
+  'typewriter'
 ] as const
 export type HomeChannelType = (typeof homeChannel)[number]
 

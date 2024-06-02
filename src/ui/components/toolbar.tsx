@@ -1,14 +1,27 @@
 import styled from '@emotion/styled'
-import { css } from '@emotion/css'
-import { AnimatePresence, motion } from 'framer-motion'
-import { FC, useRef, useState } from 'react'
-import { TiThList, TiArchive } from 'react-icons/ti'
+import { FC } from 'react'
+import {
+  MdCode,
+  MdDataObject,
+  MdFormatBold,
+  MdFormatItalic,
+  MdLibraryBooks,
+  MdCoronavirus,
+  MdFormatAlignLeft,
+  MdFormatAlignRight,
+  MdFormatAlignJustify
+} from 'react-icons/md'
 import { Post } from '../libs/utils'
 import { ONE_WAY_CHANNEL } from 'src/config/ipc'
-import { useLibraryContext } from '../contexts/library-context'
+import { pub } from '../libs/pubsub'
 
+const ToolDrag = styled.div`
+  height: 100%;
+  flex-grow: 1;
+  flex-base；0;
+  -webkit-app-region: drag;
+`
 const ToolSpan = styled.span`
-  margin: 0 5px;
   padding: 2px;
   display: flex;
   :hover {
@@ -17,12 +30,27 @@ const ToolSpan = styled.span`
     cursor: pointer;
   }
 `
+const ToolbarWrapper = styled.div`
+  width: 100%;
+  height: 41px;
+  flex-shrink: 0;
+  border-bottom: 1px solid #ccc;
+  padding: 5px 0px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+`
+const ToolbarBody = styled.div`
+  flex-shrink: 0;
+  max-width: 580px;
+  width: 80%;
+  margin: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+`
 
 const Toolbar: FC = () => {
-  const [visible, setVisible] = useState(false)
-  const timer = useRef<NodeJS.Timeout>(null)
-
-  const { currentFile } = useLibraryContext()
   const toggleSidebar = () => {
     // send message to main process
     Post(ONE_WAY_CHANNEL, { type: 'render-toggle-sidebar' }, true)
@@ -31,71 +59,47 @@ const Toolbar: FC = () => {
     // send message to main process
     Post(ONE_WAY_CHANNEL, { type: 'render-toggle-headNav' }, true)
   }
-  const cancleTimeout = () => {
-    if (timer.current) {
-      clearTimeout(timer.current)
-      timer.current = null
+  const toolbarEvent = (eventName: string) => {
+    return (e: React.MouseEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      pub('nw-editor-pubsub', { type: 'toolbar-event', data: { eventName } })
     }
   }
-  const registeTimeout = () => {
-    timer.current = setTimeout(() => {
-      setVisible(false)
-    }, 2000)
-  }
   return (
-    <>
-      <div
-        className={css({
-          height: '20px',
-          width: '50px',
-          position: 'absolute',
-          right: 0,
-          top: 0,
-          userSelect: 'none'
-        })}
-        onMouseEnter={() => setVisible(true)}
-      ></div>
-      <AnimatePresence initial={false} mode="wait">
-        {visible && (
-          <motion.div
-            initial={{ top: -20, opacity: 0 }}
-            animate={{ top: 0, opacity: 1 }}
-            exit={{ top: -20, opacity: 0 }}
-            className={css({
-              boxSizing: 'border-box',
-              backgroundColor: '#F7FAFC',
-              width: '100%',
-              padding: '5px',
-              position: 'absolute',
-              top: 0,
-              right: 0,
-              userSelect: 'none',
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              borderBottom: '1px solid #ccc'
-            })}
-            onMouseLeave={registeTimeout}
-            onMouseEnter={cancleTimeout}
-          >
-            <div
-              className={css({
-                lineHeight: 1,
-                margin: 'auto'
-              })}
-            >
-              {currentFile || 'Untitled'}
-            </div>
-            <ToolSpan onClick={toggleSidebar}>
-              <TiThList />
-            </ToolSpan>
-            <ToolSpan onClick={toggleHeadNav}>
-              <TiArchive />
-            </ToolSpan>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </>
+    <ToolbarWrapper>
+      <ToolDrag />
+      <ToolbarBody>
+        <ToolSpan onClick={toolbarEvent('insert-bold')}>
+          <MdFormatBold />
+        </ToolSpan>
+        <ToolSpan onClick={toolbarEvent('insert-italic')}>
+          <MdFormatItalic />
+        </ToolSpan>
+        <ToolSpan onClick={toolbarEvent('insert-inline-code')}>
+          <MdCode />
+        </ToolSpan>
+        <ToolSpan onClick={toolbarEvent('insert-code-block')}>
+          <MdDataObject />
+        </ToolSpan>
+        <ToolSpan onClick={toolbarEvent('align-left')}>
+          <MdFormatAlignLeft />
+        </ToolSpan>
+        <ToolSpan onClick={toolbarEvent('align-justify')}>
+          <MdFormatAlignJustify />
+        </ToolSpan>
+        <ToolSpan onClick={toolbarEvent('align-right')}>
+          <MdFormatAlignRight />
+        </ToolSpan>
+        <ToolSpan onClick={toggleSidebar} style={{ marginLeft: 'auto' }}>
+          <MdLibraryBooks />
+        </ToolSpan>
+        <ToolSpan onClick={toggleHeadNav}>
+          <MdCoronavirus />
+        </ToolSpan>
+      </ToolbarBody>
+      <ToolDrag />
+    </ToolbarWrapper>
   )
 }
 
