@@ -108,7 +108,11 @@ export const useEditor = <T extends Element>(
             // handle scroll
             if (ctl.scrollTimer || !view) return
             ctl.scrollTimer = setTimeout(() => {
-              const scrollTop = view.scrollDOM.scrollTop
+              const fixOffset = window._next_writer_rendererConfig.plugin
+                .typewriter
+                ? window.innerHeight * 0.5
+                : 0
+              const scrollTop = view.scrollDOM.scrollTop - fixOffset
               const topBlockInfo = view.elementAtHeight(scrollTop)
               const line = view.state.doc.lineAt(topBlockInfo.from).number
 
