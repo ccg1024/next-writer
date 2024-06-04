@@ -84,7 +84,7 @@ const LibraryProvider: FC<PropsWithChildren> = props => {
     let data = ''
     FRONTMATTERKEYS.forEach(key => {
       if (key in note) {
-        data += `${key}: '${note[key]}'\n`
+        data += `${key}: '${note[key].replace(/['"]/g, '‘').replace(/\n/g, '  ')}'\n`
       }
     })
 
