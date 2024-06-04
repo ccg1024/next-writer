@@ -21,6 +21,7 @@ import LibraryProvider from '../contexts/library-context'
 import LibBar from './lib-bar'
 import FrontMatter from './front-matter'
 import Drag from './drag'
+import LibFloatMenu from './lib-float-manu'
 
 const Home = () => {
   const [showSide, setShowSide] = useState<boolean>(true)
@@ -31,6 +32,7 @@ const Home = () => {
   const [hideEditor, setHideEditor] = useState(false)
   const [loading, setLoading] = useState(false)
   const [isTypewriter, setIsTypewriter] = useState(false)
+  const [showFloatMenu, setShowFloatMenu] = useState(false)
 
   const listenerMap = {
     toggleSidebar: (data: IpcChannelData) => {
@@ -40,6 +42,10 @@ const Home = () => {
     toggleMidebar: (data: IpcChannelData) => {
       const { checked } = data.value
       setShowDetail(checked)
+    },
+    toggleFloatMenu: (data: IpcChannelData) => {
+      const { checked } = data.value
+      setShowFloatMenu(checked)
     },
     toggleHeadNav: (data: IpcChannelData) => {
       const { checked } = data.value
@@ -216,6 +222,7 @@ const Home = () => {
             <Editor />
             {showFocus && <VerticalBlur />}
           </div>
+          {showFloatMenu && <LibFloatMenu />}
         </LibraryProvider>
         <Preview visible={showPreview} hideEditor={hideEditor} />
         <HeadNav visible={showHeadNav} />

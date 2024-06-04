@@ -14,9 +14,13 @@ import {
 } from './file_process'
 import { exitCache, getCache, updateCache } from './cache'
 import {
+  deleteRootWorkplatformInfoUnit,
   formatedMessage,
+  getLibNameFromPath,
   getRelativePath,
+  isWorkpaltformInLib,
   syncWorkstationInfo,
+  updateSaveFileMenuItem,
   updateWorkstationInfo,
   updateWorkstationInfoWithWrite
 } from './utils'
@@ -32,6 +36,7 @@ import {
   FrontMatter
 } from '_types'
 import matter from 'gray-matter'
+import { alertError, warnInfo } from './dialog'
 
 async function handleOpenFileFromRenderer(_: unknown, filePath: string) {
   // check whether have cache
@@ -138,6 +143,7 @@ async function listener(_e: IpcMainEvent, req: IpcRequest) {
         value: { ...readFileIpcValue, isLibrary, reqPath: filePath }
       } as IpcChannelData
     )
+    updateSaveFileMenuItem(fullpath)
   } else if (req.type === 'open-recent-file') {
     // From filelist components open recent file
     const _data = req.data as Obj
@@ -297,6 +303,70 @@ async function handler(
 
     if (result === -1) {
       return Promise.reject(`[next-writer]: 库名[${formatLib}]已存在`)
+    }
+
+    return {
+      data: {
+        status: 'success'
+      }
+    }
+  } else if (req.type === 'delete-libOrfile') {
+    const { type, pathInLib } = req.data
+    if (typeof type !== 'string') {
+      throw new Error('`type` is not string in delete-libOrfile')
+    }
+    if (typeof pathInLib !== 'string') {
+      throw new Error('`pathInLib` is not string in delete-libOrfile')
+    }
+    if (!pathInLib) {
+      throw new Error('`pathInLib` is empty in delete-libOrfile')
+    }
+    if (type !== 'file' && type !== 'folder') {
+      throw new Error(
+        '`type` is not equal to file or folder in delete-libOrfile'
+      )
+    }
+    const { response } = await warnInfo(
+      `确定删除当前${type == 'file' ? '笔记' : `库: ${getLibNameFromPath(pathInLib)}`}?`,
+      global._next_writer_windowConfig.win
+    )
+    if (response == 0) {
+      return {
+        data: {
+          status: 'cancel'
+        }
+      }
+    }
+
+    // begin delete file or lib
+    const root = global._next_writer_windowConfig.root
+    const fullpath = path.resolve(root, pathInLib)
+
+    try {
+      fs.rmSync(fullpath, { recursive: true })
+    } catch (err) {
+      alertError('文件操作错误', err.message)
+      return {
+        data: {
+          status: 'error'
+        }
+      }
+    }
+    // update Menu
+    if (isWorkpaltformInLib(pathInLib)) {
+      updateSaveFileMenuItem(null)
+    }
+    // update rootWorkplatformInfo
+    try {
+      deleteRootWorkplatformInfoUnit(pathInLib, type)
+      await writeRootWorkstationInfo()
+    } catch (err) {
+      alertError('工作站错误', err.message)
+      return {
+        data: {
+          status: 'error'
+        }
+      }
     }
 
     return {

@@ -253,24 +253,18 @@ const Editor: FC = (): JSX.Element => {
         }
       })
     } else if (data.type === 'writefile') {
+      const { workInPath } = data.value
+      if (workInPath !== currentFile) {
+        console.log('前后端文件路径不一致，尝试重启应用修复')
+        pub('nw-show-message', {
+          type: '',
+          data: { message: '前后端文件路径不一致，尝试重启应用修复' }
+        })
+        return
+      }
       refSaveFile.current(editorView.state.doc.toString())
-      // window.ipc._render_saveFile(editorView.state.doc.toString())
-      // Post(
-      //   ONE_WAY_CHANNEL,
-      //   {
-      //     type: 'save-file',
-      //     data: { content: editorView.state.doc.toString() }
-      //   },
-      //   true
-      // ).catch(err => {
-      //   throw err
-      // })
       // trigger modify save
       window._next_writer_rendererConfig.modified = false
-      // pub('nw-sidebar-pubsub', {
-      //   type: 'nw-sidebar-file-change',
-      //   data: { status: 'normal' }
-      // })
       // if not a empty file save, publi a message
       if (window._next_writer_rendererConfig.workpath !== '') {
         pub('nw-show-message', {
@@ -288,7 +282,7 @@ const Editor: FC = (): JSX.Element => {
     return () => {
       removeListener()
     }
-  }, [editorView])
+  }, [editorView, currentFile])
 
   const openFloat = (e: MouseEvent) => {
     // e.preventDefault() and return false will close right click selection

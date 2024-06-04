@@ -1,3 +1,4 @@
+import { Menu } from 'electron'
 import fs from 'fs'
 import {
   FileState,
@@ -285,11 +286,122 @@ function findFolderName(
 }
 
 export function getRelativePath(path: string) {
-  const root = global._next_writer_windowConfig.root
+  let root = global._next_writer_windowConfig.root
   if (!root) {
     throw new Error('root is empty in getRelativePath')
+  }
+  while (root && root.endsWith('/')) {
+    root = root.substring(0, root.length - 1)
   }
   if (path.startsWith('.')) return path
 
   return `./${path.substring(root.length + 1)}`
+}
+
+export function isWorkpaltformInLib(lib: string) {
+  const workPlatform = global._next_writer_windowConfig.workPlatform
+  if (!workPlatform || !lib) return false
+
+  const workInLib = getRelativePath(workPlatform)
+  const libTokens = lib.split('/')
+  const workInLibTokens = workInLib.split('/')
+  if (workInLibTokens.length < libTokens.length) return false
+
+  for (let i = 0; i < libTokens.length; i++) {
+    if (libTokens[i] !== workInLibTokens[i]) return false
+  }
+
+  return true
+}
+
+/**
+ * delete a unit both in rootWorkplatformInfo and stageWorkplatformInfo
+ * @param pathInLib A relative path in library, just like './test.md'
+ * @param type Type of disk information to be deleted
+ */
+export function deleteRootWorkplatformInfoUnit(
+  pathInLib: string,
+  type: 'file' | 'folder'
+) {
+  if (!pathInLib.startsWith('.')) {
+    throw new Error(
+      '`pathInLib` is not a relatve path in deleteRootWorkplatformInfoUnit function'
+    )
+  }
+
+  let rootInfo = global._next_writer_windowConfig.rootWorkplatformInfo
+  let stageInfo = global._next_writer_windowConfig.stageWorkplatformInfo
+  const tokens = pathInLib.split('/')
+  tokens.shift()
+  for (let i = 0; i < tokens.length; i++) {
+    if (i === tokens.length - 1) {
+      // last item
+      if (type === 'file') {
+        const rootFileId = findFileIndex(rootInfo.files, tokens[i])
+        if (rootFileId == -1) {
+          throw new Error(
+            'Cannot find root-file in deleteRootWorkplatformInfoUnit'
+          )
+        }
+        const stageFileId = findFileIndex(stageInfo.files, tokens[i])
+        if (stageFileId == -1) {
+          throw new Error(
+            'Cannot find stage-file in deleteRootWorkplatformInfoUnit'
+          )
+        }
+        rootInfo.files.splice(rootFileId, 1)
+        stageInfo.files.splice(stageFileId, 1)
+      } else {
+        const rootFolderId = findFolderIndex(rootInfo.folders, tokens[i])
+        if (rootFolderId == -1) {
+          throw new Error(
+            'Cannot find root-folder in deleteRootWorkplatformInfoUnit'
+          )
+        }
+        const stageFolderId = findFolderIndex(stageInfo.folders, tokens[i])
+        if (stageFolderId == -1) {
+          throw new Error(
+            'Cannot find stage-folder in deleteRootWorkplatformInfoUnit'
+          )
+        }
+        rootInfo.folders.splice(rootFolderId, 1)
+        stageInfo.folders.splice(stageFolderId, 1)
+      }
+      break
+    }
+    const rootIdx = findFolderIndex(rootInfo.folders, tokens[i])
+    if (rootIdx == -1) {
+      throw new Error(
+        'Cannot find root-folder name in deleteRootWorkplatformInfoUnit'
+      )
+    }
+    const stageIdx = findFolderIndex(stageInfo.folders, tokens[i])
+    if (stageIdx == -1) {
+      throw new Error(
+        'Cannot find stage-folder name in deleteRootWorkplatformInfoUnit'
+      )
+    }
+
+    rootInfo = rootInfo.folders[rootIdx].subfolders
+    stageInfo = stageInfo.folders[stageIdx].subfolders
+  }
+}
+
+export function updateSaveFileMenuItem(filePath: string) {
+  const menu = Menu.getApplicationMenu()
+  const fileMenu = menu.items.find(item => item.label === '文件')
+  if (!fileMenu) return
+  const saveFileItem = fileMenu.submenu.items.find(
+    item => item.label === '保存'
+  )
+  if (saveFileItem) {
+    saveFileItem.enabled = filePath ? true : false
+    Menu.setApplicationMenu(menu)
+  }
+}
+
+export function getLibNameFromPath(lib: string) {
+  if (!lib) return null
+  const libTokens = lib.split('/')
+  return libTokens[libTokens.length - 1]
 }

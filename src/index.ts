@@ -37,6 +37,7 @@ global._next_writer_windowConfig = {
     sideBarVisible: true,
     mideBarVisible: true,
     hideNavVisible: false,
+    floatMenuVisible: false,
     preview: false,
     livePreview: false
   }
@@ -91,6 +92,7 @@ const createWindow = (): void => {
     sideBarVisible: true,
     mideBarVisible: true,
     hideNavVisible: false,
+    floatMenuVisible: false,
     preview: false,
     livePreview: false
   }

@@ -45,3 +45,17 @@ export function handleToggleHeadNav(win: BrowserWindow) {
   } as IpcChannelData)
   global._next_writer_windowConfig.menuStatus.hideNavVisible = !oldValue
 }
+
+export function handleToggleFloatMenu(win: BrowserWindow) {
+  if (!win) return
+
+  const oldValue =
+    !!global._next_writer_windowConfig.menuStatus.floatMenuVisible
+  win.webContents.send(ipcChannel['main-to-render'].home_component, {
+    type: 'toggleFloatMenu',
+    value: {
+      checked: !oldValue
+    }
+  } as IpcChannelData)
+  global._next_writer_windowConfig.menuStatus.floatMenuVisible = !oldValue
+}

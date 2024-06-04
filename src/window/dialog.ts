@@ -9,3 +9,16 @@ export function alertInfo(msg: string, win: BrowserWindow) {
     cancelId: 1
   })
 }
+
+export function warnInfo(msg: string, win: BrowserWindow) {
+  return dialog.showMessageBox(win, {
+    type: 'warning',
+    buttons: ['否', '是'],
+    defaultId: 1,
+    message: msg,
+    cancelId: 0
+  })
+}
+export function alertError(title: string, content: string) {
+  return dialog.showErrorBox(title, content)
+}

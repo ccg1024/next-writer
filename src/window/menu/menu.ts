@@ -15,10 +15,12 @@ import {
 } from '../file_process'
 import { IpcChannelData } from '_types'
 import {
+  handleToggleFloatMenu,
   handleToggleHeadNav,
   handleToggleMideBar,
   handleToggleSidebar
 } from './menu-callback'
+import { alertError } from '../dialog'
 
 // menu callback
 async function editorTypewriter(
@@ -82,9 +84,27 @@ async function _openFile(_: unknown, win: BrowserWindow) {
 }
 
 async function saveFile(_: unknown, win: BrowserWindow) {
+  let root = global._next_writer_windowConfig.root
+  if (!root) {
+    throw new Error('`root` is empty in saveFile menu callback')
+  }
+  const workplatform = global._next_writer_windowConfig.workPlatform
+  if (!workplatform) {
+    alertError('菜单错误', '保存工作路径为空，尝试重启应用修复')
+    return
+  }
+  if (workplatform.length <= root.length) {
+    alertError('菜单错误', '工作路径不在根路径中，尝试重启应用修复')
+    return
+  }
+  while (root.endsWith('/')) {
+    root = root.substring(0, root.length - 1)
+  }
   win.webContents.send(ipcChannel['main-to-render'].editor_component, {
     type: 'writefile',
-    value: {}
+    value: {
+      workInPath: `.${workplatform.substring(root.length)}`
+    }
   } as IpcChannelData)
 }
 
@@ -131,6 +151,9 @@ function toggleMideBar(_m: MenuItem, win: BrowserWindow) {
 
 function toggleHeadNav(_m: MenuItem, win: BrowserWindow, _: unknown) {
   handleToggleHeadNav(win)
+}
+function toggleFloatMenu(_: MenuItem, win: BrowserWindow) {
+  handleToggleFloatMenu(win)
 }
 
 function toggleFocusMode(m: MenuItem, win: BrowserWindow) {
@@ -245,6 +268,7 @@ export default function createMenus(): MenuItemConstructorOptions[] {
         {
           label: '保存',
           click: saveFile,
+          enabled: false,
           accelerator: isMac ? 'Cmd+s' : 'Ctrl+s'
         }
         // {
@@ -268,6 +292,11 @@ export default function createMenus(): MenuItemConstructorOptions[] {
           label: '详情栏',
           click: toggleMideBar,
           accelerator: isMac ? 'Cmd+Shift+d' : 'Ctrl+Shift+d'
+        },
+        {
+          label: '浮动菜单',
+          click: toggleFloatMenu,
+          accelerator: isMac ? 'Cmd+Shift+t' : 'Ctrl+Shift+t'
         },
         {
           label: '切换导航',

@@ -23,6 +23,7 @@ const homeChannel = [
   'toggleSidebar',
   'toggleMidebar',
   'toggleHeadNav',
+  'toggleFloatMenu',
   'focusMode',
   'preview',
   'livePreview',
@@ -37,6 +38,7 @@ export type SidebarChannelType = (typeof sidebarChannel)[number]
 export type IpcChannelDataValue = {
   [key: string]: Primitive | Obj
   manualStatus?: 'pending' | 'rejected' | 'fulfilled'
+  workInPath?: string
 } & Partial<ReadFileDescriptor> &
   Partial<CheckBoxValue> &
   Partial<RootWorkstationInfo>
@@ -188,7 +190,8 @@ export type UpdateCacheContent = {
 export type MenuStatus = {
   sideBarVisible: boolean
   mideBarVisible: boolean
-  hideNavVisible: boolean
+  hideNavVisible: boolean // head-nav
+  floatMenuVisible: boolean
   preview: boolean
   livePreview: boolean
 }
