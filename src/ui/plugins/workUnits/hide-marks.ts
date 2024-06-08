@@ -88,7 +88,11 @@ class HideMarksPlugin implements ScheduleUnit {
       if (match && match[2].length !== 0) {
         // hide link url
         workInDecos.push(
-          hideDecoration(node.from + match[1].length + 2, node.to)
+          hideDecoration(node.from + match[1].length + 2, node.to, {
+            inlineFilter: true,
+            from: node.from,
+            to: node.to
+          })
         )
       }
     }
@@ -127,6 +131,14 @@ class HideMarksPlugin implements ScheduleUnit {
       filter(from, _to, value) {
         // if the decoration do not filter, just return
         if (!value.spec.needFilter) return true
+
+        // if the decoration need inlineFilter
+        if (value.spec.inlineFilter) {
+          const cursor = update.view.state.selection.main.from
+          if (cursor > value.spec.from && cursor < value.spec.to) return false
+
+          return true
+        }
 
         const decoLine = update.view.state.doc.lineAt(from)
         if (decoLine.from == line.from) return false
