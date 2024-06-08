@@ -40,7 +40,8 @@ class ListAlignMark implements ScheduleUnit {
       position: 'absolute',
       transform: 'translateX(-100%)',
       color: '#4299E1',
-      fontWeight: 'bold'
+      fontWeight: 'bold',
+      fontFamily: 'var(--nw-editor-code-font-family), monospace'
     }
   })
   init: ProcessInitUnit = () => {

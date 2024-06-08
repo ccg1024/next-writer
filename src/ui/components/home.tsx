@@ -118,13 +118,13 @@ const Home = () => {
         const r = document.querySelector('body')
 
         let fontSize = '16px'
-        let fontFamily = 'M PLUS Rounded 1c'
+        let fontFamily = 'monospace'
         if (config.editorFont) {
           r.style.setProperty('--nw-editor-font-family', config.editorFont)
-          fontFamily = config.editorFont
         }
         if (config.codeFont) {
           r.style.setProperty('--nw-editor-code-font-family', config.codeFont)
+          fontFamily = config.codeFont
         }
         if (config.uiFont) {
           r.style.setProperty('--nw-ui-font-family', config.uiFont)
