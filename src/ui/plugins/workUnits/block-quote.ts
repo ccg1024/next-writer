@@ -11,7 +11,32 @@ class BlockQuotePlugin implements ScheduleUnit {
   private stageDecos: Range<Decoration>[]
   theme: Extension = EditorView.baseTheme({
     '.cm-content > .cm-quote-block': {
-      backgroundColor: 'rgba(226,232,240,0.5)'
+      position: 'relative',
+      marginInlineStart: '5px',
+      marginInlineEnd: '5px',
+      backgroundColor: 'rgba(226,232,240,0.5)',
+      '&::after': {
+        content: '""',
+        position: 'absolute',
+        width: '5px',
+        height: '100%',
+        top: 0,
+        right: 0,
+        backgroundColor: 'rgba(226,232,240,0.5)',
+        zIndex: -1,
+        transform: 'translateX(100%)'
+      },
+      '&::before': {
+        content: '""',
+        position: 'absolute',
+        width: '5px',
+        height: '100%',
+        top: 0,
+        left: 0,
+        backgroundColor: 'rgba(226,232,240,0.5)',
+        zIndex: -1,
+        transform: 'translateX(-100%)'
+      }
     },
     '.cm-content > .cm-quote-block-start': {
       paddingTop: '5px'
@@ -44,13 +69,13 @@ class BlockQuotePlugin implements ScheduleUnit {
             class: 'cm-quote-block'
           })
         })
-        workInDecos.push({
-          from: line.from,
-          to: line.to,
-          value: Decoration.mark({
-            class: 'cm-inner-quote'
-          })
-        })
+        // workInDecos.push({
+        //   from: line.from,
+        //   to: line.to,
+        //   value: Decoration.mark({
+        //     class: 'cm-inner-quote'
+        //   })
+        // })
         pos = line.to + 1
       }
 
