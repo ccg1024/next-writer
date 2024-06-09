@@ -206,9 +206,7 @@ export const defaultSyntaxHighlighting = HighlightStyle.define([
   {
     tag: markTags.inlineCode,
     color: 'black',
-    padding: '0 4px',
     backgroundColor: 'rgba(175, 184, 193, 0.2)',
-    borderRadius: 'var(--nw-border-radius-sm)',
     fontFamily: 'var(--nw-editor-code-font-family)'
   },
   {
