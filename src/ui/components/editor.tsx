@@ -266,12 +266,12 @@ const Editor: FC = (): JSX.Element => {
       // trigger modify save
       window._next_writer_rendererConfig.modified = false
       // if not a empty file save, publi a message
-      if (window._next_writer_rendererConfig.workpath !== '') {
-        pub('nw-show-message', {
-          type: '',
-          data: { message: window._next_writer_rendererConfig.workpath }
-        })
-      }
+      // if (window._next_writer_rendererConfig.workpath !== '') {
+      //   pub('nw-show-message', {
+      //     type: '',
+      //     data: { message: window._next_writer_rendererConfig.workpath }
+      //   })
+      // }
     }
   }
 
