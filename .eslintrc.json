@@ -33,5 +33,6 @@
         "extensions": [".ts", ".tsx", ".js", ".jsx", ".json", ".d.ts"]
       }
     }
-  }
+  },
+  "ignorePatterns": ["bin/"]
 }

@@ -5,7 +5,7 @@
   "description": "A refectored version of the imarkdown project, focusing on hybrid editing mode",
   "main": ".webpack/main",
   "scripts": {
-    "start": "electron-forge start",
+    "start": "node bin/shell/index.js DEV && electron-forge start",
     "package": "electron-forge package",
     "make": "electron-forge make",
     "publish": "electron-forge publish",
@@ -60,6 +60,7 @@
     "@emotion/css": "^11.11.2",
     "@emotion/react": "^11.11.3",
     "@emotion/styled": "^11.11.0",
+    "antd": "^5.20.5",
     "electron-squirrel-startup": "^1.0.0",
     "framer-motion": "^11.0.8",
     "gray-matter": "^4.0.3",

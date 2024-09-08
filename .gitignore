@@ -91,3 +91,6 @@ typings/
 # Electron-Forge
 out/
 test/
+
+# Next writer
+bin/index.es.js
