@@ -12,7 +12,31 @@ class CodeBlockPlugin implements ScheduleUnit {
   theme = EditorView.baseTheme({
     '.cm-content > .cm-code-block': {
       backgroundColor: '#cccccc22',
-      fontFamily: 'var(--nw-editor-code-font-family)'
+      fontFamily: 'var(--nw-editor-code-font-family)',
+      position: 'relative',
+      marginInline: '16px',
+      '&::before': {
+        content: '""',
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        height: '100%',
+        width: '16px',
+        zIndex: -1,
+        transform: 'translateX(-100%)',
+        backgroundColor: '#cccccc22'
+      },
+      '&::after': {
+        content: '""',
+        position: 'absolute',
+        top: 0,
+        right: 0,
+        height: '100%',
+        width: '16px',
+        zIndex: -1,
+        transform: 'translateX(100%)',
+        backgroundColor: '#cccccc22'
+      }
     }
   })
   constructor() {
