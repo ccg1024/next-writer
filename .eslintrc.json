@@ -28,7 +28,8 @@
       "alias": {
         "map": [
           ["src", "./src"],
-          ["_types", "./src/types/types.d.ts"]
+          ["_types", "./src/types/types.d.ts"],
+          ["bin", "./bin"]
         ],
         "extensions": [".ts", ".tsx", ".js", ".jsx", ".json", ".d.ts"]
       }

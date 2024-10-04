@@ -1,4 +1,4 @@
-import { dialog, BrowserWindow } from 'electron'
+import { dialog, BrowserWindow } from 'electron';
 
 export function alertInfo(msg: string, win: BrowserWindow) {
   return dialog.showMessageBoxSync(win, {
@@ -7,7 +7,7 @@ export function alertInfo(msg: string, win: BrowserWindow) {
     message: msg,
     buttons: ['Yes', 'No'],
     cancelId: 1
-  })
+  });
 }
 
 export function warnInfo(msg: string, win: BrowserWindow) {
@@ -17,8 +17,8 @@ export function warnInfo(msg: string, win: BrowserWindow) {
     defaultId: 1,
     message: msg,
     cancelId: 0
-  })
+  });
 }
 export function alertError(title: string, content: string) {
-  return dialog.showErrorBox(title, content)
+  return dialog.showErrorBox(title, content);
 }

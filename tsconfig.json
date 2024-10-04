@@ -13,10 +13,12 @@
     "outDir": "dist",
     "moduleResolution": "node",
     "resolveJsonModule": true,
+    "experimentalDecorators": true,
     "paths": {
       "*": ["node_modules/*"],
       "_types": ["src/types/types.d.ts"],
-      "src/*": ["./src/*"]
+      "src/*": ["./src/*"],
+      "bin/*": ["./bin/*"]
     }
   },
   "include": ["src/**/*"]

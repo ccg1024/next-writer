@@ -1,11 +1,10 @@
-import type { Configuration } from 'webpack'
-import path from 'path'
-import CopyWebpackPlugin from 'copy-webpack-plugin'
+import CopyWebpackPlugin from 'copy-webpack-plugin';
+import path from 'path';
+import type { Configuration } from 'webpack';
+import { plugins } from './webpack.plugins';
+import { rules } from './webpack.rules';
 
-import { rules } from './webpack.rules'
-import { plugins } from './webpack.plugins'
-
-const assets = ['svg', 'img']
+const assets = ['svg', 'img'];
 
 const copyPlugins = [
   new CopyWebpackPlugin({
@@ -14,12 +13,12 @@ const copyPlugins = [
       to: path.resolve(__dirname, '.webpack/renderer', asset)
     }))
   })
-]
+];
 
 rules.push({
   test: /\.css$/,
   use: [{ loader: 'style-loader' }, { loader: 'css-loader' }]
-})
+});
 
 export const rendererConfig: Configuration = {
   module: {
@@ -32,4 +31,4 @@ export const rendererConfig: Configuration = {
       src: path.resolve(__dirname, 'src/')
     }
   }
-}
+};
