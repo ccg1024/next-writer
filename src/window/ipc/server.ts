@@ -2,7 +2,8 @@ import { ipcMain, IpcMainInvokeEvent } from 'electron';
 import path from 'path';
 import { SERVER_CHANNEL } from 'src/tools/config';
 import { normalizeError } from 'src/tools/utils';
-import { NormalObject, Request, RequestAddLibOrFile, RequestDelLibOrFile, Response } from '_types';
+import { IAddLibOrFile, IDelLibOrFile } from 'src/types/api';
+import { NormalObject, Request, Response } from '_types';
 import FileSystem from '../sys/file-system';
 import MainGlobal from '../sys/main-global';
 
@@ -56,32 +57,34 @@ class IpcServer {
   }
 
   // Add library folder of file in root dir
-  async addLibOrFile(data: RequestAddLibOrFile): Promise<Response> {
+  async addLibOrFile(data: IAddLibOrFile): Promise<Response> {
     return this.modifyLibOrFile('add', data);
   }
 
   // Delete library folder or file in root dir
-  async delLibOrFile(data: RequestDelLibOrFile) {
+  async delLibOrFile(data: IDelLibOrFile) {
     return this.modifyLibOrFile('del', data);
   }
 
   // Modify option in root dir for `add` or `del`
-  async modifyLibOrFile(option: 'add' | 'del', data: RequestAddLibOrFile | RequestDelLibOrFile): Promise<Response> {
-    const { type, path: _path } = data ?? {};
+  async modifyLibOrFile(option: 'add' | 'del', data: IAddLibOrFile): Promise<Response> {
+    const { type, path: _path, title } = data ?? {};
     const rootDir = this._mainGlobal.getConfig('rootDir');
-    const innerPath = _path.startsWith(rootDir) ? _path : path.resolve(rootDir, _path);
+    const connectPath = path.join(_path, title);
+    const innerPath = connectPath.startsWith(rootDir) ? connectPath : path.resolve(rootDir, connectPath);
+    const target = type === 'file' ? `${innerPath}.nwriter` : innerPath;
     try {
       if (option === 'add') {
         if (type === 'file') {
-          await this._fileSystem.writeFile(path.resolve(innerPath, '.md'), '');
+          await this._fileSystem.writeFile(target, '');
         }
         if (type === 'folder') {
-          await this._fileSystem.mkFolder(innerPath);
+          await this._fileSystem.mkFolder(target);
         }
-        this._fileSystem.updateTree(innerPath, type);
+        this._fileSystem.updateTree(innerPath, type); // update file system, do not need .nwrtier
       } else if (option === 'del') {
-        await this._fileSystem.rmLibOrFile(innerPath);
-        this._fileSystem.removeTreeItem(innerPath);
+        await this._fileSystem.rmLibOrFile(target);
+        this._fileSystem.removeTreeItem(innerPath); // update file system, do not need .nwrtier
       }
       return {
         status: 0,

@@ -34,6 +34,8 @@
     "eslint-import-resolver-alias": "^1.1.2",
     "eslint-plugin-import": "^2.25.0",
     "fork-ts-checker-webpack-plugin": "^7.2.13",
+    "less": "^4.2.0",
+    "less-loader": "^12.2.0",
     "node-loader": "^2.0.0",
     "style-loader": "^3.0.0",
     "ts-loader": "^9.2.2",
@@ -47,6 +49,7 @@
   },
   "license": "GPL-3",
   "dependencies": {
+    "@ant-design/icons": "^5.5.1",
     "@codemirror/autocomplete": "6.8.1",
     "@codemirror/commands": "6.2.4",
     "@codemirror/lang-css": "6.2.0",

@@ -1,6 +1,6 @@
 import { message } from 'antd';
 import { useLayoutEffect, useState } from 'react';
-import * as mainProcess from '../libs/main-process';
+import mainProcess from '../libs/main-process';
 
 /**
  * Using renderer process config

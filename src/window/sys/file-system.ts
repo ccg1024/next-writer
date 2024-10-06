@@ -8,6 +8,9 @@ import type MainGlobal from './main-global';
 type ReadFileOptions = Parameters<typeof fs.promises.readFile>[1];
 type WriteFileOptions = Parameters<typeof fs.promises.writeFile>[2];
 
+// Root dir info file
+const WORKSPACE_INFO_FILE = '.nwriter.info.json';
+
 /**
  * Encapsulated file system, providing file reading and writing operations.
  *
@@ -185,22 +188,23 @@ class FileSystem {
     const pathTokens = innerPath.split('/').filter(item => item !== '.' && !!item);
 
     this.recursiveRemoveTreeItem(pathTokens, currentTree);
-
+    this.updateLibrary(currentTree);
     this.setTree(currentTree);
   }
+
   private recursiveRemoveTreeItem(pathTokens: string[], currentTree: LibraryTree[]) {
-    if (!isEffectArray(pathTokens) || !isEffectArray(currentTree)) {
+    if (!isEffectArray(pathTokens) || !Array.isArray(currentTree)) {
       return;
     }
 
     const currentPath = pathTokens.shift();
     const targetLib = currentTree.find(lib => lib.name === currentPath);
     if (targetLib) {
-      if (currentPath.length > 0) {
+      if (pathTokens.length > 0) {
         this.recursiveRemoveTreeItem(pathTokens, targetLib.children);
       } else {
         const targetIndex = currentTree.findIndex(lib => lib.name === currentPath);
-        currentTree.splice(targetIndex, targetIndex + 1);
+        currentTree.splice(targetIndex, 1);
       }
     }
   }
@@ -221,11 +225,12 @@ class FileSystem {
     const pathTokens = innerPath.split('/').filter(item => item !== '.' && !!item);
 
     this.recursiveUpdateTree(pathTokens, currentTree, type);
+    this.updateLibrary(currentTree);
     this.setTree(currentTree);
   }
 
   private recursiveUpdateTree(pathTokens: string[], currentTree: LibraryTree[], type: LibraryType) {
-    if (!isEffectArray(pathTokens) || !isEffectArray(currentTree)) {
+    if (!isEffectArray(pathTokens) || !Array.isArray(currentTree)) {
       return;
     }
     const currentPath = pathTokens.shift();
@@ -250,6 +255,27 @@ class FileSystem {
       };
       currentTree.push(newLib);
       this.recursiveUpdateTree(pathTokens, newLib.children, type);
+    }
+  }
+
+  updateLibrary(tree?: LibraryTree[]) {
+    // Get root dir path
+    const rootDir = this._mainGlobal.getConfig('rootDir');
+
+    if (!rootDir) {
+      throw new Error('[File-System] The root dir is empty when invoke updateLibrary');
+    }
+
+    if (!fs.existsSync(rootDir)) {
+      fs.mkdirSync(rootDir, { recursive: true });
+    }
+
+    const infoFilePath = path.resolve(rootDir, WORKSPACE_INFO_FILE);
+
+    try {
+      fs.writeFileSync(infoFilePath, JSON.stringify({ tree: tree ?? [] }, null, 2), { encoding: 'utf8' });
+    } catch (err) {
+      throw new Error(err);
     }
   }
 }

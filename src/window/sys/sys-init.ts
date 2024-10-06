@@ -171,15 +171,11 @@ class SysInit {
       return;
     }
 
-    if (!fs.existsSync(rootDir)) {
-      fs.mkdirSync(rootDir, { recursive: true });
-    }
-
     const infoFilePath = path.resolve(rootDir, WORKSPACE_INFO_FILE);
 
     // If there is no info file, the library is empty or a new one.
     if (!fs.existsSync(infoFilePath)) {
-      fs.writeFileSync(infoFilePath, JSON.stringify({ tree: [] }, null, 2), { encoding: 'utf8' });
+      this._fileSystem.updateLibrary();
       this._fileSystem.setTree([]);
       return;
     }

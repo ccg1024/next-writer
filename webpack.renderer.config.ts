@@ -15,10 +15,16 @@ const copyPlugins = [
   })
 ];
 
-rules.push({
-  test: /\.css$/,
-  use: [{ loader: 'style-loader' }, { loader: 'css-loader' }]
-});
+rules.push(
+  {
+    test: /\.css$/,
+    use: [{ loader: 'style-loader' }, { loader: 'css-loader' }]
+  },
+  {
+    test: /\.less$/i,
+    use: [{ loader: 'style-loader' }, { loader: 'css-loader' }, { loader: 'less-loader' }]
+  }
+);
 
 export const rendererConfig: Configuration = {
   module: {

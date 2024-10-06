@@ -24,10 +24,11 @@ const WORKSTATION_JSON = '.nwriter.info.json';
 const DEFAULT_WINDOW: BrowserWindowConstructorOptions = {
   height: 725,
   width: 1180,
-  minWidth: 500,
+  minWidth: 1000,
   minHeight: 400,
   frame: false,
   titleBarStyle: 'hidden',
+  trafficLightPosition: { x: 28, y: 15 },
   vibrancy: 'under-window',
   visualEffectState: 'active',
   webPreferences: {

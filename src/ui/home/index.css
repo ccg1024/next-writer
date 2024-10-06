@@ -1,0 +1,116 @@
+/* custom css variables */
+:root {
+  --nw-color-transparent: transparent;
+  --nw-color-whiteAlpha-50: rgba(255, 255, 255, 0.08);
+  --nw-color-whiteAlpha-100: rgba(255, 255, 255, 0.16);
+  --nw-color-whiteAlpha-200: rgba(255, 255, 255, 0.24);
+  --nw-color-whiteAlpha-300: rgba(255, 255, 255, 0.32);
+  --nw-color-whiteAlpha-400: rgba(255, 255, 255, 0.4);
+  --nw-color-whiteAlpha-500: rgba(255, 255, 255, 0.48);
+  --nw-color-whiteAlpha-600: rgba(255, 255, 255, 0.56);
+  --nw-color-whiteAlpha-700: rgba(255, 255, 255, 0.64);
+  --nw-color-whiteAlpha-800: rgba(255, 255, 255, 0.72);
+  --nw-color-whiteAlpha-900: rgba(255, 255, 255, 0.8);
+  --nw-color-blackAlpha-50: rgba(0, 0, 0, 0.08);
+  --nw-color-blackAlpha-100: rgba(0, 0, 0, 0.16);
+  --nw-color-blackAlpha-200: rgba(0, 0, 0, 0.24);
+  --nw-color-blackAlpha-300: rgba(0, 0, 0, 0.32);
+  --nw-color-blackAlpha-400: rgba(0, 0, 0, 0.4);
+  --nw-color-redAlpha-50: rgba(229, 62, 62, 0.08);
+  --nw-color-redAlpha-100: rgba(229, 62, 62, 0.16);
+  --nw-color-redAlpha-200: rgba(229, 62, 62, 0.24);
+  --nw-color-redAlpha-300: rgba(229, 62, 62, 0.32);
+  --nw-color-redAlpha-400: rgba(229, 62, 62, 0.4);
+  --nw-color-redAlpha-500: rgba(229, 62, 62, 0.48);
+  --nw-color-redAlpha-600: rgba(229, 62, 62, 0.56);
+  --nw-color-redAlpha-700: rgba(229, 62, 62, 0.64);
+  --nw-color-redAlpha-800: rgba(229, 62, 62, 0.72);
+  --nw-color-gray-50: #f7fafc;
+  --nw-color-gray-100: #edf2f7;
+  --nw-color-gray-200: #e2e8f0;
+  --nw-color-gray-300: #cbd5e0;
+  --nw-color-gray-500: #718096;
+  --nw-border-radius-sm: 5px;
+  --nw-border-radius-md: 10px;
+  --nw-border-radius-lg: 15px;
+  --nw-border-radius-mx: 100%;
+  --nw-box-shadow-sm: 2px 2px 5px #8c8c8c;
+  --nw-box-shadow-md: 0px 0px 10px #8c8c8c;
+  --nw-box-shadow-lg: 2px 2px 15px #8c8c8c;
+
+  --nw-size-sm: 0.5em;
+  --nw-size-md: 1em;
+  --nw-size-lg: 1.5em;
+
+  --nw-editor-font-family: 'M PLUS Rounded 1c';
+  --nw-editor-code-font-family: 'Hack Nerd Font';
+  --nw-ui-font-family: 'M PLUS Rounded 1c';
+  --nw-ui-font-size: 16px;
+  --nw-editor-font-size: 16px;
+  --nw-head-nav-item-color: #4299e1;
+  --nw-letter-spacing: 0.1em;
+  --nw-editor-text-align: left;
+  --nw-editor-content-padding: 0px;
+}
+
+@keyframes animation-rotate {
+  0% {
+    transform: rotate(0);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.test {
+  width: auto;
+  height: 200px;
+  background-color: green;
+}
+
+#root {
+  box-sizing: border-box;
+  position: relative;
+  height: 100vh;
+}
+
+#home {
+  -webkit-app-region: no-drag;
+  height: 100%;
+  display: flex;
+  font-family: var(--nw-ui-font-family);
+  position: relative;
+}
+
+.home-container {
+  flex-grow: 1;
+  flex-basis: 0;
+  min-width: 0;
+  overflow: hidden;
+  background-color: #ffffff;
+  border-left: 1px solid #ccc;
+  font-size: 16px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.right-center-absolute {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  transform: translate(0, -50%);
+}
+
+.fixed-flex-item {
+  flex-shrink: 0;
+  flex-grow: 0;
+}
+.text-hide {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.root-animation {
+  transition: padding 0.25s linear;
+}

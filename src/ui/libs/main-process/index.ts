@@ -1,12 +1,12 @@
 import { SERVER_CHANNEL } from 'src/tools/config';
-import { NormalObject } from '_types';
+import { IAddLibOrFile, IDelLibOrFile } from 'src/types/api';
 import api from '../api';
 
-async function addLibOrFile(data: NormalObject) {
+async function addLibOrFile(data: IAddLibOrFile) {
   return api({ type: SERVER_CHANNEL.addLibOrFile, data });
 }
 
-async function delLibOrFile(data: NormalObject) {
+async function delLibOrFile(data: IDelLibOrFile) {
   return api({ type: SERVER_CHANNEL.delLibOrFile, data });
 }
 
@@ -18,4 +18,6 @@ async function getLibrary() {
   return api({ type: SERVER_CHANNEL.getLibrary, data: null });
 }
 
-export { addLibOrFile, delLibOrFile, readConfig, getLibrary };
+const mainProcess = { addLibOrFile, delLibOrFile, readConfig, getLibrary };
+
+export default mainProcess;
