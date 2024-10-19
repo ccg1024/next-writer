@@ -1,4 +1,5 @@
 import { createRoot } from 'react-dom/client';
+import { ConfigProvider } from 'antd';
 // import Home from './components/home'
 import Home from './home';
 
@@ -11,4 +12,8 @@ window._next_writer_rendererConfig = {
 };
 
 const root = createRoot(document.getElementById('root'));
-root.render(<Home />);
+root.render(
+  <ConfigProvider prefixCls="_next_writer" theme={{ hashed: false }}>
+    <Home />
+  </ConfigProvider>
+);

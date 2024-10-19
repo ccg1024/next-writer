@@ -57,7 +57,7 @@ export const AddModal = React.forwardRef<AddModalHandle, AddModalProps>((props, 
       const { status, message: msg } =
         (await mainProcess.addLibOrFile({
           type: optionType,
-          path: currentLib?.root ?? '',
+          path: optionType === 'folder' ? '' : (currentLib?.root ?? ''),
           title: formData.name
         })) ?? {};
       if (status === 0) {
@@ -148,6 +148,7 @@ export const DelModal = React.forwardRef<DelModalHandle, DelModalProps>((props, 
   const delOption = async () => {
     if (target) {
       try {
+        // Should not pass title to main process, since main process try to join path and title
         const { status, message: msg } = await mainProcess.delLibOrFile({ ...target, title: '' });
         if (status === 0) {
           const shouldReset = currentLib.file === target.path;
