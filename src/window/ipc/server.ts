@@ -2,7 +2,7 @@ import { ipcMain, IpcMainInvokeEvent } from 'electron';
 import path from 'path';
 import { SERVER_CHANNEL } from 'src/tools/config';
 import { normalizeError } from 'src/tools/utils';
-import { IAddLibOrFile, IDelLibOrFile } from 'src/types/api';
+import { IAddLibOrFile, IDelLibOrFile, QueryFileDTO } from 'src/types/api';
 import { NormalObject, Request, Response } from '_types';
 import FileSystem from '../sys/file-system';
 import MainGlobal from '../sys/main-global';
@@ -53,7 +53,14 @@ class IpcServer {
         return this.readConfig();
       case SERVER_CHANNEL.getLibrary:
         return this.getLibrary();
+      case SERVER_CHANNEL.queryFile:
+        return this.queryFile(data);
     }
+  }
+
+  private getPath(_path: string) {
+    const rootDir = this._mainGlobal.getConfig('rootDir');
+    return _path.startsWith(rootDir) ? _path : path.resolve(rootDir, _path);
   }
 
   // Add library folder of file in root dir
@@ -115,6 +122,29 @@ class IpcServer {
       status: 0,
       data: this._fileSystem.getTree(),
       message: ''
+    };
+  }
+
+  async queryFile(data: QueryFileDTO) {
+    const { path: filePath } = data ?? {};
+    const innerPath = this.getPath(filePath);
+    try {
+      const fileBuffer = await this._fileSystem.readFile(`${innerPath}.nwriter`);
+      return {
+        status: 0,
+        data: {
+          content: fileBuffer.toString()
+        },
+        message: ''
+      };
+    } catch (err) {
+      // ..
+    }
+
+    return {
+      status: -1,
+      data: null,
+      message: 'some thing wrong, when query file'
     };
   }
 }

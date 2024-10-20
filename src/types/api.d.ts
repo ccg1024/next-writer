@@ -7,3 +7,7 @@ export interface IAddLibOrFile {
 }
 
 export type IDelLibOrFile = IAddLibOrFile;
+
+export interface QueryFileDTO {
+  path: string;
+}

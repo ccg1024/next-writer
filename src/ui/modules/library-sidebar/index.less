@@ -54,6 +54,20 @@
       background-color: transparent;
     }
   }
+
+  .library-sidebar-icon {
+    padding: 4px;
+    border-radius: 4px;
+    display: inline-flex;
+    vertical-align: -2px;
+    opacity: 0;
+
+    &:hover {
+      cursor: pointer;
+      background-color: rgba(0, 0, 0, 0.08);
+      opacity: 1;
+    }
+  }
 }
 
 .library-detail-wrapper {
@@ -67,9 +81,10 @@
   height: 40px;
   line-height: 40px;
   user-select: none;
+  box-sizing: border-box;
   border-bottom: 1px solid rgba(0, 0, 0, 0.1);
 
-  .library-detail-add {
+  .library-detail-icon {
     padding: 4px;
     border-radius: 4px;
     display: inline-flex;
@@ -100,4 +115,21 @@
 .library-detail-item-selected {
   background-color: #e6f4ff;
   color: #1677ff;
+}
+
+.library-sidebar-spin-wrapper {
+  width: 512px;
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 1;
+  background-color: rgba(0, 0, 0, 0.45);
+  height: 100%;
+
+  .library-sidebar-spin {
+    position: relative;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
 }

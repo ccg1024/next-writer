@@ -11,7 +11,7 @@ export interface AddModalHandle {
 }
 
 interface AddModalProps {
-  callback: (parent?: string, reset?: boolean) => void;
+  callback: (parent?: string, reset?: boolean, type?: LibraryType) => void;
 }
 
 export const AddModal = React.forwardRef<AddModalHandle, AddModalProps>((props, ref) => {
@@ -61,7 +61,7 @@ export const AddModal = React.forwardRef<AddModalHandle, AddModalProps>((props, 
           title: formData.name
         })) ?? {};
       if (status === 0) {
-        props.callback && props.callback(currentLib?.root ?? '');
+        props.callback && props.callback();
         closeModal();
       } else {
         message.error(msg ?? 'Some thing error when add library or file');
@@ -116,7 +116,7 @@ export interface DelModalHandle {
 }
 
 interface DelModalProps {
-  callback: (parent?: string, reset?: boolean) => void;
+  callback: (parent?: string, reset?: boolean, type?: LibraryType) => void;
 }
 
 export const DelModal = React.forwardRef<DelModalHandle, DelModalProps>((props, ref) => {
@@ -151,8 +151,8 @@ export const DelModal = React.forwardRef<DelModalHandle, DelModalProps>((props, 
         // Should not pass title to main process, since main process try to join path and title
         const { status, message: msg } = await mainProcess.delLibOrFile({ ...target, title: '' });
         if (status === 0) {
-          const shouldReset = currentLib.file === target.path;
-          props.callback && props.callback(null, shouldReset);
+          const shouldReset = target.type === 'file' ? true : currentLib.root === target.path;
+          props.callback && props.callback(null, shouldReset, target.type);
           closeModal();
         } else {
           message.error(msg ?? 'Some thing wrong when delete file or lib');

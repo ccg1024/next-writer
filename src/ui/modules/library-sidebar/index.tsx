@@ -1,24 +1,27 @@
-import { DeleteOutlined, FolderOutlined, FormOutlined } from '@ant-design/icons';
-import { message, Menu, MenuProps, Typography, Row, Col } from 'antd';
+import { message, Menu, MenuProps, Typography, Row, Col, Spin } from 'antd';
+import { DeleteOutlined, FolderOutlined, FormOutlined, MinusCircleOutlined } from '@ant-design/icons';
+import { motion } from 'framer-motion';
 import React, { FC, useCallback, useEffect, useRef, useState } from 'react';
 import { isEffectArray, isEffectObject } from 'src/tools/utils';
 import { WindowDragBox } from 'src/ui/components/drag';
 import { useHomeContext } from 'src/ui/home/module.context';
 import mainProcess from 'src/ui/libs/main-process';
 import { LibraryTree, LibraryType, NormalObject } from '_types';
-import { AddModal, AddModalHandle, DelModal, DelModalHandle, DelModalTarget } from './modal';
+import { AddModal, AddModalHandle, DelModal, DelModalHandle } from './modal';
+import { VerticalEmpty } from 'src/ui/components/antd/preset/empty';
 
 import './index.less';
-import { motion } from 'framer-motion';
-import { VerticalEmpty } from 'src/ui/components/antd/preset/empty';
 
 const { Text, Title, Paragraph } = Typography;
 type MenuItem = Required<MenuProps>['items'][number];
 
-const LibrarySidebar: FC = () => {
+interface LibrarySidebarProps {
+  detailCallback(lib: LibraryTree): void;
+}
+const LibrarySidebar: FC<LibrarySidebarProps> = props => {
   const [libTree, setLibTree] = useState<LibraryTree[]>(null);
   const [selectedLib, setSelectedLib] = useState<LibraryTree>(null);
-  const [_loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [conditions, setConditions] = useState<NormalObject>(null);
 
   const addRef = useRef<AddModalHandle>(null);
@@ -34,9 +37,13 @@ const LibrarySidebar: FC = () => {
     setLoading(false);
   }, []);
 
-  const reRequest = useCallback((_parent?: string, reset?: boolean) => {
+  const reRequest = useCallback((_parent?: string, reset?: boolean, type: LibraryType = 'file') => {
     if (reset) {
-      setCurrentLib({ file: null });
+      if (type === 'file') {
+        setCurrentLib({ file: null });
+      } else if (type === 'folder') {
+        setCurrentLib({ root: '', file: null });
+      }
     }
     setConditions({});
   }, []);
@@ -57,6 +64,7 @@ const LibrarySidebar: FC = () => {
   // ============================================================
   // Request data
   // ============================================================
+  // Get library info tree
   async function getLibraryTree() {
     try {
       setLoading(true);
@@ -65,6 +73,27 @@ const LibrarySidebar: FC = () => {
         setLibTree(data ?? []);
       } else {
         message.error(msg ?? 'Got error when reading library');
+      }
+    } catch (err) {
+      // ..
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // Get selected file
+  async function getSelectedFile(filePath: string, lib: LibraryTree) {
+    setLoading(true);
+    try {
+      const { status, data, message: msg } = await mainProcess.queryFile({ path: filePath });
+      if (status === 0) {
+        // TODO: 处理文件内容回调
+        const { content: _ } = data ?? {};
+        if (props.detailCallback && typeof props.detailCallback === 'function') {
+          props.detailCallback(lib);
+        }
+      } else {
+        message.error(msg);
       }
     } catch (err) {
       // ..
@@ -85,7 +114,29 @@ const LibrarySidebar: FC = () => {
             if (lib.type === 'folder') {
               return {
                 key: lib.name,
-                label: <div style={{ backgroundColor: 'transparent' }}>{lib.name}</div>
+                label: (
+                  <div style={{ backgroundColor: 'transparent' }}>
+                    <Row>
+                      <Col span={20}>{lib.name}</Col>
+                      <Col span={4} style={{ textAlign: 'center' }}>
+                        <motion.div
+                          className="library-sidebar-icon"
+                          whileTap={{ scale: 0.8 }}
+                          onClick={e => {
+                            e.stopPropagation();
+                            delRef.current?.open({
+                              path: lib.name,
+                              title: lib.name,
+                              type: 'folder'
+                            });
+                          }}
+                        >
+                          <MinusCircleOutlined />
+                        </motion.div>
+                      </Col>
+                    </Row>
+                  </div>
+                )
               };
             }
           })
@@ -114,6 +165,11 @@ const LibrarySidebar: FC = () => {
 
   return (
     <>
+      {loading && (
+        <div className="library-sidebar-spin-wrapper">
+          <Spin className="library-sidebar-spin" />
+        </div>
+      )}
       <div className="library-sidebar-wrapper">
         <WindowDragBox style={{ height: '40px', flexShrink: 0 }} />
         <div className="library-next-writer">NEXT-WRITER</div>
@@ -143,6 +199,7 @@ const LibrarySidebar: FC = () => {
                     parent={selectedLib.name}
                     currentFile={currentLib?.file}
                     setCurrentFile={file => void setCurrentLib({ file })}
+                    requestCallback={getSelectedFile}
                   />
                 );
               }
@@ -180,7 +237,7 @@ const LibraryDetailHeader: FC<{ addFile: () => void; delFile: () => void }> = ({
       <Row>
         <Col span={8} style={{ textAlign: 'left' }}>
           {showDelIcon() && (
-            <motion.span className="library-detail-add" whileTap={{ scale: 0.8 }} onClick={delFile}>
+            <motion.span className="library-detail-icon" whileTap={{ scale: 0.8 }} onClick={delFile}>
               <DeleteOutlined />
             </motion.span>
           )}
@@ -190,7 +247,7 @@ const LibraryDetailHeader: FC<{ addFile: () => void; delFile: () => void }> = ({
         </Col>
         <Col span={8} style={{ textAlign: 'right' }}>
           {currentLib?.root && (
-            <motion.span className="library-detail-add" whileTap={{ scale: 0.8 }} onClick={addFile}>
+            <motion.span className="library-detail-icon" whileTap={{ scale: 0.8 }} onClick={addFile}>
               <FormOutlined />
             </motion.span>
           )}
@@ -205,15 +262,17 @@ const LibraryDetailItem: FC<{
   parent: string;
   currentFile: string;
   setCurrentFile: (file: string) => void;
+  requestCallback: (filePath: string, lib: LibraryTree) => void;
 }> = props => {
-  const { lib, parent, currentFile, setCurrentFile } = props;
+  const { lib, parent, currentFile, setCurrentFile, requestCallback } = props;
 
   const unique = `${parent}/${lib.name}`;
 
   const onClick = (e: React.MouseEvent) => {
     const id = e.currentTarget?.id;
-    if (id) {
+    if (id && currentFile !== id) {
       setCurrentFile(id);
+      requestCallback(id, lib);
     }
   };
 
