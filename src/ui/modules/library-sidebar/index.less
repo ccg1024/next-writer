@@ -8,6 +8,8 @@
   display: flex;
   flex-direction: column;
   flex-flow: column;
+  flex-shrink: 0;
+  min-width: 0;
 
   .library-sidebar-main {
     overflow: auto;
@@ -75,6 +77,8 @@
   border-right: 1px solid rgba(0, 0, 0, 0.1);
   background-color: white;
   padding: 16px;
+  flex-shrink: 0;
+  min-width: 0;
 }
 
 .library-detail-header {
@@ -123,7 +127,7 @@
   left: 0;
   top: 0;
   z-index: 1;
-  background-color: rgba(0, 0, 0, 0.45);
+  background-color: rgba(255, 255, 255, 0.45);
   height: 100%;
 
   .library-sidebar-spin {

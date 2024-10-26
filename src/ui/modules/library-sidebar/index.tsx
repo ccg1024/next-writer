@@ -6,7 +6,7 @@ import { isEffectArray, isEffectObject } from 'src/tools/utils';
 import { WindowDragBox } from 'src/ui/components/drag';
 import { useHomeContext } from 'src/ui/home/module.context';
 import mainProcess from 'src/ui/libs/main-process';
-import { LibraryTree, LibraryType, NormalObject } from '_types';
+import { LibraryDetail, LibraryTree, LibraryType, NormalObject } from '_types';
 import { AddModal, AddModalHandle, DelModal, DelModalHandle } from './modal';
 import { VerticalEmpty } from 'src/ui/components/antd/preset/empty';
 
@@ -16,7 +16,7 @@ const { Text, Title, Paragraph } = Typography;
 type MenuItem = Required<MenuProps>['items'][number];
 
 interface LibrarySidebarProps {
-  detailCallback(lib: LibraryTree): void;
+  detailCallback(lib: LibraryDetail): void;
 }
 const LibrarySidebar: FC<LibrarySidebarProps> = props => {
   const [libTree, setLibTree] = useState<LibraryTree[]>(null);
@@ -44,6 +44,7 @@ const LibrarySidebar: FC<LibrarySidebarProps> = props => {
       } else if (type === 'folder') {
         setCurrentLib({ root: '', file: null });
       }
+      props.detailCallback && props.detailCallback(null);
     }
     setConditions({});
   }, []);
@@ -88,9 +89,9 @@ const LibrarySidebar: FC<LibrarySidebarProps> = props => {
       const { status, data, message: msg } = await mainProcess.queryFile({ path: filePath });
       if (status === 0) {
         // TODO: 处理文件内容回调
-        const { content: _ } = data ?? {};
+        const { content } = data ?? {};
         if (props.detailCallback && typeof props.detailCallback === 'function') {
-          props.detailCallback(lib);
+          props.detailCallback({ ...lib, content });
         }
       } else {
         message.error(msg);

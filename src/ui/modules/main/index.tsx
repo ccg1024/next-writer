@@ -1,18 +1,20 @@
 import { Typography } from 'antd';
 import React, { useImperativeHandle, useState } from 'react';
 import { VerticalEmpty } from 'src/ui/components/antd/preset/empty';
-import { LibraryTree } from '_types';
+import useCodemirror from 'src/ui/hooks/useCodemirror';
+import { LibraryDetail } from '_types';
 import './index.less';
 
 const { Title, Paragraph } = Typography;
 
 export interface ExposedHandler {
-  queryFile(lib: LibraryTree): void;
+  queryFile(lib: LibraryDetail): void;
 }
 
 const Main: React.ForwardRefRenderFunction<ExposedHandler> = (_, ref) => {
   // current file
-  const [lib, setLib] = useState<LibraryTree>(null);
+  const [lib, setLib] = useState<LibraryDetail>(null);
+  const [divRef, _editor] = useCodemirror<HTMLDivElement>({ initDoc: lib?.content }, [lib]);
   // ============================================================
   // Exposed handler
   // ============================================================
@@ -36,13 +38,14 @@ const Main: React.ForwardRefRenderFunction<ExposedHandler> = (_, ref) => {
 
   return (
     <div className="main-wrapper">
-      <div style={{ marginTop: '40px', paddingBottom: '16px' }}>
+      <div className="main-header">
         <Title level={4} style={{ marginTop: 0 }}>
           {lib.name}
         </Title>
         <Paragraph>{lib.modifiedTime}</Paragraph>
       </div>
       {/* put codemirror here */}
+      <div ref={divRef} className="next-writer-editor-wrapper"></div>
     </div>
   );
 };

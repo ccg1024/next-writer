@@ -243,13 +243,18 @@ export const NEXT_WRITER_VERSION = 'v0.0.1';
 
 export type LibraryType = 'folder' | 'file';
 
-export type LibraryTree = {
+export type LibraryBase = {
   name: string;
   type: LibraryType;
   birthTime: string;
   modifiedTime: string;
+};
+
+export type LibraryTree = LibraryBase & {
   children: LibraryTree[];
 };
+
+export type LibraryDetail = LibraryBase & { content: string };
 
 export type MainProcessConfig = {
   win: BrowserWindow; // Current BrowserWindow instance

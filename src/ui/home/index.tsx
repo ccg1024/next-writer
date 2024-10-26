@@ -6,7 +6,7 @@ import Main, { ExposedHandler as MainExposed } from '../modules/main';
 import HomeContext, { Library } from './module.context';
 
 import './index.css';
-import { LibraryTree } from '_types';
+import { LibraryDetail } from '_types';
 
 const Home = () => {
   const [currentLib, setCurrentLib] = useState<Library>(null);
@@ -16,7 +16,7 @@ const Home = () => {
   const renderConfig = useRenderConfig();
 
   const mainRef = useRef<MainExposed>(null);
-  const mainRefCallback = useCallback((lib: LibraryTree) => {
+  const mainRefCallback = useCallback((lib: LibraryDetail) => {
     mainRef.current?.queryFile(lib);
   }, []);
 

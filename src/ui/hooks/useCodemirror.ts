@@ -1,0 +1,325 @@
+import { closeBrackets, closeBracketsKeymap } from '@codemirror/autocomplete';
+import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
+import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
+import { bracketMatching, foldKeymap, HighlightStyle, indentOnInput, syntaxHighlighting } from '@codemirror/language';
+import { languages } from '@codemirror/language-data';
+import { highlightSelectionMatches, searchKeymap } from '@codemirror/search';
+import { EditorState } from '@codemirror/state';
+import {
+  drawSelection,
+  dropCursor,
+  EditorView,
+  highlightSpecialChars,
+  keymap,
+  rectangularSelection
+} from '@codemirror/view';
+import React, { CSSProperties, useEffect, useRef, useState } from 'react';
+import { StyleSpec } from 'style-mod';
+import { tags, Tag, styleTags } from '@lezer/highlight';
+import { MarkdownConfig } from '@lezer/markdown';
+import { NormalObject } from '_types';
+
+import '../css/theme.css';
+
+interface Props {
+  initDoc: string;
+}
+/**
+ * Return a ref object which to contain the codemirror edito, and a codemirror view instance
+ *
+ * @author crazycodegame
+ */
+const useCodemirror = <T extends Element>(
+  props: Props,
+  deps?: NormalObject[]
+): [React.MutableRefObject<T | null>, EditorView] => {
+  const { initDoc } = props;
+  const [editorView, setEditorView] = useState<EditorView>(null);
+  const containerRef = useRef<T>(null);
+
+  useEffect(() => {
+    // Can not touch dom container
+    if (!containerRef.current) {
+      setEditorView(null);
+      return;
+    }
+
+    const startState = EditorState.create({
+      doc: initDoc,
+      extensions: [...defaultExtension()]
+    });
+
+    const view = new EditorView({
+      state: startState,
+      parent: containerRef.current
+    });
+
+    setEditorView(view);
+
+    return () => {
+      view.destroy();
+    };
+  }, [...deps]);
+
+  return [containerRef, editorView];
+};
+
+// ============================================================
+// So other default config here
+// ============================================================
+
+function defaultExtension() {
+  return [
+    highlightSpecialChars(),
+    history(),
+    drawSelection(),
+    dropCursor(),
+    EditorState.allowMultipleSelections.of(true),
+    indentOnInput(),
+    bracketMatching(),
+    closeBrackets(),
+    rectangularSelection(),
+    highlightSelectionMatches(),
+    EditorView.lineWrapping,
+    keymap.of([...closeBracketsKeymap, ...defaultKeymap, ...searchKeymap, ...historyKeymap, ...foldKeymap]),
+    markdown({
+      base: markdownLanguage,
+      codeLanguages: languages,
+      addKeymap: true,
+      extensions: [markdownTagExtension()]
+    }),
+    defaultTheme()
+  ];
+}
+
+function defaultTheme() {
+  const themeCss: { [key: string]: CSSProperties | StyleSpec } = {
+    '&': {
+      // css in cm-editor
+      height: '100%',
+      fontSize: '1em'
+    },
+    '&.cm-focused': {
+      outline: 'none'
+    },
+    '&.cm-focused .cm-cursor': {
+      borderLeftWidth: '2px'
+    },
+    '& .cm-content': {
+      padding: 0,
+      maxWidth: '680px',
+      margin: 'auto'
+    },
+    '& .cm-line': {
+      padding: 0
+    },
+    '&.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground': {
+      backgroundColor: 'rgba(217, 217, 217, 0.5)'
+    }
+  };
+  const theme = EditorView.theme(themeCss as { [key: string]: StyleSpec });
+
+  // Tag highlight
+  const syntaxHighlight = HighlightStyle.define([
+    // ============================================================
+    // content highlight
+    // ============================================================
+    {
+      tag: tags.list,
+      color: 'var(--nw-theme-list-content)'
+    },
+    {
+      tag: tags.link,
+      color: 'var(--nw-theme-link-content)',
+      textDecoration: 'underline',
+      fontWeight: 'bold'
+    },
+    {
+      tag: tags.quote,
+      color: 'var(--nw-theme-quote-content)'
+    },
+    {
+      tag: tags.emphasis,
+      color: 'var(--nw-theme-emphasis-content)',
+      fontStyle: 'italic'
+    },
+    {
+      tag: tags.strong, // bold style
+      fontWeight: 'bold',
+      color: 'var(--nw-theme-strong-content)'
+    },
+    {
+      tag: tags.heading,
+      color: 'var(--nw-theme-head-content)',
+      fontWeight: 'bold'
+    },
+    {
+      tag: tags.heading1,
+      fontSize: '2em',
+      color: 'var(--nw-theme-head-content)',
+      fontWeight: 'bold'
+    },
+    {
+      tag: tags.heading2,
+      fontSize: '1.8em',
+      color: 'var(--nw-theme-head-content)',
+      fontWeight: 'bold'
+    },
+    {
+      tag: tags.heading3,
+      fontSize: '1.6em',
+      color: 'var(--nw-theme-head-content)',
+      fontWeight: 'bold'
+    },
+    {
+      tag: tags.heading4,
+      fontSize: '1.4em',
+      color: 'var(--nw-theme-head-content)',
+      fontWeight: 'bold'
+    },
+    {
+      tag: tags.heading5,
+      fontSize: '1.2em',
+      color: 'var(--nw-theme-head-content)',
+      fontWeight: 'bold'
+    },
+    {
+      tag: tags.heading6,
+      fontSize: '1em',
+      color: 'var(--nw-theme-head-content)',
+      fontWeight: 'bold'
+    },
+    {
+      tag: tags.strikethrough, // 删除线
+      textDecoration: 'line-through'
+    },
+    // ============================================================
+    // marker highlight
+    // ============================================================
+    {
+      tag: tags.meta,
+      color: 'var(--nw-theme-quote-mark)'
+    },
+    {
+      tag: mdTags.headingMark,
+      color: 'var(--nw-theme-head-mark)'
+    },
+    {
+      tag: mdTags.quoteMark,
+      color: 'var(--nw-theme-quote-mark)'
+    },
+    {
+      tag: mdTags.listMark,
+      color: 'var(--nw-theme-list-mark)'
+    },
+    {
+      tag: mdTags.codeMark,
+      color: 'var(--nw-theme-code-mark)'
+    },
+    {
+      tag: mdTags.codeInfo,
+      color: 'var(--nw-theme-code-info)'
+    },
+    {
+      tag: mdTags.inlineCode,
+      backgroundColor: 'rgba(175, 184, 193, 0.2)'
+    },
+    // ============================================================
+    // code mark highlight
+    // ============================================================
+    {
+      tag: [tags.keyword, tags.typeName, tags.namespace, tags.bracket, tags.operator],
+      color: '#D73A4A'
+    },
+    {
+      tag: [tags.string, tags.deleted],
+      color: '#032A57'
+    },
+    {
+      tag: tags.variableName,
+      color: '#000000'
+    },
+    {
+      tag: [tags.regexp, /*@__PURE__*/ tags.special(tags.string)],
+      color: '#E36208'
+    },
+    {
+      tag: /*@__PURE__*/ tags.local(tags.variableName), // not work
+      color: 'yellow !important'
+    },
+    {
+      tag: [/*@__PURE__*/ tags.special(tags.variableName), tags.macroName], // not work
+      color: 'yellow'
+    },
+    {
+      tag: tags.propertyName,
+      color: '#333'
+    },
+    {
+      tag: tags.comment,
+      color: '#6A737D'
+    },
+    {
+      tag: tags.invalid, // not work
+      color: '#f00'
+    },
+    {
+      tag: [tags.self, tags.null, tags.escape, tags.number, tags.definition(tags.variableName)],
+      color: '#015CC5'
+    },
+    {
+      tag: [
+        tags.className,
+        tags.attributeName,
+        tags.function(tags.variableName),
+        tags.function(tags.propertyName),
+        tags.definition(tags.propertyName)
+      ],
+      color: '#6F42C1'
+    }
+  ]);
+
+  return [theme, syntaxHighlighting(syntaxHighlight)];
+}
+
+const mdTags = {
+  headingMark: Tag.define(),
+  quoteMark: Tag.define(),
+  listMark: Tag.define(),
+  linkMark: Tag.define(),
+  emphasisMark: Tag.define(),
+  codeMark: Tag.define(),
+  codeText: Tag.define(),
+  codeInfo: Tag.define(),
+  linkTitle: Tag.define(),
+  linkLabel: Tag.define(),
+  url: Tag.define(),
+  inlineCode: Tag.define(),
+  tableDelimiter: Tag.define(),
+  tableRow: Tag.define()
+};
+
+function markdownTagExtension(): MarkdownConfig {
+  return {
+    props: [
+      styleTags({
+        HeaderMark: mdTags.headingMark,
+        QuoteMark: mdTags.quoteMark,
+        ListMark: mdTags.listMark,
+        LinkMark: mdTags.linkMark,
+        EmphasisMark: mdTags.emphasisMark,
+        CodeMark: mdTags.codeMark,
+        CodeText: mdTags.codeText,
+        CodeInfo: mdTags.codeInfo,
+        LinkTitle: mdTags.linkTitle,
+        LinkLabel: mdTags.linkLabel,
+        URL: mdTags.url,
+        InlineCode: mdTags.inlineCode,
+        TableDelimiter: mdTags.tableDelimiter,
+        TableRow: mdTags.tableRow
+      })
+    ]
+  };
+}
+
+export default useCodemirror;
