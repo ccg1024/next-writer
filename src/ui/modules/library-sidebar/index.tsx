@@ -88,7 +88,6 @@ const LibrarySidebar: FC<LibrarySidebarProps> = props => {
     try {
       const { status, data, message: msg } = await mainProcess.queryFile({ path: filePath });
       if (status === 0) {
-        // TODO: 处理文件内容回调
         const { content } = data ?? {};
         if (props.detailCallback && typeof props.detailCallback === 'function') {
           props.detailCallback({ ...lib, content });
@@ -189,26 +188,28 @@ const LibrarySidebar: FC<LibrarySidebarProps> = props => {
           addFile={() => void addRef.current?.open('file')}
           delFile={() => void delRef.current?.open(getDeleteDTO('file'))}
         />
-        {isEffectObject(selectedLib) && isEffectArray(selectedLib.children) ? (
-          selectedLib.children
-            .map(lib => {
-              if (lib.type === 'file') {
-                return (
-                  <LibraryDetailItem
-                    key={lib?.name}
-                    lib={lib}
-                    parent={selectedLib.name}
-                    currentFile={currentLib?.file}
-                    setCurrentFile={file => void setCurrentLib({ file })}
-                    requestCallback={getSelectedFile}
-                  />
-                );
-              }
-            })
-            .filter(Boolean)
-        ) : (
-          <VerticalEmpty description="无笔记" />
-        )}
+        <div className="library-detail-item-wrapper">
+          {isEffectObject(selectedLib) && isEffectArray(selectedLib.children) ? (
+            selectedLib.children
+              .map(lib => {
+                if (lib.type === 'file') {
+                  return (
+                    <LibraryDetailItem
+                      key={lib?.name}
+                      lib={lib}
+                      parent={selectedLib.name}
+                      currentFile={currentLib?.file}
+                      setCurrentFile={file => void setCurrentLib({ file })}
+                      requestCallback={getSelectedFile}
+                    />
+                  );
+                }
+              })
+              .filter(Boolean)
+          ) : (
+            <VerticalEmpty description="无笔记" />
+          )}
+        </div>
       </div>
       <AddModal ref={addRef} callback={reRequest} />
       <DelModal ref={delRef} callback={reRequest} />

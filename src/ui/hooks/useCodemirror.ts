@@ -11,7 +11,8 @@ import {
   EditorView,
   highlightSpecialChars,
   keymap,
-  rectangularSelection
+  rectangularSelection,
+  ViewUpdate
 } from '@codemirror/view';
 import React, { CSSProperties, useEffect, useRef, useState } from 'react';
 import { StyleSpec } from 'style-mod';
@@ -23,6 +24,8 @@ import '../css/theme.css';
 
 interface Props {
   initDoc: string;
+  onEditorChange?: IMountUpdateListener['onChange'];
+  onEditorDocChange?: IMountUpdateListener['onDocChange'];
 }
 /**
  * Return a ref object which to contain the codemirror edito, and a codemirror view instance
@@ -33,7 +36,7 @@ const useCodemirror = <T extends Element>(
   props: Props,
   deps?: NormalObject[]
 ): [React.MutableRefObject<T | null>, EditorView] => {
-  const { initDoc } = props;
+  const { initDoc, onEditorChange, onEditorDocChange } = props;
   const [editorView, setEditorView] = useState<EditorView>(null);
   const containerRef = useRef<T>(null);
 
@@ -46,7 +49,10 @@ const useCodemirror = <T extends Element>(
 
     const startState = EditorState.create({
       doc: initDoc,
-      extensions: [...defaultExtension()]
+      extensions: [
+        ...defaultExtension(),
+        mountUpdateListener({ onChange: onEditorChange, onDocChange: onEditorDocChange })
+      ]
     });
 
     const view = new EditorView({
@@ -222,7 +228,9 @@ function defaultTheme() {
     },
     {
       tag: mdTags.inlineCode,
-      backgroundColor: 'rgba(175, 184, 193, 0.2)'
+      backgroundColor: 'rgba(175, 184, 193, 0.2)',
+      paddingInline: '4px',
+      borderRadius: '4px'
     },
     // ============================================================
     // code mark highlight
@@ -320,6 +328,28 @@ function markdownTagExtension(): MarkdownConfig {
       })
     ]
   };
+}
+
+interface IMountUpdateListener {
+  onDocChange?: (view: EditorView) => void;
+  onChange?: (update: ViewUpdate) => void;
+}
+/**
+ * Mount codemirror editor update callback function
+ *
+ * @param onDocChange Document change callback function syntax sugar, the latest Editview instance is passed as parameter
+ * @param onChange Change callback funciton. Any codemirror editor update will trigger this callback. This ViewUpdate instance is passed in as parameter
+ */
+function mountUpdateListener(config?: IMountUpdateListener) {
+  return EditorView.updateListener.of(update => {
+    if (update.docChanged) {
+      // Invoke onDocChange
+      config.onDocChange && config.onDocChange(update.view);
+    }
+
+    // Invoke onChange
+    config.onChange && config.onChange(update);
+  });
 }
 
 export default useCodemirror;
