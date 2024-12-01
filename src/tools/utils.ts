@@ -13,7 +13,7 @@ export function isEffectArray<T>(arr: T[]): arr is T[] {
 /**
  * Whether a variable is an Object instance and has at least one key-value
  */
-export function isEffectObject<T extends NormalObject>(obj: unknown): obj is T {
+export function isEffectObject<T extends NormalObject>(obj: T): obj is T {
   if (Object.prototype.toString.call(obj) === '[object Object]') {
     if (Object.keys(obj).length > 0) {
       return true;
