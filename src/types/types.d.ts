@@ -256,16 +256,15 @@ export type LibraryTree = LibraryBase & {
 
 export type LibraryDetail = LibraryBase & { content: string };
 
-export type MainProcessConfig = {
+export type MainProcessConfig = Partial<{
   win: BrowserWindow; // Current BrowserWindow instance
   rootDir: string; // Absolute path of library
   configDir: string; // next-writer configuration path
-  configName: string; // next-writer configuration name, normally is `nwriter.json`
   logDir: string; // next-writer log file storage path
-  logName: string; // next-writer log file name, normally is `nwriter.log`
   menuStatus: MainProcessMenuStatus; // Record optional menu status, true or false, true means that the menu option is applied
   renderConfig: NormalObject;
-};
+  libraryTree: LibraryTree;
+}>;
 
 export type MainProcessMenuStatus = {
   librarySidebar: boolean;

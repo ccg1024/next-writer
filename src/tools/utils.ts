@@ -22,6 +22,53 @@ export function isEffectObject<T extends NormalObject>(obj: T): obj is T {
   return false;
 }
 
+type TrulyEmpty = null | undefined | '';
+
+export function isTrulyEmpty(val: unknown): val is TrulyEmpty {
+  return (val ?? '') === '' ? true : false;
+}
+
+export function removeEmpty(val: Record<string | symbol, unknown>) {
+  if (isEffectObject(val)) {
+    return Object.fromEntries(Object.entries(val).filter((_, value) => !isTrulyEmpty(value)));
+  }
+  return val;
+}
+
+type NormalTree = {
+  children?: NormalTree[];
+};
+/**
+ * Recursive processing of tree structed data
+ */
+export function operateTree(tree: NormalTree, locate: (tree: NormalTree) => boolean, operate: 'remove' | 'change') {
+  // Stop process if tree is not an valid object
+  if (!isEffectObject(tree)) {
+    return;
+  }
+  // process current tree
+  if (operate !== 'remove' && locate(tree)) {
+    // ...
+  }
+
+  // Recursive processing sub-tree
+  if (isEffectArray(tree.children)) {
+    let stopFilter = false;
+    if (operate === 'remove') {
+      tree.children = tree.children.filter(subTree => {
+        if (locate(subTree)) {
+          stopFilter = true;
+          return false;
+        }
+        return true;
+      });
+    }
+    if (!stopFilter) {
+      tree.children.forEach(subTree => operateTree(subTree, locate, operate));
+    }
+  }
+}
+
 /**
  * Normalize error output
  */

@@ -1,14 +1,9 @@
 {
   "compilerOptions": {
-    "types": [
-      "@emotion/react/types/css-prop",
-      "reflect-metadata"
-    ],
+    "types": ["@emotion/react/types/css-prop", "reflect-metadata"],
     "jsx": "react-jsx",
     "target": "ES6",
-    "lib": [
-      "es6"
-    ],
+    "lib": ["es6", "DOM"],
     "allowJs": true,
     "module": "commonjs",
     "skipLibCheck": true,
@@ -22,21 +17,13 @@
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "paths": {
-      "*": [
-        "node_modules/*"
-      ],
-      "_types": [
-        "src/types/types.d.ts"
-      ],
-      "src/*": [
-        "./src/*"
-      ],
-      "bin/*": [
-        "./bin/*"
-      ]
+      "*": ["node_modules/*"],
+      "_types": ["src/types/types.d.ts"],
+      "src/*": ["./src/*"],
+      "bin/*": ["./bin/*"]
     }
   },
-  "include": [
-    "src/**/*"
-  ]
+  "include": ["src/**/*"],
+  "exclude": ["src/**/unused/*"]
 }
+

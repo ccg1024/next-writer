@@ -94,3 +94,5 @@ test/
 
 # Next writer
 bin/index.es.js
+# vscode
+.vscode/

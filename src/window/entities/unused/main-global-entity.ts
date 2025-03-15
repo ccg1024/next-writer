@@ -9,10 +9,7 @@ class NextMainGlobal implements MainGlobal {
   private __renderConfig: NormalObject;
 
   constructor() {
-    this.__config = {
-      configName: 'nwriter.json',
-      logName: 'nwriter.log'
-    };
+    this.__config = {};
     this.__renderConfig = {};
   }
 

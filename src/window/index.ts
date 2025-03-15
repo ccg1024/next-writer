@@ -1,6 +1,8 @@
 import { app, BrowserWindow, dialog, net, protocol } from 'electron';
 import path from 'path';
-import nextWriter from './app';
+import INextApp from './interface/next-app';
+import { nextWriterC } from './inversify.config';
+import { TYPES } from './types';
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require('electron-squirrel-startup')) {
@@ -21,10 +23,11 @@ protocol.registerSchemesAsPrivileged([
   }
 ]);
 
+const nextApp = nextWriterC.get<INextApp>(TYPES.INextApp);
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
-app.on('ready', nextWriter.createWindow);
+app.on('ready', nextApp.createWindow);
 app.whenReady().then(() => {
   protocol.handle('atom', request => {
     return net.fetch('file://' + decodeURI(request.url.slice('atom://'.length)));
@@ -56,7 +59,7 @@ app.on('activate', () => {
   // On OS X it's common to re-create a window in the app when the
   // dock icon is clicked and there are no other windows open.
   if (BrowserWindow.getAllWindows().length === 0) {
-    nextWriter.createWindow();
+    nextApp.createWindow();
   }
 });
 

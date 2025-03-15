@@ -76,10 +76,31 @@ class NextWriter implements IApp {
 
     // TODO: need to check cache system init
     // this.cache = new
+
+    // TODO: rebuild workstation record info
+    // this.readWorkstationRecord()
+
+    // Load renderer process
+    this._win.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
+
+    // Apply self-check before closing the application
+    this._win.on('close', async _e => {
+      // ..
+    });
   }
+  // NOTE: Should be duplicated
   createMenu(): void {
     // ..
   }
+
+  // NOTE: Should be DUplicated
+  readWorkstationRecord() {
+    // ..
+  }
+
+  /**
+   * Run every destroy method of next-writer dependence.
+   */
   destroy(): void {
     // ..
   }

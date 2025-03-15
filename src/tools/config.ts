@@ -8,3 +8,5 @@ export const SERVER_CHANNEL = {
   getLibrary: 'server-get-library',
   queryFile: 'searver-query-file'
 };
+
+export const APP_PROMOT = '[nwriter]:';
