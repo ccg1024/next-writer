@@ -1,18 +1,15 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import useRenderConfig from '../hooks/useRenderConfig';
 import { BaseLayout } from '../modules/layout';
 import LibrarySidebar from '../modules/library-sidebar';
 import Main, { ExposedHandler as MainExposed } from '../modules/main';
 import HomeContext, { Library } from './module.context';
+import { LibraryDetail } from '_types';
 
 import './index.css';
-import { LibraryDetail } from '_types';
 
 const Home = () => {
   const [currentLib, setCurrentLib] = useState<Library>(null);
-  const setCallback = useCallback((lib: Partial<Library>) => {
-    setCurrentLib(pre => ({ ...pre, ...lib }));
-  }, []);
   const renderConfig = useRenderConfig();
 
   const mainRef = useRef<MainExposed>(null);
@@ -20,8 +17,17 @@ const Home = () => {
     mainRef.current?.queryFile(lib);
   }, []);
 
+  const contenxtValue = useMemo(
+    () => ({
+      renderConfig,
+      currentLib,
+      setCurrentLib
+    }),
+    [renderConfig, currentLib]
+  );
+
   return (
-    <HomeContext.Provider value={{ renderConfig, currentLib, setCurrentLib: setCallback }}>
+    <HomeContext.Provider value={contenxtValue}>
       <BaseLayout>
         <LibrarySidebar detailCallback={mainRefCallback} />
         <Main ref={mainRef} />

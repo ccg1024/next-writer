@@ -10,3 +10,10 @@ export const SERVER_CHANNEL = {
 };
 
 export const APP_PROMOT = '[nwriter]:';
+
+// The IoC version
+export const IPC_CHANNEL = {
+  READ_CONFIG: 'read-config',
+  READ_FILE: 'read-file',
+  UPDATE_LIB: 'updateLib'
+};

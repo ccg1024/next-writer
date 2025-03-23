@@ -1,4 +1,5 @@
 import nodePath from 'path';
+import { IPC_CHANNEL } from 'src/tools/config';
 import { QueryFileDTO } from 'src/types/api';
 import { MainProcessConfig } from '_types';
 import INextFileSystem from '../interface/next-file-system';
@@ -11,7 +12,7 @@ import { TYPES } from '../types';
  * Reading the specified file information
  */
 const readFileHandler: INextIpcHandler = {
-  type: 'read-file',
+  type: IPC_CHANNEL.READ_FILE,
   apply: async (_: string, data: QueryFileDTO) => {
     const { path } = data || {};
     const store = nextWriterC.get<INextStoreSystem<MainProcessConfig>>(TYPES.INextStoreSystem);

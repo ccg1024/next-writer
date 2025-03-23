@@ -1,3 +1,4 @@
+import { IPC_CHANNEL } from 'src/tools/config';
 import INextIpcHandler from '../interface/next-ipc-handler';
 import { INextStoreSystemType } from '../interface/next-store-system';
 import { nextWriterC } from '../inversify.config';
@@ -7,7 +8,7 @@ import { TYPES } from '../types';
  * Reading renderer config and library tree data
  */
 const readConfigHandler: INextIpcHandler = {
-  type: 'read-config',
+  type: IPC_CHANNEL.READ_CONFIG,
   apply: async () => {
     const store = nextWriterC.get<INextStoreSystemType>(TYPES.INextStoreSystem);
     return {

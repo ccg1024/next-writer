@@ -9,7 +9,7 @@ export interface Library {
 export interface IHomeContext {
   currentLib: Library;
   renderConfig: NormalObject;
-  setCurrentLib: (lib: Partial<Library>) => void;
+  setCurrentLib: (lib: Library) => void;
 }
 
 const HomeContext = createContext<IHomeContext>(null);

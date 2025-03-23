@@ -1,6 +1,7 @@
 import nodeFs from 'fs';
 import nodePath from 'path';
 import { isTrulyEmpty } from 'src/tools/utils';
+import { IPC_CHANNEL } from 'src/tools/config';
 import { LibraryTree } from '_types';
 import { ROOT_CONFIG_NAME } from 'bin/index.es';
 import INextFileSystem from '../interface/next-file-system';
@@ -18,7 +19,7 @@ export type UpdateLibDTO = {
  * Update library tree object, which locate in main process store
  */
 const updateLibHandler: INextIpcHandler = {
-  type: 'update-lib',
+  type: IPC_CHANNEL.UPDATE_LIB,
   apply: async (_: string, data: UpdateLibDTO) => {
     const { operate, path, type } = data || {};
     const fileSys = nextWriterC.get<INextFileSystem>(TYPES.INextFileSystem);
