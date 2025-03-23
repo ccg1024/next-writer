@@ -4,8 +4,8 @@
 // ============================================================
 import { Request, Response } from '_types';
 
-async function api(param: Request): Promise<Response> {
-  return window.ipc._post(param);
+async function api<T, U>(param: Request<T>): Promise<Response<U>> {
+  return window.ipc._post<T, U>(param);
 }
 
 export default api;

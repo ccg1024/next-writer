@@ -1,5 +1,7 @@
 import { createContext, useContext } from 'react';
-import { NormalObject } from '_types';
+import { ReadConfigResponse } from '_types';
+
+type RenderConfig = ReadConfigResponse;
 
 export interface Library {
   root: string;
@@ -8,7 +10,7 @@ export interface Library {
 
 export interface IHomeContext {
   currentLib: Library;
-  renderConfig: NormalObject;
+  renderConfig: RenderConfig;
   setCurrentLib: (lib: Library) => void;
 }
 
@@ -18,4 +20,14 @@ export const useHomeContext = () => {
   return useContext(HomeContext);
 };
 
+// There is no need to use this context yet.
 export default HomeContext;
+
+interface IThemeContext {
+  config: RenderConfig['config'];
+}
+const ThemeContext = createContext<IThemeContext>(null);
+
+export const ThemeProvider = ThemeContext.Provider;
+
+export const useThemeContext = () => useContext(ThemeContext);

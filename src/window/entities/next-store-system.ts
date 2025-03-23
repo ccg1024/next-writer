@@ -37,9 +37,9 @@ class NextStoreSystem implements INextStoreSystem<MainProcessConfig> {
     this.__config = { ...this.__config, ...(config ?? {}) };
   }
 
-  getConfig<K extends keyof MainProcessConfig>(key: K): MainProcessConfig[K] {
+  getConfig<K extends keyof MainProcessConfig>(key: K, raw = false): MainProcessConfig[K] {
     const target = this.__config?.[key] ?? void 0;
-    if (typeof target === 'object' && target !== null) {
+    if (typeof target === 'object' && target !== null && !raw) {
       return constObjProxyFactory(target as unknown as object, key) as unknown as MainProcessConfig[K];
     }
     return target;

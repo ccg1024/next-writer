@@ -1,7 +1,6 @@
 import nodePath from 'path';
 import { IPC_CHANNEL } from 'src/tools/config';
-import { QueryFileDTO } from 'src/types/api';
-import { MainProcessConfig } from '_types';
+import { MainProcessConfig, ReadFileRequest, ReadFileResponse } from '_types';
 import INextFileSystem from '../interface/next-file-system';
 import INextIpcHandler from '../interface/next-ipc-handler';
 import INextStoreSystem from '../interface/next-store-system';
@@ -13,14 +12,15 @@ import { TYPES } from '../types';
  */
 const readFileHandler: INextIpcHandler = {
   type: IPC_CHANNEL.READ_FILE,
-  apply: async (_: string, data: QueryFileDTO) => {
-    const { path } = data || {};
+  apply: async (_: string, reqData: ReadFileRequest) => {
+    const { path } = reqData || {};
     const store = nextWriterC.get<INextStoreSystem<MainProcessConfig>>(TYPES.INextStoreSystem);
     const fileSys = nextWriterC.get<INextFileSystem>(TYPES.INextFileSystem);
     const rootDir = store.getConfig('rootDir');
     const fullPath = path.startsWith(rootDir) ? path : nodePath.join(rootDir, path);
     const content = await fileSys.readFile(fullPath, { encoding: 'utf8' });
-    return { status: 0, data: { content }, message: '' };
+    const data: ReadFileResponse = { content };
+    return { status: 0, data };
   }
 };
 

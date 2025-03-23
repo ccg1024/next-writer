@@ -36,10 +36,10 @@ const nextWriterC = new Container();
 // nextWriterC.bind<IpcServer>(TYPES.IpcServer).to(NextIpcServer);
 // nextWriterC.bind<CacheSystem>(TYPES.CacheSystem).to(NextCahce);
 // nextWriterC.bind<INextWriterMenu>(TYPES.INextWriterMenu).to(NextWriterMenu);
-nextWriterC.bind<INextFileSystem>(TYPES.INextFileSystem).to(NextFileSystem);
-nextWriterC.bind<INextStoreSystem<MainProcessConfig>>(TYPES.INextStoreSystem).to(NextStoreSystem);
-nextWriterC.bind<INextCacheSystem>(TYPES.INextCacheSystem).to(NextCacheSystem);
-nextWriterC.bind<INextIpcServer>(TYPES.INextIpcServer).to(NextIpcServer);
-nextWriterC.bind<INextApp>(TYPES.INextApp).to(NextApp);
+nextWriterC.bind<INextFileSystem>(TYPES.INextFileSystem).to(NextFileSystem).inSingletonScope();
+nextWriterC.bind<INextStoreSystem<MainProcessConfig>>(TYPES.INextStoreSystem).to(NextStoreSystem).inSingletonScope();
+nextWriterC.bind<INextCacheSystem>(TYPES.INextCacheSystem).to(NextCacheSystem).inSingletonScope();
+nextWriterC.bind<INextIpcServer>(TYPES.INextIpcServer).to(NextIpcServer).inSingletonScope();
+nextWriterC.bind<INextApp>(TYPES.INextApp).to(NextApp).inSingletonScope();
 
 export { nextWriterC };

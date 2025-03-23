@@ -1,7 +1,7 @@
 import { ipcMain } from 'electron';
 import { injectable } from 'inversify';
 import { isTrulyEmpty } from 'src/tools/utils';
-import { NormalObject, Request, Response } from '_types';
+import { Request, Response } from '_types';
 import INextIpcHandler from '../interface/next-ipc-handler';
 import INextIpcServer from '../interface/next-ipc-server';
 
@@ -20,22 +20,23 @@ class NextIpcServer implements INextIpcServer {
     ipcMain.handle(IPC_SERVER_NAME, this.listener);
   }
 
-  listener(_e: Electron.IpcMainInvokeEvent, req: Request): Promise<Response> {
+  listener(_e: Electron.IpcMainInvokeEvent, req: Request<unknown>): Promise<Response<unknown>> {
     if (!isTrulyEmpty(req)) {
       const { type, data } = req;
       return this.dispatch(type, data);
     }
   }
 
-  async dispatch(type: string, data?: NormalObject): Promise<Response> {
+  async dispatch(type: string, data?: unknown): Promise<Response<unknown>> {
     // Just find the first handler to process event.
     const handler = this.handlers.find(handler => handler.type === type);
 
+    // The request type and response type are determined by the specific handler
     if (handler) {
       return handler.apply(type, data);
     }
 
-    return { status: 0, data: null, message: 'Do not attach handler to handle such request.' };
+    return { status: -1, data: null, message: 'Do not attach handler to handle such request.' };
   }
 
   registerHandler(handler: INextIpcHandler) {

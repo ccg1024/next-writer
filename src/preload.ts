@@ -1,7 +1,7 @@
 // See the Electron documentation for details on how to use preload scripts:
 // https://www.electronjs.org/docs/latest/tutorial/process-model#preload-scripts
 import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron';
-import { NormalObject } from '_types';
+import { Request } from '_types';
 import { ipcChannel } from './config/ipc';
 
 type CallbackFunction = (event: IpcRendererEvent, ...args: unknown[]) => void;
@@ -35,11 +35,16 @@ contextBridge.exposeInMainWorld('ipc', {
     // Two-way channel general call interface
     return ipcRenderer.invoke(channel, data);
   },
+
   _render_post: (channel: string, data: unknown) => {
     // One-way channel general call interface
     ipcRenderer.send(channel, data);
   },
-  _post(param: NormalObject) {
-    return ipcRenderer.invoke('ipc-server', param);
+
+  /**
+   * Renderer to main bidirectional channel (mock http)
+   */
+  _post<T>(param: Request<T>) {
+    return ipcRenderer.invoke('next-ipc-server', param);
   }
 });

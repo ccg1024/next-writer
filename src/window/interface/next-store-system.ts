@@ -18,8 +18,11 @@ interface INextStoreSystem<T> {
 
   /**
    * Get specific value of key
+   * @param key target `key` of store object
+   * @param raw whether return raw data of target, default is `false`
+   * @return A proxy of target value if target is object when `raw` is `false`
    */
-  getConfig<K extends keyof T>(key: K): T[K];
+  getConfig<K extends keyof T>(key: K, raw?: boolean): T[K];
 
   /**
    * Set multi key-value paris

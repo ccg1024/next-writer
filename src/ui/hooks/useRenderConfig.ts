@@ -1,18 +1,19 @@
 import { message } from 'antd';
 import { useLayoutEffect, useState } from 'react';
+import { ReadConfigResponse } from '_types';
 import mainProcess from '../libs/main-process';
 
 /**
  * Using renderer process config
  */
-const useRenderConfig = () => {
-  const [renderConfig, setRenderConfig] = useState(null);
+const useRenderConfig = (): ReadConfigResponse | null => {
+  const [renderConfig, setRenderConfig] = useState<ReadConfigResponse>(null);
   useLayoutEffect(() => {
     mainProcess.readConfig().then(res => {
       const { status, data, message: msg } = res || {};
 
       if (status === 0) {
-        setRenderConfig(data ?? {});
+        setRenderConfig(data);
       } else {
         message.error(msg || '读取配置失败');
       }

@@ -1,5 +1,6 @@
-import { SERVER_CHANNEL } from 'src/tools/config';
-import { IAddLibOrFile, IDelLibOrFile, QueryFileDTO } from 'src/types/api';
+import { IPC_CHANNEL, SERVER_CHANNEL } from 'src/tools/config';
+import { IAddLibOrFile, IDelLibOrFile } from 'src/types/api';
+import { ReadConfigResponse, ReadFileRequest, ReadFileResponse } from '_types';
 import api from '../api';
 
 async function addLibOrFile(data: IAddLibOrFile) {
@@ -11,17 +12,17 @@ async function delLibOrFile(data: IDelLibOrFile) {
 }
 
 async function readConfig() {
-  return api({ type: SERVER_CHANNEL.readConfig, data: null });
+  return api<undefined, ReadConfigResponse>({ type: IPC_CHANNEL.READ_CONFIG });
 }
 
 async function getLibrary() {
   return api({ type: SERVER_CHANNEL.getLibrary, data: null });
 }
 
-async function queryFile(data: QueryFileDTO) {
-  return api({ type: SERVER_CHANNEL.queryFile, data });
+async function readFile(data: ReadFileRequest) {
+  return api<ReadFileRequest, ReadFileResponse>({ type: IPC_CHANNEL.READ_FILE, data });
 }
 
-const mainProcess = { addLibOrFile, delLibOrFile, readConfig, getLibrary, queryFile };
+const mainProcess = { addLibOrFile, delLibOrFile, readConfig, getLibrary, readFile };
 
 export default mainProcess;

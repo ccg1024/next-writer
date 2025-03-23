@@ -120,13 +120,13 @@ export type RootWorkstationInfo = {
 // -----------------------------------------------
 
 type IpcCallback = (event: IpcRendererEvent, ...args: Array<unknown>) => void;
-export interface ipc {
+export interface IPC {
   listenEditorChannel: (cb: IpcCallback) => () => void;
   listenHomeChannel: (cb: IpcCallback) => () => void;
   listenSidebarChannel: (cb: IpcCallback) => () => void;
   _invoke_post: (channel: string, req: IpcRequest) => Promise<IpcResponse>;
   _render_post: (channel: string, req: IpcRequest) => void;
-  _post: (param: NormalObject) => Promise<Response>;
+  _post: <T, U>(param: Request<T>) => Promise<Response<U>>;
 }
 
 export type RendererPlugin = {
@@ -212,7 +212,7 @@ export type WindowConfig = {
 
 declare global {
   interface Window {
-    ipc: ipc;
+    ipc: IPC;
     _next_writer_rendererConfig: RendererConfig;
   }
   namespace globalThis {
@@ -277,16 +277,38 @@ export type DeepReadOnly<T extends Record<string | symbol, unknown>> = {
   readonly [K in keyof T]: DeepReadOnly<T[K]>;
 };
 
-export type Response = {
-  status: number;
-  data: NormalObject;
-  message: string;
+// ============================================================
+// Just for Ipc communication -- start
+// ============================================================
+
+export type Request<T> = {
+  type: string;
+  data?: T;
 };
 
-export type Request = {
-  type: string;
-  data: NormalObject;
+export type Response<T> = {
+  status: number;
+  data: T;
+  message?: string;
 };
+
+// NOTE: the type here is fill to data feild of Request or Response
+
+export type ReadConfigResponse = {
+  config: NormalObject;
+  libTree: LibraryTree;
+};
+
+export type ReadFileRequest = {
+  path: string;
+};
+
+export type ReadFileResponse = {
+  content: string;
+};
+// ============================================================
+// end -- just for ipc communication
+// ============================================================
 
 export type RequestAddLibOrFile = {
   type: 'file' | 'folder';
