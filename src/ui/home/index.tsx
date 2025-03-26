@@ -4,6 +4,7 @@ import { BaseLayout } from '../modules/layout';
 import LibrarySidebar from '../modules/library-sidebar';
 import Main, { ExposedHandler as MainExposed } from '../modules/main';
 import { ThemeProvider } from './module.context';
+import { LibraryBase, LibraryTree } from '_types';
 
 import './index.css';
 
@@ -13,8 +14,8 @@ const Home = () => {
   const mainRef = useRef<MainExposed>(null);
 
   // This function will be called when change note.
-  const mainRefCallback = useCallback((_notePath: string) => {
-    // mainRef.current?.queryFile(lib);
+  const mainRefCallback = useCallback((noteId: string, note: LibraryBase, parent: LibraryTree) => {
+    mainRef.current?.queryFile(noteId, note, parent);
   }, []);
 
   const themeConfig = useMemo(() => ({ config: renderConfig?.config }), [renderConfig?.config]);

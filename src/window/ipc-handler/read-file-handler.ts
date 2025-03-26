@@ -17,7 +17,7 @@ const readFileHandler: INextIpcHandler = {
     const store = nextWriterC.get<INextStoreSystem<MainProcessConfig>>(TYPES.INextStoreSystem);
     const fileSys = nextWriterC.get<INextFileSystem>(TYPES.INextFileSystem);
     const rootDir = store.getConfig('rootDir');
-    const fullPath = path.startsWith(rootDir) ? path : nodePath.join(rootDir, path);
+    const fullPath = path.startsWith(rootDir) ? path : nodePath.join(rootDir, path + '.md');
     const content = await fileSys.readFile(fullPath, { encoding: 'utf8' });
     const data: ReadFileResponse = { content };
     return { status: 0, data };

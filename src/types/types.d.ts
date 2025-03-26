@@ -244,6 +244,7 @@ export const NEXT_WRITER_VERSION = 'v0.0.1';
 export type LibraryType = 'folder' | 'file';
 
 export type LibraryBase = {
+  id?: string; // Generated at runtime
   name: string;
   type: LibraryType;
   birthTime: string;

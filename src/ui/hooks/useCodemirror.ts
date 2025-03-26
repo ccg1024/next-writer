@@ -18,12 +18,16 @@ import React, { CSSProperties, useEffect, useRef, useState } from 'react';
 import { StyleSpec } from 'style-mod';
 import { tags, Tag, styleTags } from '@lezer/highlight';
 import { MarkdownConfig } from '@lezer/markdown';
-import { NormalObject } from '_types';
+import { isTrulyEmpty } from 'src/tools/utils';
 
 import '../css/theme.css';
 
-interface Props {
+export type InitialEditorState = {
   initDoc: string;
+};
+
+interface Props {
+  initialEditorState: InitialEditorState;
   onEditorChange?: IMountUpdateListener['onChange'];
   onEditorDocChange?: IMountUpdateListener['onDocChange'];
 }
@@ -32,11 +36,8 @@ interface Props {
  *
  * @author crazycodegame
  */
-const useCodemirror = <T extends Element>(
-  props: Props,
-  deps?: NormalObject[]
-): [React.MutableRefObject<T | null>, EditorView] => {
-  const { initDoc, onEditorChange, onEditorDocChange } = props;
+const useCodemirror = <T extends Element>(props: Props): [React.MutableRefObject<T | null>, EditorView] => {
+  const { initialEditorState, onEditorChange, onEditorDocChange } = props;
   const [editorView, setEditorView] = useState<EditorView>(null);
   const containerRef = useRef<T>(null);
 
@@ -47,8 +48,12 @@ const useCodemirror = <T extends Element>(
       return;
     }
 
+    if (isTrulyEmpty(initialEditorState)) {
+      return;
+    }
+
     const startState = EditorState.create({
-      doc: initDoc,
+      doc: initialEditorState.initDoc || '',
       extensions: [
         ...defaultExtension(),
         mountUpdateListener({ onChange: onEditorChange, onDocChange: onEditorDocChange })
@@ -65,7 +70,7 @@ const useCodemirror = <T extends Element>(
     return () => {
       view.destroy();
     };
-  }, [...deps]);
+  }, [initialEditorState]);
 
   return [containerRef, editorView];
 };

@@ -7,6 +7,7 @@ import { WindowDragBox } from 'src/ui/components/drag';
 import { LibraryDetail, LibraryTree, LibraryType, NormalObject } from '_types';
 import { AddModal, AddModalHandle, DelModal, DelModalHandle } from './modal';
 import { VerticalEmpty } from 'src/ui/components/antd/preset/empty';
+import type { ExposedHandler as MainExpose } from '../main';
 
 import './index.less';
 
@@ -25,7 +26,7 @@ function isRenderNote(lib: LibraryTree | RenderNote): lib is RenderNote {
 
 // The lib in here means folder, and the lib detail means the files of that folder
 interface LibrarySidebarProps {
-  onNoteChange(notePath: string): void;
+  onNoteChange: MainExpose['queryFile'];
   storedLibrary: LibraryTree; // Full library info which include every lib and lib detail
 }
 
@@ -34,9 +35,6 @@ const LibrarySidebar: FC<LibrarySidebarProps> = ({ onNoteChange: onChange, store
   const [selectedLib, setSelectedLib] = useState<RenderLib>(null);
   const [selectedNote, setSelectedNote] = useState<string>(null);
 
-  // Other state
-  const [loading, _setLoading] = useState(false);
-
   const addRef = useRef<AddModalHandle>(null);
   const delRef = useRef<DelModalHandle>(null);
 
@@ -44,9 +42,9 @@ const LibrarySidebar: FC<LibrarySidebarProps> = ({ onNoteChange: onChange, store
   // Wrap callback
   // ============================================================
   const onNoteChange = useCallback(
-    (notePath: string) => {
+    (notePath: string, note: LibraryTree, parent: LibraryTree) => {
       setSelectedNote(notePath);
-      onChange(notePath); // Trigger note change to other sibling component
+      onChange(notePath, note, parent); // Trigger note change to other sibling component
     },
     [onChange]
   );
@@ -134,11 +132,11 @@ const LibrarySidebar: FC<LibrarySidebarProps> = ({ onNoteChange: onChange, store
 
   return (
     <>
-      {loading && (
-        <div className="library-sidebar-spin-wrapper">
-          <Spin className="library-sidebar-spin" />
-        </div>
-      )}
+      {/* {loading && ( */}
+      {/*   <div className="library-sidebar-spin-wrapper"> */}
+      {/*     <Spin className="library-sidebar-spin" /> */}
+      {/*   </div> */}
+      {/* )} */}
       <div className="library-sidebar-wrapper">
         <WindowDragBox style={{ height: '40px', flexShrink: 0 }} />
         <div className="library-next-writer">NEXT-WRITER</div>
@@ -160,7 +158,7 @@ const LibrarySidebar: FC<LibrarySidebarProps> = ({ onNoteChange: onChange, store
               .filter(isRenderNote)
               .map(note => (
                 <NoteItem
-                  key={note?.name}
+                  key={note.name}
                   note={note}
                   parent={selectedLib}
                   activeNote={selectedNote}
@@ -225,25 +223,21 @@ interface NoteItemProps {
   note: RenderNote;
   parent: RenderLib;
   activeNote: string; // The unique key
-  onNoteClick: (notePath: string) => void;
+  onNoteClick: MainExpose['queryFile'];
 }
 const NoteItem: FC<NoteItemProps> = props => {
   const { note, parent, activeNote, onNoteClick } = props;
 
-  const unique = `${parent.name}/${note.name}`;
-
-  const onClick = (e: React.MouseEvent) => {
-    const id = e.currentTarget?.id;
+  const onClick = (id: string) => {
     if (id && activeNote !== id) {
-      onNoteClick(id);
+      onNoteClick(id, note, parent);
     }
   };
 
   return (
     <div
-      id={unique}
-      onClick={onClick}
-      className={`library-detail-item ${activeNote === unique ? 'library-detail-item-selected' : ''}`}
+      onClick={() => void onClick(note.id)}
+      className={`library-detail-item ${activeNote === note.id ? 'library-detail-item-selected' : ''}`}
       onMouseEnter={e => void e.currentTarget?.classList.add('library-detail-item-active')}
       onMouseLeave={e => void e.currentTarget?.classList.remove('library-detail-item-active')}
     >
