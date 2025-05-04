@@ -244,15 +244,36 @@ export const NEXT_WRITER_VERSION = 'v0.0.1';
 export type LibraryType = 'folder' | 'file';
 
 export type LibraryBase = {
-  id?: string; // Generated at runtime
-  name: string;
+  name: string; // Referer to file name
   type: LibraryType;
   birthTime: string;
   modifiedTime: string;
+  description?: string; // Description for file object
 };
 
 export type LibraryTree = LibraryBase & {
   children: LibraryTree[];
+};
+
+export type RootLibraryTree = {
+  isRoot: boolean; // Is root library
+  children: LibraryTree[];
+};
+
+// The runtime information is not stored, but generated at runtime
+export type RendererLibraryBase = {
+  id?: string; // Generated at runtime [runtime information]
+  name: string; // Referer to file name
+  type: LibraryType;
+  birthTime: string;
+  modifiedTime: string;
+  description?: string; // Description for file object
+  relativePath?: string; // Relative path to curent file or folder [runtime information]
+  parent?: LibraryTree; // Parent node [runtime information]
+};
+
+export type RendererLibraryTree = RendererLibraryBase & {
+  children: RendererLibraryTree[];
 };
 
 export type LibraryDetail = LibraryBase & { content: string };
@@ -307,6 +328,14 @@ export type ReadFileRequest = {
 export type ReadFileResponse = {
   content: string;
 };
+
+export type UpdateLibRequest = {
+  operate: 'add' | 'del';
+  path: string;
+  type: 'file' | 'folder';
+};
+
+export type UpdateLibResponse = LibraryTree;
 // ============================================================
 // end -- just for ipc communication
 // ============================================================

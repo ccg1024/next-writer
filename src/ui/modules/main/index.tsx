@@ -1,27 +1,83 @@
-import { EditorView } from '@codemirror/view';
+import React, { useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
+import { EditorView, ViewUpdate } from '@codemirror/view';
 import { Typography } from 'antd';
-import React, { useCallback, useEffect, useImperativeHandle, useState } from 'react';
 import { isTrulyEmpty } from 'src/tools/utils';
 import { VerticalEmpty } from 'src/ui/components/antd/preset/empty';
 import useCodemirror, { InitialEditorState } from 'src/ui/hooks/useCodemirror';
 import mainProcess from 'src/ui/libs/main-process';
-import { LibraryBase, LibraryTree } from '_types';
+import { RendererLibraryTree } from '_types';
+import { debounceFn } from 'src/ui/libs/utils';
 
 import './index.less';
 
-const { Title, Paragraph } = Typography;
+const { Title } = Typography;
+
+const MAX_DESCRIPTION_LENGTH = 100 as const;
 
 export interface ExposedHandler {
-  queryFile(noteId: string, note: LibraryBase, parent: LibraryTree): void;
+  queryFile(noteId: string, note: RendererLibraryTree, parent: RendererLibraryTree): void;
 }
 
-const Main: React.ForwardRefRenderFunction<ExposedHandler> = (_, ref) => {
-  const [aggregateNote, setAggregateNote] = useState<{ noteId: string; note: LibraryBase; parent: LibraryTree }>(null);
+interface MainProps {
+  onLibContentChange?(libItem: RendererLibraryTree): void;
+}
+
+const editorTransactionActions = ['docChange', 'updateDescription'] as const;
+type EditorTransactionAction = {
+  type: (typeof editorTransactionActions)[number];
+  doc?: string;
+};
+
+const Main: React.ForwardRefRenderFunction<ExposedHandler, MainProps> = (props, ref) => {
+  const { onLibContentChange: pubNoteUpdate } = props;
+  // Should always keep in mind that aggregatNode and the active lib item of sidebar are two objects representing
+  // the same state, and these two states should be updated synchronously.
+  const [aggregateNote, setAggregateNote] = useState<{
+    noteId: string;
+    note: RendererLibraryTree;
+    parent: RendererLibraryTree;
+  }>(null);
   const [initialEditorState, setInitialEditorState] = useState<InitialEditorState>(null);
+  const [editorTransaction, setEditorTransaction] = useState(null);
+
+  const debounceEditorTransaction = useMemo(() => {
+    function transaction(action: EditorTransactionAction) {
+      switch (action.type) {
+        case 'updateDescription': {
+          setAggregateNote(pre => ({ ...pre, note: { ...pre.note, description: action.doc } }));
+          setEditorTransaction(action);
+          break;
+        }
+      }
+    }
+    return debounceFn(transaction);
+  }, []);
+
+  const headInProcess = useRef<string>('');
+
   const onEditorDocChange = useCallback((_view: EditorView) => {
     // TODO: some thing to run when file is change
   }, []);
-  const [divRef, _editor] = useCodemirror<HTMLDivElement>({ initialEditorState, onEditorDocChange });
+
+  const onEditorChange = useCallback((update: ViewUpdate) => {
+    if (update.docChanged) {
+      update.transactions.forEach(tr => {
+        if (tr.changes) {
+          tr.changes.iterChanges(fromA => {
+            if (fromA <= MAX_DESCRIPTION_LENGTH) {
+              const fullDoc = update.state.doc.toString();
+              const doc =
+                fullDoc.length > MAX_DESCRIPTION_LENGTH ? fullDoc.substring(0, MAX_DESCRIPTION_LENGTH) : fullDoc;
+              // Must using debounce function
+              debounceEditorTransaction({ type: 'updateDescription', doc });
+            }
+          });
+        }
+      });
+    }
+  }, []);
+
+  const [divRef, _editor] = useCodemirror<HTMLDivElement>({ initialEditorState, onEditorDocChange, onEditorChange });
   // ============================================================
   // Exposed handler
   // ============================================================
@@ -48,9 +104,8 @@ const Main: React.ForwardRefRenderFunction<ExposedHandler> = (_, ref) => {
       return;
     }
     let shouldUpdate = true;
-    const notePath = `${aggregateNote.parent.name}/${aggregateNote.note.name}`;
     const readNote = async () => {
-      const { status, data } = await mainProcess.readFile({ path: notePath });
+      const { status, data } = await mainProcess.readFile({ path: aggregateNote.note.relativePath });
       if (shouldUpdate && status === 0) {
         setInitialEditorState({ initDoc: data.content });
       }
@@ -62,10 +117,26 @@ const Main: React.ForwardRefRenderFunction<ExposedHandler> = (_, ref) => {
     };
   }, [aggregateNote?.noteId]);
 
+  useEffect(() => {
+    if (!editorTransaction) {
+      return;
+    }
+    switch (editorTransaction.type) {
+      case 'updateDescription': {
+        pubNoteUpdate(aggregateNote.note);
+        break;
+      }
+    }
+  }, [editorTransaction]);
+
+  // ============================================================
+  // Render
+  // ============================================================
   if (isTrulyEmpty(aggregateNote?.noteId)) {
     return (
       <div className="main-wrapper">
         <VerticalEmpty description="无笔记" style={{ paddingTop: '48px' }} />
+        <div ref={divRef} className="next-writer-editor-wrapper" style={{ display: 'none' }}></div>
       </div>
     );
   }
@@ -73,10 +144,33 @@ const Main: React.ForwardRefRenderFunction<ExposedHandler> = (_, ref) => {
   return (
     <div className="main-wrapper">
       <div className="main-header">
-        <Title level={4} style={{ marginTop: 0 }}>
-          title
+        <Title
+          level={4}
+          style={{ marginTop: 0 }}
+          editable={{
+            triggerType: ['text'],
+            // editing: headEditState,
+            onStart: () => {
+              headInProcess.current = aggregateNote.note.name;
+            },
+            onChange: text => {
+              headInProcess.current = text;
+            },
+            onEnd: () => {
+              const newAggregateNote = {
+                ...aggregateNote,
+                note: { ...aggregateNote.note, name: headInProcess.current }
+              };
+              // Update aggregateNote
+              setAggregateNote(newAggregateNote);
+              pubNoteUpdate(newAggregateNote.note);
+              // Cleaning the data in process
+              headInProcess.current = '';
+            }
+          }}
+        >
+          {aggregateNote.note.name}
         </Title>
-        <Paragraph>some thine here</Paragraph>
       </div>
       {/* put codemirror here */}
       <div ref={divRef} className="next-writer-editor-wrapper"></div>

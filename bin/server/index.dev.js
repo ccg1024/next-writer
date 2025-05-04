@@ -17,6 +17,9 @@ export const ROOT_DIR_NAME = 'nwriter-dev';
 // Default library info; ~/Documents/${ROOT_DIR_NAME}/${ROOT_CONFIG_NAME}
 export const ROOT_CONFIG_NAME = '.nwriter.info.json';
 
+// The maximum length of the file description
+export const MAX_FILE_DESCRIPTION_LENGTH = 100;
+
 // Default config
 export const NW_CONFIG = {
   uiFontSize: '16px',

@@ -2,25 +2,20 @@ import nodeFs from 'fs';
 import nodePath from 'path';
 import { isTrulyEmpty } from 'src/tools/utils';
 import { IPC_CHANNEL } from 'src/tools/config';
-import { LibraryTree } from '_types';
+import { LibraryTree, UpdateLibRequest } from '_types';
 import { ROOT_CONFIG_NAME } from 'bin/index.es';
 import INextFileSystem from '../interface/next-file-system';
 import INextIpcHandler from '../interface/next-ipc-handler';
-import { INextStoreSystemType } from '../interface/next-store-system';
+import INextStoreSystem from '../interface/next-store-system';
 import { nextWriterC } from '../inversify.config';
 import { TYPES } from '../types';
 
-export type UpdateLibDTO = {
-  operate: 'add' | 'del';
-  path: string;
-  type: 'file' | 'folder';
-};
 /**
  * Update library tree object, which locate in main process store
  */
 const updateLibHandler: INextIpcHandler = {
   type: IPC_CHANNEL.UPDATE_LIB,
-  apply: async (_: string, data: UpdateLibDTO) => {
+  apply: async (_: string, data: UpdateLibRequest) => {
     const { operate, path, type } = data || {};
     const fileSys = nextWriterC.get<INextFileSystem>(TYPES.INextFileSystem);
     const formatPath = fileSys.formatPath(path);
@@ -33,9 +28,11 @@ const updateLibHandler: INextIpcHandler = {
       return Promise.reject(new Error('Some thing wrong with file type.'));
     }
 
-    const store = nextWriterC.get<INextStoreSystemType>(TYPES.INextStoreSystem);
+    const store = nextWriterC.get<INextStoreSystem>(TYPES.INextStoreSystem);
     const rootDir = store.getConfig('rootDir');
-    const relativePath = formatPath.startsWith(rootDir) ? formatPath.substring(rootDir.length) : formatPath;
+    const relativePath = formatPath.startsWith(rootDir)
+      ? formatPath.substring(rootDir.length)
+      : formatPath.substring(2);
     const fullPath = nodePath.join(rootDir, relativePath);
     const pathToken = relativePath.split('/').filter(token => !!token);
 
@@ -59,6 +56,7 @@ const updateLibHandler: INextIpcHandler = {
       return Promise.reject(new Error('Cannot find target library path'));
     }
 
+    let resolveData = null;
     switch (`${operate}-${type}`) {
       case 'add-file': {
         const notePath = fullPath + '.md';
@@ -67,11 +65,12 @@ const updateLibHandler: INextIpcHandler = {
         const libToken: LibraryTree = {
           name: targetName,
           type: 'file',
-          birthTime: fileState.birthtime.toString(),
-          modifiedTime: fileState.mtime.toString(),
+          birthTime: fileState.birthtime.toLocaleString(),
+          modifiedTime: fileState.mtime.toLocaleString(),
           children: []
         };
         parentLib.children.push(libToken);
+        resolveData = libToken;
         break;
       }
       case 'add-folder': {
@@ -80,8 +79,8 @@ const updateLibHandler: INextIpcHandler = {
         const libToken: LibraryTree = {
           name: targetName,
           type: 'folder',
-          birthTime: folderState.birthtime.toString(),
-          modifiedTime: folderState.mtime.toString(),
+          birthTime: folderState.birthtime.toLocaleString(),
+          modifiedTime: folderState.mtime.toLocaleString(),
           children: []
         };
         parentLib.children.push(libToken);
@@ -106,7 +105,7 @@ const updateLibHandler: INextIpcHandler = {
     await fileSys.writeFile(nodePath.join(rootDir, ROOT_CONFIG_NAME), JSON.stringify(libTree, null, 2));
     // Restore, althought it is not necessary, the above changes have affected the original object
     store.setConfig('libraryTree', libTree);
-    return { status: 0, data: {}, message: '' };
+    return { status: 0, data: resolveData ?? {}, message: '' };
   }
 };
 

@@ -1,6 +1,6 @@
 import { inject, injectable } from 'inversify';
 import { isEffectObject, isTrulyEmpty } from 'src/tools/utils';
-import { Cache, CacheContent, MainProcessConfig } from '_types';
+import { Cache, CacheContent } from '_types';
 import INextCacheSystem from '../interface/next-cache-system';
 import INextStoreSystem from '../interface/next-store-system';
 import { TYPES } from '../types';
@@ -8,8 +8,8 @@ import { TYPES } from '../types';
 @injectable()
 class NextCacheSystem implements INextCacheSystem {
   private __cache: Cache;
-  private __sotre: INextStoreSystem<MainProcessConfig>;
-  constructor(@inject(TYPES.INextStoreSystem) nextSotreSystem: INextStoreSystem<MainProcessConfig>) {
+  private __sotre: INextStoreSystem;
+  constructor(@inject(TYPES.INextStoreSystem) nextSotreSystem: INextStoreSystem) {
     this.init();
     this.__sotre = nextSotreSystem;
   }

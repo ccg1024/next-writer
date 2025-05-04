@@ -5,7 +5,7 @@ import { MainProcessConfig } from '_types';
  *
  * @author crazycodegame
  */
-interface INextStoreSystem<T> {
+interface StoreSystem<T> {
   /**
    * Initialize store
    */
@@ -40,6 +40,6 @@ interface INextStoreSystem<T> {
   destroy(): void;
 }
 
-export type INextStoreSystemType = INextStoreSystem<MainProcessConfig>;
+type INextStoreSystem = StoreSystem<MainProcessConfig>;
 
 export default INextStoreSystem;

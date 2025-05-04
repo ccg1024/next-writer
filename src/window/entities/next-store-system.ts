@@ -3,19 +3,8 @@ import { isTrulyEmpty } from 'src/tools/utils';
 import { MainProcessConfig } from '_types';
 import INextStoreSystem from '../interface/next-store-system';
 
-function constObjProxyFactory<T extends object>(target: T, key?: unknown) {
-  return new Proxy(target, {
-    set() {
-      if (!isTrulyEmpty(key)) {
-        throw new Error('Cannot modify a constant config directly, using setConfig instead.');
-      }
-      throw new Error(`Cannot modify a constant config of key(${key}) directly, using setConfig instead.`);
-    }
-  });
-}
-
 @injectable()
-class NextStoreSystem implements INextStoreSystem<MainProcessConfig> {
+class NextStoreSystem implements INextStoreSystem {
   private __config: MainProcessConfig;
 
   constructor() {
@@ -37,16 +26,12 @@ class NextStoreSystem implements INextStoreSystem<MainProcessConfig> {
     this.__config = { ...this.__config, ...(config ?? {}) };
   }
 
-  getConfig<K extends keyof MainProcessConfig>(key: K, raw = false): MainProcessConfig[K] {
-    const target = this.__config?.[key] ?? void 0;
-    if (typeof target === 'object' && target !== null && !raw) {
-      return constObjProxyFactory(target as unknown as object, key) as unknown as MainProcessConfig[K];
-    }
-    return target;
+  getConfig<K extends keyof MainProcessConfig>(key: K): MainProcessConfig[K] {
+    return this.__config?.[key] ?? void 0;
   }
 
   getConfigs(): MainProcessConfig {
-    return constObjProxyFactory(this.__config);
+    return this.__config;
   }
 
   destroy(): void {

@@ -1,9 +1,9 @@
-import { EditorState } from '@codemirror/state'
-import { FileState, IpcRequest, RootWorkstationFolderInfo } from '_types'
+import { EditorState } from '@codemirror/state';
+import { FileState, IpcRequest, RootWorkstationFolderInfo } from '_types';
 
 export function reversePath(path: string, sep?: string) {
-  const _sep = sep ? sep : '/'
-  return path.split(_sep).reverse().join(_sep)
+  const _sep = sep ? sep : '/';
+  return path.split(_sep).reverse().join(_sep);
 }
 
 /**
@@ -16,27 +16,27 @@ export function reversePath(path: string, sep?: string) {
 export async function Post(channel: string, data: IpcRequest, single = false) {
   // Make a Post response to main process
   if (single) {
-    window.ipc._render_post(channel, data)
-    return null
+    window.ipc._render_post(channel, data);
+    return null;
   }
-  return window.ipc._invoke_post(channel, data)
+  return window.ipc._invoke_post(channel, data);
 }
 
 export function fileAndFolderNameCheck(name: string) {
-  if (!name) return false
+  if (!name) return false;
 
   // ensure the name just include a-z, 0-9, chiness
-  const pattern = /^[A-Za-z0-9\u4e00-\u9fa5]+$/gi
-  return pattern.test(name)
+  const pattern = /^[A-Za-z0-9\u4e00-\u9fa5]+$/gi;
+  return pattern.test(name);
 }
 
 export function getFileBaseName(filePath: string) {
-  if (!filePath) return ''
-  const idx = filePath.lastIndexOf('.')
+  if (!filePath) return '';
+  const idx = filePath.lastIndexOf('.');
   if (idx != -1) {
-    return filePath.substring(0, idx)
+    return filePath.substring(0, idx);
   }
-  return filePath
+  return filePath;
 }
 
 export const emojiList = [
@@ -433,67 +433,57 @@ export const emojiList = [
   '\ud83c\udf4a',
   '\ud83c\udff9',
   '\ud83d\udc6f'
-]
+];
 
 export const noSelection = (state: EditorState) => {
-  return state.selection.main.anchor === state.selection.main.head
-}
+  return state.selection.main.anchor === state.selection.main.head;
+};
 
-export const debounce = function (
-  fn: (...args: unknown[]) => void,
-  delay = 1000
-) {
-  let timer: NodeJS.Timeout = null
+export const debounce = function (fn: (...args: unknown[]) => void, delay = 1000) {
+  let timer: NodeJS.Timeout = null;
   return function (...args: unknown[]) {
-    clearTimeout(timer)
+    clearTimeout(timer);
     timer = setTimeout(() => {
       // 确保调用返回函数的 this
       // 与执行函数 fn 的 this
       // 指向相同
-      fn.call(this, ...args)
-    }, delay)
-  }
-}
+      fn.call(this, ...args);
+    }, delay);
+  };
+};
 
-export const throttle = function <T extends unknown[]>(
-  fn: (...args: T) => void,
-  delay = 1000
-) {
-  let timer: NodeJS.Timeout = null
+export const throttle = function <T extends unknown[]>(fn: (...args: T) => void, delay = 1000) {
+  let timer: NodeJS.Timeout = null;
   return function (...args: T) {
-    if (timer) return
+    if (timer) return;
 
     timer = setTimeout(() => {
-      fn.call(this, ...args)
-      timer = null
-    }, delay)
-  }
-}
+      fn.call(this, ...args);
+      timer = null;
+    }, delay);
+  };
+};
 
 export function resolve2path(path1: string, path2: string) {
-  const p1 = path1.endsWith('/') ? path1 : `${path1}/`
-  const p2 = path2.startsWith('./')
-    ? path2.slice(2)
-    : path2.startsWith('/')
-      ? path2.slice(1)
-      : path2
+  const p1 = path1.endsWith('/') ? path1 : `${path1}/`;
+  const p2 = path2.startsWith('./') ? path2.slice(2) : path2.startsWith('/') ? path2.slice(1) : path2;
 
-  return `${p1}${p2}`
+  return `${p1}${p2}`;
 }
 
 function getFormatTime(time: Date) {
-  return `${time.getFullYear()}-${time.getMonth() + 1}-${time.getDate()}`
+  return `${time.getFullYear()}-${time.getMonth() + 1}-${time.getDate()}`;
 }
-export function formatTime(): string
-export function formatTime(date: string): string
-export function formatTime(date: number): string
+export function formatTime(): string;
+export function formatTime(date: string): string;
+export function formatTime(date: number): string;
 export function formatTime(date?: string | number) {
   if (!date) {
-    const time = new Date()
-    return getFormatTime(time)
+    const time = new Date();
+    return getFormatTime(time);
   }
 
-  return getFormatTime(new Date(date))
+  return getFormatTime(new Date(date));
 }
 
 /**
@@ -502,58 +492,75 @@ export function formatTime(date?: string | number) {
  * @param date timestamp for `new Date()`
  * @returns time distance description.
  */
-export function timeDistance(date: string): string
-export function timeDistance(date: number): string
+export function timeDistance(date: string): string;
+export function timeDistance(date: number): string;
 export function timeDistance(date: number | string): string {
-  const oldDate = typeof date === 'string' ? new Date(date).valueOf() : date
-  const current = new Date()
-  const diff = (current.valueOf() - oldDate) / 1000
+  const oldDate = typeof date === 'string' ? new Date(date).valueOf() : date;
+  const current = new Date();
+  const diff = (current.valueOf() - oldDate) / 1000;
 
-  if (diff < 60) return 'seconds ago'
+  if (diff < 60) return 'seconds ago';
 
   // greater than 1 minute less than 1 hour
 
-  if (diff < 3600) return `${Math.floor(diff / 60)} minute ago`
+  if (diff < 3600) return `${Math.floor(diff / 60)} minute ago`;
 
-  if (diff < 86400) return `${Math.floor(diff / (60 * 60))} hour ago`
+  if (diff < 86400) return `${Math.floor(diff / (60 * 60))} hour ago`;
 
-  return getFormatTime(new Date(oldDate))
+  return getFormatTime(new Date(oldDate));
 }
 
 export function getCurrentNote(notes: FileState[], relativeName: string) {
-  if (!notes) return null
+  if (!notes) return null;
 
-  const tokens = relativeName.split('/')
-  const currentName = tokens[tokens.length - 1]
+  const tokens = relativeName.split('/');
+  const currentName = tokens[tokens.length - 1];
   for (let i = 0; i < notes.length; i++) {
-    if (notes[i].name === currentName) return notes[i]
+    if (notes[i].name === currentName) return notes[i];
   }
 
-  return null
+  return null;
 }
 
-export function findFolderIndex(
-  folders: RootWorkstationFolderInfo[],
-  target: string
-) {
+export function findFolderIndex(folders: RootWorkstationFolderInfo[], target: string) {
   for (let i = 0; i < folders.length; i++) {
-    if (folders[i].name === target) return i
+    if (folders[i].name === target) return i;
   }
 
-  return -1
+  return -1;
 }
 export function findFileIndex(files: FileState[], target: string) {
   for (let i = 0; i < files.length; i++) {
-    if (files[i].name === target) return i
+    if (files[i].name === target) return i;
   }
-  return -1
+  return -1;
 }
 
 export function isValidFileName(fileName: string) {
-  if (!fileName || fileName.startsWith('.') || fileName.indexOf(' ') !== -1)
-    return false
+  if (!fileName || fileName.startsWith('.') || fileName.indexOf(' ') !== -1) return false;
 
-  const regex = /^[^\\/:*?"<>|]{1,255}$/
+  const regex = /^[^\\/:*?"<>|]{1,255}$/;
 
-  return regex.test(fileName)
+  return regex.test(fileName);
+}
+
+// Mock a unique id
+export function generateUniqueId(slate: string) {
+  return `${Math.random().toString(36).substring(2, 15)}_${new Date().valueOf().toString(36)}_${slate || ''}`;
+}
+
+/**
+ * Make a debounce function.
+ * Can be optimized using requestAnimationFrame.
+ */
+export function debounceFn<F extends (...args: unknown[]) => unknown>(fn: F, delay = 500) {
+  let timer: NodeJS.Timeout;
+  return (...args: Parameters<typeof fn>) => {
+    if (timer) {
+      clearTimeout(timer);
+    }
+    timer = setTimeout(() => {
+      fn(...args);
+    }, delay);
+  };
 }

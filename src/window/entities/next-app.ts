@@ -15,9 +15,9 @@ import INextApp from '../interface/next-app';
 import INextCacheSystem from '../interface/next-cache-system';
 import INextFileSystem from '../interface/next-file-system';
 import INextIpcServer from '../interface/next-ipc-server';
+import INextMenu from '../interface/next-menu';
 import { TYPES } from '../types';
 import INextStoreSystem from '../interface/next-store-system';
-import { MainProcessConfig } from '_types';
 import { isEffectObject, isTrulyEmpty, removeEmpty } from 'src/tools/utils';
 import ipcHanlders from '../ipc-handler';
 import { APP_PROMOT } from 'src/tools/config';
@@ -57,18 +57,21 @@ class NextApp implements INextApp {
   private _cache: INextCacheSystem;
   private _ipc: INextIpcServer;
   private _fileSystem: INextFileSystem;
-  private _store: INextStoreSystem<MainProcessConfig>;
+  private _store: INextStoreSystem;
+  private _menu: INextMenu;
   constructor(
     @inject(TYPES.INextCacheSystem) cache: INextCacheSystem,
     @inject(TYPES.INextIpcServer) ipc: INextIpcServer,
     @inject(TYPES.INextFileSystem) fileSystem: INextFileSystem,
-    @inject(TYPES.INextStoreSystem) store: INextStoreSystem<MainProcessConfig>
+    @inject(TYPES.INextStoreSystem) store: INextStoreSystem,
+    @inject(TYPES.INextMenu) menu: INextMenu
   ) {
     this._cache = cache;
     this._ipc = ipc;
     this._fileSystem = fileSystem;
     this._store = store;
     this.createWindow = this.createWindow.bind(this);
+    this._menu = menu;
   }
   async createWindow() {
     // Remove all listener if exist a application instance.
@@ -91,6 +94,9 @@ class NextApp implements INextApp {
     this._ipc.listen();
     // register ipc handler
     ipcHanlders.forEach(handler => this._ipc.registerHandler(handler));
+
+    // Create menu
+    this._menu.createMenu();
 
     if (NW_ENV === 'DEV') {
       this._win.webContents.openDevTools();

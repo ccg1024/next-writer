@@ -20,9 +20,10 @@ import INextCacheSystem from '../interface/next-cache-system';
 import NextCacheSystem from '../entities/next-cache-system';
 import INextIpcServer from '../interface/next-ipc-server';
 import NextIpcServer from '../entities/next-ipc-server';
+import INextMenu from '../interface/next-menu';
+import NextMenu from '../entities/next-menu';
 import INextApp from '../interface/next-app';
 import NextApp from '../entities/next-app';
-import { MainProcessConfig } from '_types';
 import { TYPES } from '../types';
 
 /**
@@ -37,9 +38,10 @@ const nextWriterC = new Container();
 // nextWriterC.bind<CacheSystem>(TYPES.CacheSystem).to(NextCahce);
 // nextWriterC.bind<INextWriterMenu>(TYPES.INextWriterMenu).to(NextWriterMenu);
 nextWriterC.bind<INextFileSystem>(TYPES.INextFileSystem).to(NextFileSystem).inSingletonScope();
-nextWriterC.bind<INextStoreSystem<MainProcessConfig>>(TYPES.INextStoreSystem).to(NextStoreSystem).inSingletonScope();
+nextWriterC.bind<INextStoreSystem>(TYPES.INextStoreSystem).to(NextStoreSystem).inSingletonScope();
 nextWriterC.bind<INextCacheSystem>(TYPES.INextCacheSystem).to(NextCacheSystem).inSingletonScope();
 nextWriterC.bind<INextIpcServer>(TYPES.INextIpcServer).to(NextIpcServer).inSingletonScope();
+nextWriterC.bind<INextMenu>(TYPES.INextMenu).to(NextMenu).inSingletonScope();
 nextWriterC.bind<INextApp>(TYPES.INextApp).to(NextApp).inSingletonScope();
 
 export { nextWriterC };

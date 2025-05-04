@@ -16,6 +16,7 @@ const TYPES = {
   INextStoreSystem: Symbol.for('INextStoreSystem'),
   INextCacheSystem: Symbol.for('INextCacheSystem'),
   INextIpcServer: Symbol.for('INextIpcServer'),
+  INextMenu: Symbol.for('INextMenu'),
   INextApp: Symbol.for('INextApp')
 };
 

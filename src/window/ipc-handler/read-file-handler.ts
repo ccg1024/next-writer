@@ -1,6 +1,6 @@
 import nodePath from 'path';
 import { IPC_CHANNEL } from 'src/tools/config';
-import { MainProcessConfig, ReadFileRequest, ReadFileResponse } from '_types';
+import { ReadFileRequest, ReadFileResponse } from '_types';
 import INextFileSystem from '../interface/next-file-system';
 import INextIpcHandler from '../interface/next-ipc-handler';
 import INextStoreSystem from '../interface/next-store-system';
@@ -14,7 +14,7 @@ const readFileHandler: INextIpcHandler = {
   type: IPC_CHANNEL.READ_FILE,
   apply: async (_: string, reqData: ReadFileRequest) => {
     const { path } = reqData || {};
-    const store = nextWriterC.get<INextStoreSystem<MainProcessConfig>>(TYPES.INextStoreSystem);
+    const store = nextWriterC.get<INextStoreSystem>(TYPES.INextStoreSystem);
     const fileSys = nextWriterC.get<INextFileSystem>(TYPES.INextFileSystem);
     const rootDir = store.getConfig('rootDir');
     const fullPath = path.startsWith(rootDir) ? path : nodePath.join(rootDir, path + '.md');

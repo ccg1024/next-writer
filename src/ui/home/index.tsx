@@ -1,10 +1,10 @@
 import { useCallback, useMemo, useRef } from 'react';
 import useRenderConfig from '../hooks/useRenderConfig';
 import { BaseLayout } from '../modules/layout';
-import LibrarySidebar from '../modules/library-sidebar';
-import Main, { ExposedHandler as MainExposed } from '../modules/main';
+import LibrarySidebar, { type LibrarySidebarExpoused } from '../modules/library-sidebar';
+import Main, { type ExposedHandler as MainExposed } from '../modules/main';
 import { ThemeProvider } from './module.context';
-import { LibraryBase, LibraryTree } from '_types';
+import { LibraryTree } from '_types';
 
 import './index.css';
 
@@ -12,10 +12,16 @@ const Home = () => {
   const renderConfig = useRenderConfig();
 
   const mainRef = useRef<MainExposed>(null);
+  const sidebarRef = useRef<LibrarySidebarExpoused>(null);
 
   // This function will be called when change note.
-  const mainRefCallback = useCallback((noteId: string, note: LibraryBase, parent: LibraryTree) => {
+  const mainRefCallback = useCallback((noteId: string, note: LibraryTree, parent: LibraryTree) => {
     mainRef.current?.queryFile(noteId, note, parent);
+  }, []);
+
+  // Update lib item information.
+  const updateLibItem = useCallback((libItem: LibraryTree) => {
+    sidebarRef.current && sidebarRef.current.updateLibItem(libItem);
   }, []);
 
   const themeConfig = useMemo(() => ({ config: renderConfig?.config }), [renderConfig?.config]);
@@ -24,9 +30,9 @@ const Home = () => {
     <ThemeProvider value={themeConfig}>
       <BaseLayout>
         {/* Show lib bar and detail bar of current lib */}
-        <LibrarySidebar storedLibrary={renderConfig?.libTree} onNoteChange={mainRefCallback} />
+        <LibrarySidebar ref={sidebarRef} onNoteChange={mainRefCallback} />
         {/* Show current note */}
-        <Main ref={mainRef} />
+        <Main ref={mainRef} onLibContentChange={updateLibItem} />
       </BaseLayout>
     </ThemeProvider>
   );

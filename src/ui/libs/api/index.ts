@@ -4,7 +4,7 @@
 // ============================================================
 import { Request, Response } from '_types';
 
-async function api<T, U>(param: Request<T>): Promise<Response<U>> {
+async function api<T, U = unknown>(param: Request<T>): Promise<Response<U>> {
   return window.ipc._post<T, U>(param);
 }
 

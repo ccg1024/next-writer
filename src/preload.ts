@@ -41,6 +41,7 @@ contextBridge.exposeInMainWorld('ipc', {
     ipcRenderer.send(channel, data);
   },
 
+  // IOC
   /**
    * Renderer to main bidirectional channel (mock http)
    */

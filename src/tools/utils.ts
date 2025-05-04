@@ -22,9 +22,7 @@ export function isEffectObject<T extends NormalObject>(obj: T): obj is T {
   return false;
 }
 
-type TrulyEmpty = null | undefined | '';
-
-export function isTrulyEmpty(val: unknown): val is TrulyEmpty {
+export function isTrulyEmpty(val: unknown): val is null {
   return (val ?? '') === '' ? true : false;
 }
 
