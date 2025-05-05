@@ -15,5 +15,6 @@ export const APP_PROMOT = '[nwriter]:';
 export const IPC_CHANNEL = {
   READ_CONFIG: 'read-config',
   READ_FILE: 'read-file',
-  UPDATE_LIB: 'updateLib'
+  UPDATE_LIB: 'updateLib',
+  WIRTE_FILE: 'write-file'
 };

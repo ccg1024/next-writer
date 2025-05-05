@@ -118,6 +118,12 @@ export type RootWorkstationInfo = {
 // -----------------------------------------------
 // For Renderer process
 // -----------------------------------------------
+const RENDERER_LISTENER_ACTIONS = ['write-file'] as const;
+export type RendererListenerAction<T = Record<string, unknown>> = {
+  type: (typeof RENDERER_LISTENER_ACTIONS)[number];
+  payload?: T;
+};
+export type RendererListenerCallback = (event: IpcRendererEvent, action?: RendererListenerAction) => void;
 
 type IpcCallback = (event: IpcRendererEvent, ...args: Array<unknown>) => void;
 export interface IPC {
@@ -127,6 +133,7 @@ export interface IPC {
   _invoke_post: (channel: string, req: IpcRequest) => Promise<IpcResponse>;
   _render_post: (channel: string, req: IpcRequest) => void;
   _post: <T, U>(param: Request<T>) => Promise<Response<U>>;
+  rendererListener: (cb: RendererListenerCallback) => () => void;
 }
 
 export type RendererPlugin = {
@@ -327,6 +334,12 @@ export type ReadFileRequest = {
 
 export type ReadFileResponse = {
   content: string;
+};
+
+export type WriteFileRequest = {
+  path: string;
+  content: string;
+  nameInRuntime?: string; // using to rename
 };
 
 export type UpdateLibRequest = {

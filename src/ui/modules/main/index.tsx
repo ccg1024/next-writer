@@ -1,12 +1,13 @@
-import React, { useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useImperativeHandle, useMemo, useReducer, useRef, useState } from 'react';
 import { EditorView, ViewUpdate } from '@codemirror/view';
-import { Typography } from 'antd';
+import { App, Typography } from 'antd';
 import { isTrulyEmpty } from 'src/tools/utils';
 import { VerticalEmpty } from 'src/ui/components/antd/preset/empty';
 import useCodemirror, { InitialEditorState } from 'src/ui/hooks/useCodemirror';
 import mainProcess from 'src/ui/libs/main-process';
-import { RendererLibraryTree } from '_types';
+import { RendererLibraryTree, RendererListenerAction } from '_types';
 import { debounceFn } from 'src/ui/libs/utils';
+import rendererIpcListener, { RendererIpcActionCallback } from '../ipc';
 
 import './index.less';
 
@@ -30,6 +31,7 @@ type EditorTransactionAction = {
 
 const Main: React.ForwardRefRenderFunction<ExposedHandler, MainProps> = (props, ref) => {
   const { onLibContentChange: pubNoteUpdate } = props;
+  const { message } = App.useApp();
   // Should always keep in mind that aggregatNode and the active lib item of sidebar are two objects representing
   // the same state, and these two states should be updated synchronously.
   const [aggregateNote, setAggregateNote] = useState<{
@@ -38,7 +40,7 @@ const Main: React.ForwardRefRenderFunction<ExposedHandler, MainProps> = (props, 
     parent: RendererLibraryTree;
   }>(null);
   const [initialEditorState, setInitialEditorState] = useState<InitialEditorState>(null);
-  const [editorTransaction, setEditorTransaction] = useState(null);
+  const [editorTransaction, setEditorTransaction] = useState<EditorTransactionAction>(null);
 
   const debounceEditorTransaction = useMemo(() => {
     function transaction(action: EditorTransactionAction) {
@@ -77,7 +79,22 @@ const Main: React.ForwardRefRenderFunction<ExposedHandler, MainProps> = (props, 
     }
   }, []);
 
-  const [divRef, _editor] = useCodemirror<HTMLDivElement>({ initialEditorState, onEditorDocChange, onEditorChange });
+  const [divRef, editor] = useCodemirror<HTMLDivElement>({ initialEditorState, onEditorDocChange, onEditorChange });
+  // for Ipc action
+  const [_ipcAction, dispatchIpcAction] = useReducer(ipcAction, void 0);
+  function ipcAction(_: undefined, action: RendererListenerAction) {
+    switch (action.type) {
+      case 'write-file': {
+        const content = editor.state.doc.toString();
+        mainProcess.writeFile({ path: aggregateNote.note.relativePath, content }).then(res => {
+          if (res.status !== 0) {
+            message.error(res.message || '保存文件失败');
+          }
+        });
+        break;
+      }
+    }
+  }
   // ============================================================
   // Exposed handler
   // ============================================================
@@ -132,6 +149,17 @@ const Main: React.ForwardRefRenderFunction<ExposedHandler, MainProps> = (props, 
       }
     }
   }, [editorTransaction]);
+
+  useEffect(() => {
+    const saveFile: RendererIpcActionCallback = (_e, action) => {
+      dispatchIpcAction(action);
+    };
+    saveFile.type = 'write-file';
+    rendererIpcListener.register(saveFile);
+    return () => {
+      rendererIpcListener.deregister(saveFile);
+    };
+  }, []);
 
   // ============================================================
   // Render

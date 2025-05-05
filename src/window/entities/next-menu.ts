@@ -6,7 +6,7 @@ import { isTrulyEmpty } from 'src/tools/utils';
 import nodeFs from 'fs';
 import nodePath from 'path';
 import { TYPES } from '../types';
-import { LibraryTree, RootLibraryTree } from '_types';
+import { LibraryTree, RendererListenerAction, RootLibraryTree } from '_types';
 import { MAX_FILE_DESCRIPTION_LENGTH, ROOT_CONFIG_NAME } from 'bin/index.es';
 import INextFileSystem from '../interface/next-file-system';
 
@@ -25,6 +25,7 @@ class NextMenu implements INextMenu {
 
     // bind methods
     this.synchronousLibrary = this.synchronousLibrary.bind(this);
+    this.save = this.save.bind(this);
   }
   getMenuTemplate(): MenuItemConstructorOptions[] {
     const appInfo: MenuItemConstructorOptions[] = this.isMac
@@ -49,8 +50,9 @@ class NextMenu implements INextMenu {
       submenu: [
         {
           label: '保存',
-          enabled: false,
-          accelerator: this.isMac ? 'Cmd+s' : 'Ctrl+s'
+          // enabled: false,
+          accelerator: this.isMac ? 'Cmd+s' : 'Ctrl+s',
+          click: this.save
         }
       ]
     };
@@ -160,6 +162,9 @@ class NextMenu implements INextMenu {
       this._store.setConfig('libraryTree', rootLib as unknown as LibraryTree);
       win.webContents.reload();
     }
+  }
+  private save(_m: MenuItem, win: BrowserWindow, _event: KeyboardEvent): void {
+    win.webContents.send('next-ipc-client', { type: 'write-file' } as RendererListenerAction);
   }
 }
 

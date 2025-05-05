@@ -1,10 +1,11 @@
-import { useCallback, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import useRenderConfig from '../hooks/useRenderConfig';
 import { BaseLayout } from '../modules/layout';
 import LibrarySidebar, { type LibrarySidebarExpoused } from '../modules/library-sidebar';
 import Main, { type ExposedHandler as MainExposed } from '../modules/main';
 import { ThemeProvider } from './module.context';
 import { LibraryTree } from '_types';
+import rendererIpcListener from '../modules/ipc';
 
 import './index.css';
 
@@ -13,6 +14,18 @@ const Home = () => {
 
   const mainRef = useRef<MainExposed>(null);
   const sidebarRef = useRef<LibrarySidebarExpoused>(null);
+
+  // ============================================================
+  // Effects
+  // ============================================================
+  // Start listen ipc event
+  useEffect(() => {
+    rendererIpcListener.start();
+
+    return () => {
+      rendererIpcListener.stop();
+    };
+  }, []);
 
   // This function will be called when change note.
   const mainRefCallback = useCallback((noteId: string, note: LibraryTree, parent: LibraryTree) => {

@@ -47,5 +47,16 @@ contextBridge.exposeInMainWorld('ipc', {
    */
   _post<T>(param: Request<T>) {
     return ipcRenderer.invoke('next-ipc-server', param);
+  },
+
+  /**
+   * Main to renderer, bidirectional channel
+   */
+  rendererListener: (cb: CallbackFunction) => {
+    ipcRenderer.on('next-ipc-client', cb);
+
+    return () => {
+      ipcRenderer.removeListener('next-ipc-client', cb);
+    };
   }
 });
