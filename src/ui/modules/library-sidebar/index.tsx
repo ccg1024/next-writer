@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import React, { FC, useCallback, useImperativeHandle, useLayoutEffect, useRef, useState } from 'react';
 import { isEffectArray, isEffectObject, isTrulyEmpty } from 'src/tools/utils';
 import { WindowDragBox } from 'src/ui/components/drag';
-import { RendererLibraryTree } from '_types';
+import { LibraryType, RendererLibraryTree } from '_types';
 import InputResolveModal, { InputResolveHandle } from './modal';
 import { VerticalEmpty } from 'src/ui/components/antd/preset/empty';
 import { useRunmode } from 'src/ui/hooks/useRunmode';
@@ -133,9 +133,55 @@ const LibrarySidebar = React.forwardRef<LibrarySidebarExpoused, LibrarySidebarPr
         generateRuntimeInfo(noteToken, parent);
         parent.children.push(noteToken);
         setStoredLibrary(pre => ({ ...pre }));
-        // ..
       } else {
         message.error(res.message || '添加文件失败');
+      }
+    }
+
+    async function addLib(parent: RendererLibraryTree, libName: string) {
+      const fullPath = `${parent.relativePath}/${libName}`;
+      const res = await mainProcess.updateLib({ operate: 'add', type: 'folder', path: fullPath });
+      if (res.status === 0) {
+        const libToken = res.data;
+        generateRuntimeInfo(libToken, parent);
+        parent.children.push(libToken);
+        setStoredLibrary(pre => ({ ...pre }));
+      } else {
+        message.error(res.message || '添加库失败');
+      }
+    }
+
+    async function delNote(type: LibraryType, parent: RendererLibraryTree, target: RendererLibraryTree) {
+      if (type === 'file') {
+        const res = await mainProcess.updateLib({ operate: 'del', type: 'file', path: target.relativePath });
+        if (res.status === 0) {
+          parent.children = parent.children.filter(child => child.id !== target.id);
+          setSelectedNote(null);
+          setStoredLibrary(pre => ({ ...pre }));
+          onChange('', null, null); // Trigger note change to other sibling component
+        } else {
+          message.error(res.message || '删除文件失败');
+        }
+      } else {
+        if (target.children.length > 0) {
+          message.info('库笔记不为空，无法删除库: ' + target.name);
+          return;
+        }
+        const res = await mainProcess.updateLib({ operate: 'del', type: 'folder', path: target.relativePath });
+        if (res.status === 0) {
+          parent.children = parent.children.filter(child => child.id !== target.id);
+          // if parent is equal to root
+          if (parent.id === storedLibrary.id) {
+            setStoredLibrary(pre => ({ ...pre, children: pre.children.filter(child => child.id !== target.id) }));
+          } else {
+            setStoredLibrary(pre => ({ ...pre }));
+          }
+          if (target.id === selectedLib.id) {
+            setSelectedLib(null);
+          }
+        } else {
+          message.error(res.message || '删除库失败');
+        }
       }
     }
 
@@ -164,6 +210,41 @@ const LibrarySidebar = React.forwardRef<LibrarySidebarExpoused, LibrarySidebarPr
         addNote(lib, name);
       });
     };
+    const onAddLibClick = (parent: RendererLibraryTree) => {
+      const resolvePromise = new Promise<FormInstance>((resolve, reject) => {
+        inputResolveRef.current?.open('folder', resolve, reject);
+      });
+      resolvePromise.then(form => {
+        const name = form.getFieldValue('name');
+        const hasSameName = parent.children.some(child => child.type === 'folder' && child.name === name);
+        if (hasSameName) {
+          message.error('名称重复');
+          return;
+        }
+        addLib(parent, name);
+      });
+    };
+    const onDelNoteClick = (type: LibraryType, target: RendererLibraryTree) => {
+      const resolvePromise = new Promise((resolve, reject) => {
+        if (type === 'file') {
+          inputResolveRef.current?.open('file', resolve, reject, { isDelete: true, note: target });
+        }
+      });
+
+      resolvePromise.then(() => {
+        delNote('file', target.parent, target);
+      });
+    };
+    const onDelLibClick = (type: LibraryType, target: RendererLibraryTree) => {
+      const resolvePromise = new Promise((resolve, reject) => {
+        if (type === 'folder') {
+          inputResolveRef.current?.open('folder', resolve, reject, { isDelete: true, lib: target });
+        }
+      });
+      resolvePromise.then(() => {
+        delNote('folder', target.parent, target);
+      });
+    };
 
     // ============================================================
     // build ui
@@ -187,6 +268,7 @@ const LibrarySidebar = React.forwardRef<LibrarySidebarExpoused, LibrarySidebarPr
                         whileTap={{ scale: 0.8 }}
                         onClick={e => {
                           e.stopPropagation();
+                          onDelLibClick('folder', lib);
                         }}
                       >
                         <MinusCircleOutlined />
@@ -209,17 +291,6 @@ const LibrarySidebar = React.forwardRef<LibrarySidebarExpoused, LibrarySidebarPr
       );
     };
 
-    // const getDeleteDTO = (_type: LibraryType) => {
-    // if (type === 'file') {
-    //   const fileTokens = currentLib.file.split('/');
-    //   return {
-    //     path: currentLib.file,
-    //     title: fileTokens[fileTokens.length - 1],
-    //     type
-    //   };
-    // }
-    // };
-
     return (
       <>
         <div className="library-sidebar-wrapper">
@@ -229,14 +300,19 @@ const LibrarySidebar = React.forwardRef<LibrarySidebarExpoused, LibrarySidebarPr
             <div className="library-sidebar-menu">
               <Menu mode="inline" items={_wrapMenu()} onClick={onMenuClick} />
             </div>
-            <div className="library-sidebar-footer">
+            <div className="library-sidebar-footer" onClick={() => onAddLibClick(storedLibrary)}>
               <FolderOutlined />
               <Text className="footer-text">添加库</Text>
             </div>
           </div>
         </div>
         <div className="library-detail-wrapper">
-          <LibDetailHeader lib={selectedLib} note={selectedNote} onEditorClick={onAddNoteClick} />
+          <LibDetailHeader
+            lib={selectedLib}
+            note={selectedNote}
+            onEditorClick={onAddNoteClick}
+            onDeleteClick={onDelNoteClick}
+          />
           <div className="library-detail-item-wrapper">
             {isEffectObject(selectedLib) && isEffectArray(selectedLib.children) ? (
               selectedLib.children
@@ -259,14 +335,15 @@ interface LibDetailHeaderProps {
   lib: RenderLib;
   note: RenderNote;
   onEditorClick: (lib: RenderLib) => void;
+  onDeleteClick: (type: LibraryType, target: RendererLibraryTree) => void;
 }
 /**
  * LibDetailHeader is the header of the selected library detail, which shows the name of the library and the edit/delete icon.
  */
 const LibDetailHeader: FC<LibDetailHeaderProps> = props => {
-  const { lib, note, onEditorClick } = props;
+  const { lib, note, onEditorClick, onDeleteClick } = props;
   const showEditIcon = isEffectObject(lib) && lib.type === 'folder';
-  const showDeleteIcon = isEffectObject(note) && note.type === 'file';
+  const showDeleteIcon = isEffectObject(note) && note.type === 'file' && lib === note.parent;
   return (
     <div className="library-detail-header">
       <Row>
@@ -282,7 +359,11 @@ const LibDetailHeader: FC<LibDetailHeaderProps> = props => {
         </Col>
         <Col span={8} style={{ textAlign: 'right' }}>
           {showDeleteIcon && (
-            <motion.span className="library-detail-icon" whileTap={{ scale: 0.8 }}>
+            <motion.span
+              className="library-detail-icon"
+              whileTap={{ scale: 0.8 }}
+              onClick={() => onDeleteClick('file', note)}
+            >
               <DeleteOutlined />
             </motion.span>
           )}

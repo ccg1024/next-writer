@@ -90,6 +90,10 @@ const Main: React.ForwardRefRenderFunction<ExposedHandler, MainProps> = (props, 
        * @param parent The library tree struct of current note parent
        */
       queryFile(noteId, note, parent) {
+        if (isTrulyEmpty(noteId)) {
+          setAggregateNote(null);
+          return;
+        }
         setAggregateNote({ noteId, note, parent });
       }
     }),

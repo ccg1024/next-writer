@@ -1,9 +1,22 @@
 import React, { useImperativeHandle, useLayoutEffect, useRef, useState } from 'react';
-import { Modal, Form, Input, Button, FormInstance } from 'antd';
-import { LibraryType } from '_types';
+import { Modal, Form, Input, Button, FormInstance, Typography } from 'antd';
+import { LibraryType, RendererLibraryTree } from '_types';
+
+const { Text } = Typography;
+
+type OperateOpt = {
+  isDelete: boolean;
+  lib?: RendererLibraryTree;
+  note?: RendererLibraryTree;
+};
 
 export interface InputResolveHandle {
-  open(type: LibraryType, resolve: (form: FormInstance) => void, reject: (reason?: unknown) => void): void;
+  open(
+    type: LibraryType,
+    resolve: (form: FormInstance) => void,
+    reject: (reason?: unknown) => void,
+    opt?: OperateOpt
+  ): void;
 }
 
 /**
@@ -12,6 +25,7 @@ export interface InputResolveHandle {
 const InputResolveModal = React.forwardRef<InputResolveHandle>((_props, ref) => {
   const [visible, setVisible] = useState(false);
   const [optionType, setOptionType] = useState<LibraryType>(null);
+  const [operateOpt, setOperateOpt] = useState<OperateOpt>(null);
   const [form] = Form.useForm();
   const promiseRef = useRef<{ resolve: (form: FormInstance) => void; reject: (reason?: unknown) => void }>(null);
 
@@ -21,9 +35,10 @@ const InputResolveModal = React.forwardRef<InputResolveHandle>((_props, ref) => 
   useImperativeHandle(
     ref,
     () => ({
-      open(type, resolve, reject) {
+      open(type, resolve, reject, opt) {
         setVisible(true);
         setOptionType(type);
+        setOperateOpt(opt ?? null);
         promiseRef.current = { resolve, reject };
       }
     }),
@@ -46,9 +61,41 @@ const InputResolveModal = React.forwardRef<InputResolveHandle>((_props, ref) => 
     setVisible(false);
   };
 
+  const title = () => {
+    if (operateOpt?.isDelete) {
+      return optionType === 'file' ? '删除文件' : '删除库';
+    }
+
+    return optionType === 'file' ? '添加文件' : '添加库';
+  };
+
+  const modalContent = () => {
+    if (operateOpt?.isDelete) {
+      if (optionType === 'file') {
+        return <Text>确定删除笔记：{operateOpt?.note?.name}</Text>;
+      }
+
+      return <Text>确定删除库：{operateOpt?.lib?.name}</Text>;
+    }
+
+    return (
+      <Form.Item
+        name="name"
+        rules={[
+          {
+            required: true,
+            message: '请输入名称'
+          }
+        ]}
+      >
+        <Input placeholder="请输入名称" />
+      </Form.Item>
+    );
+  };
+
   return (
     <Modal
-      title={optionType === 'file' ? '添加文件' : '添加库'}
+      title={title()}
       open={visible}
       onCancel={closeModal}
       footer={
@@ -68,19 +115,7 @@ const InputResolveModal = React.forwardRef<InputResolveHandle>((_props, ref) => 
       destroyOnClose
     >
       <div>
-        <Form form={form}>
-          <Form.Item
-            name="name"
-            rules={[
-              {
-                required: true,
-                message: '请输入名称'
-              }
-            ]}
-          >
-            <Input placeholder="请输入名称" />
-          </Form.Item>
-        </Form>
+        <Form form={form}>{modalContent()}</Form>
       </div>
     </Modal>
   );

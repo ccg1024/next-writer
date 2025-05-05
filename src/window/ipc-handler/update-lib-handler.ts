@@ -84,6 +84,7 @@ const updateLibHandler: INextIpcHandler = {
           children: []
         };
         parentLib.children.push(libToken);
+        resolveData = libToken;
         break;
       }
       case 'del-file': {
@@ -92,10 +93,11 @@ const updateLibHandler: INextIpcHandler = {
         break;
       }
       case 'del-folder': {
-        if (parentLib.children.length > 0) {
+        const targetToken = parentLib.children.find(lib => lib.name === targetName);
+        if (targetToken.children.length > 0) {
           return Promise.reject(new Error('The folder content is not empty.'));
         }
-        await nodeFs.promises.rm(fullPath);
+        await nodeFs.promises.rmdir(fullPath);
         parentLib.children = parentLib.children.filter(lib => !(lib.name === targetName && lib.type === 'folder'));
         break;
       }
