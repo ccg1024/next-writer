@@ -1,5 +1,5 @@
 import { App, Menu, MenuProps, Typography, Row, Col, FormInstance } from 'antd';
-import { DeleteOutlined, EditOutlined, FolderOutlined, MinusCircleOutlined } from '@ant-design/icons';
+import { DeleteOutlined, EditOutlined, FolderOutlined } from '@ant-design/icons';
 import { motion } from 'framer-motion';
 import React, { FC, useCallback, useImperativeHandle, useLayoutEffect, useRef, useState } from 'react';
 import { isEffectArray, isEffectObject, isTrulyEmpty } from 'src/tools/utils';
@@ -271,7 +271,7 @@ const LibrarySidebar = React.forwardRef<LibrarySidebarExpoused, LibrarySidebarPr
                           onDelLibClick('folder', lib);
                         }}
                       >
-                        <MinusCircleOutlined />
+                        <DeleteOutlined />
                       </motion.div>
                     </Col>
                   </Row>
