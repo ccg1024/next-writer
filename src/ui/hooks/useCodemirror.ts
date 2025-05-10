@@ -4,7 +4,7 @@ import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
 import { bracketMatching, foldKeymap, HighlightStyle, indentOnInput, syntaxHighlighting } from '@codemirror/language';
 import { languages } from '@codemirror/language-data';
 import { highlightSelectionMatches, searchKeymap } from '@codemirror/search';
-import { EditorState } from '@codemirror/state';
+import { Compartment, EditorState } from '@codemirror/state';
 import {
   drawSelection,
   dropCursor,
@@ -18,6 +18,7 @@ import React, { CSSProperties, useEffect, useMemo, useRef, useState } from 'reac
 import { StyleSpec } from 'style-mod';
 import { tags, Tag, styleTags } from '@lezer/highlight';
 import { MarkdownConfig } from '@lezer/markdown';
+import ViewPlugins from '../plugins/viewPlugin';
 
 import '../css/theme.css';
 
@@ -61,7 +62,7 @@ const useCodemirror = <T extends Element>(props: Props): [React.MutableRefObject
 
     const startState = EditorState.create({
       doc: initialEditorState?.initDoc || '',
-      extensions: [...defaultExtension(), mountUpdateListener(callbackRef.current)]
+      extensions: [...defaultExtension(), mountUpdateListener(callbackRef.current), ...dynamicPlugin()]
     });
 
     const view = new EditorView({
@@ -366,6 +367,11 @@ function mountUpdateListener(config?: IMountUpdateListener) {
     // Invoke onChange
     config.onChange && config.onChange(update);
   });
+}
+
+export const dynamicViewPlugins = new Compartment();
+function dynamicPlugin() {
+  return [dynamicViewPlugins.of(ViewPlugins())];
 }
 
 export default useCodemirror;
