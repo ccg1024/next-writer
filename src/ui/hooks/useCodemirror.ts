@@ -19,6 +19,7 @@ import { StyleSpec } from 'style-mod';
 import { tags, Tag, styleTags } from '@lezer/highlight';
 import { MarkdownConfig } from '@lezer/markdown';
 import ViewPlugins from '../plugins/viewPlugin';
+import PluginGlobal from '../plugins/global';
 
 import '../css/theme.css';
 
@@ -70,9 +71,24 @@ const useCodemirror = <T extends Element>(props: Props): [React.MutableRefObject
       parent: containerRef.current
     });
 
+    // ============================================================
+    // Reigster global event of codemirror
+    // ============================================================
+    function handleMouseDown() {
+      PluginGlobal.set('didMousePress', true);
+    }
+    function handleMouseUp() {
+      PluginGlobal.set('didMousePress', false);
+      view.dispatch({});
+    }
+    document.addEventListener('mousedown', handleMouseDown, true);
+    document.addEventListener('mouseup', handleMouseUp, true);
+
     setEditorView(view);
 
     return () => {
+      document.removeEventListener('mousedown', handleMouseDown, true);
+      document.removeEventListener('mouseup', handleMouseUp, true);
       view.destroy();
     };
   }, [initialEditorState]);

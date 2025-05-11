@@ -1,10 +1,8 @@
 import { syntaxTree } from '@codemirror/language';
 import { Range, RangeSet } from '@codemirror/state';
 import { Decoration, DecorationSet, EditorView, PluginValue, ViewPlugin, ViewUpdate } from '@codemirror/view';
-
-const decoOfHide = (from: number, to: number, spec?: Record<string, unknown>) => {
-  return { from, to, value: Decoration.replace({ needFilter: true, ...spec }) };
-};
+import PluginGlobal from '../../global';
+import { filterableReplaceDeco, replaceDecorationFilter } from '../../global/utils';
 
 const theme = EditorView.baseTheme({
   '.cm-content > .cm-code-block': {
@@ -39,8 +37,6 @@ const theme = EditorView.baseTheme({
 
 class CodeBlockPlugin implements PluginValue {
   public decorations: DecorationSet;
-  public didMousePress: boolean;
-  public selectFromBlockInner: boolean;
   private stageDecos: Range<Decoration>[];
 
   constructor(view: EditorView) {
@@ -70,10 +66,10 @@ class CodeBlockPlugin implements PluginValue {
             const startLineOfBlock = view.state.doc.lineAt(node.from);
             const endLineOfBlock = view.state.doc.lineAt(node.to);
             decosInProcess.push(
-              decoOfHide(startLineOfBlock.from, startLineOfBlock.to, { blockFrom: node.from, blockTo: node.to })
+              filterableReplaceDeco(startLineOfBlock.from, startLineOfBlock.to, { from: node.from, to: node.to })
             );
             decosInProcess.push(
-              decoOfHide(endLineOfBlock.from, endLineOfBlock.to, { blockFrom: node.from, blockTo: node.to })
+              filterableReplaceDeco(endLineOfBlock.from, endLineOfBlock.to, { from: node.from, to: node.to })
             );
           }
         }
@@ -84,49 +80,16 @@ class CodeBlockPlugin implements PluginValue {
   }
 
   update(update: ViewUpdate) {
+    // If mouse is kept pressed, it means that content selection is in progress and the last decorator content is kept,
+    // oterwise, this function will re-run when mouseup event triggered, and will updating decorations in other scenarios.
+    if (PluginGlobal.get('didMousePress')) {
+      return;
+    }
     const syntaxTreeChanged = syntaxTree(update.startState) !== syntaxTree(update.state);
     if (update.docChanged || update.viewportChanged || syntaxTreeChanged) {
       this.stageDecos = this.processDecoration(update.view);
     }
-    const cursorFrom = update.view.state.selection.main.from;
-    const cursorTo = update.view.state.selection.main.to;
-    this.decorations = RangeSet.of(
-      this.stageDecos.filter(deco => {
-        const { value } = deco;
-        if (value.spec.needFilter) {
-          // If the cursor id completely inside the code block, unhide code mark
-          // and make flag duraingSelection, since the cursor could
-          if (
-            value.spec.blockFrom <= cursorFrom &&
-            value.spec.blockTo >= cursorFrom &&
-            value.spec.blockFrom <= cursorTo &&
-            value.spec.blockTo >= cursorTo
-          ) {
-            this.selectFromBlockInner = true;
-            return false;
-          }
-          // If the selection start from code block inner, keep code mark unhide.
-          if (this.selectFromBlockInner) {
-            return false;
-          }
-          // If the code mark is not unhide, keep it during selection.
-          if (this.didMousePress && !update.state.selection.main.empty) {
-            return true;
-          }
-
-          // If not select or select finished, check the cursor position, unhide code mark only if cursor range contain block
-          if (
-            (value.spec.blockFrom <= cursorFrom && value.spec.blockTo >= cursorFrom) ||
-            (value.spec.blockFrom <= cursorTo && value.spec.blockTo >= cursorTo) ||
-            (value.spec.blockFrom >= cursorFrom && value.spec.blockTo <= cursorTo)
-          ) {
-            return false;
-          }
-        }
-        return true;
-      }),
-      true
-    );
+    this.decorations = replaceDecorationFilter(this.stageDecos, update.view);
   }
 
   destroy() {
@@ -135,21 +98,7 @@ class CodeBlockPlugin implements PluginValue {
 }
 
 const plugin = ViewPlugin.fromClass(CodeBlockPlugin, {
-  decorations: v => v.decorations,
-  eventHandlers: {
-    mousedown(_e, view) {
-      const pluginInstance = view.plugin(plugin);
-      pluginInstance.didMousePress = true;
-    },
-    // TODO: If the mouse outside the editor, this event will not be triggered
-    // A better solution needs to be considered
-    mouseup(_e, view) {
-      const pluginInstance = view.plugin(plugin);
-      pluginInstance.didMousePress = false;
-      pluginInstance.selectFromBlockInner = false;
-      view.dispatch({});
-    }
-  }
+  decorations: v => v.decorations
 });
 
 const codeblockExtension = { theme, plugin };
