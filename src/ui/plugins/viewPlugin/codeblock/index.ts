@@ -1,7 +1,6 @@
 import { syntaxTree } from '@codemirror/language';
 import { Range, RangeSet } from '@codemirror/state';
 import { Decoration, DecorationSet, EditorView, PluginValue, ViewPlugin, ViewUpdate } from '@codemirror/view';
-import PluginGlobal from '../../global';
 import { filterableReplaceDeco, replaceDecorationFilter } from '../../global/utils';
 
 const theme = EditorView.baseTheme({
@@ -80,11 +79,13 @@ class CodeBlockPlugin implements PluginValue {
   }
 
   update(update: ViewUpdate) {
+    // TODO: Some thing wrong with cursor when hide and unhide inline-tag
     // If mouse is kept pressed, it means that content selection is in progress and the last decorator content is kept,
     // oterwise, this function will re-run when mouseup event triggered, and will updating decorations in other scenarios.
-    if (PluginGlobal.get('didMousePress')) {
-      return;
-    }
+    // if (PluginGlobal.get('didMousePress')) {
+    //   this.decorations = RangeSet.of(this.stageDecos, true);
+    //   return;
+    // }
     const syntaxTreeChanged = syntaxTree(update.startState) !== syntaxTree(update.state);
     if (update.docChanged || update.viewportChanged || syntaxTreeChanged) {
       this.stageDecos = this.processDecoration(update.view);
@@ -94,12 +95,11 @@ class CodeBlockPlugin implements PluginValue {
 
   destroy() {
     this.stageDecos = null;
+    this.decorations = null;
   }
 }
 
-const plugin = ViewPlugin.fromClass(CodeBlockPlugin, {
-  decorations: v => v.decorations
-});
+const plugin = ViewPlugin.fromClass(CodeBlockPlugin, { decorations: v => v.decorations });
 
 const codeblockExtension = { theme, plugin };
 

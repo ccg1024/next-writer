@@ -10,6 +10,9 @@ export function filterableReplaceDeco(from: number, to: number, spec: Omit<Filte
   return { from, to, value: Decoration.replace({ needFilter: true, ...spec }) };
 }
 export function replaceDecorationFilter(ranges: Range<Decoration>[], view: EditorView) {
+  if (!view.hasFocus) {
+    return RangeSet.of(ranges, true);
+  }
   // Get main selection cursor position
   const cursorFrom = view.state.selection.main.from;
   const cursorTo = view.state.selection.main.to;
