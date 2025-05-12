@@ -2,9 +2,24 @@ import { syntaxTree } from '@codemirror/language';
 import { Range, RangeSet } from '@codemirror/state';
 import { Decoration, DecorationSet, EditorView, PluginValue, ViewPlugin, ViewUpdate } from '@codemirror/view';
 import PluginGlobal from '../../global';
-import { filterableReplaceDeco, replaceDecorationFilter } from '../../global/utils';
+import { filterableLineDeco, filterableReplaceDeco, replaceDecorationFilter } from '../../global/utils';
 
-const theme = EditorView.baseTheme({});
+const theme = EditorView.baseTheme({
+  '.cm-horizontal-rule': {
+    position: 'relative',
+    '&:after': {
+      content: '""',
+      position: 'absolute',
+      top: '50%',
+      left: 0,
+      width: '100%',
+      borderTop: '2px solid #586EA5',
+      transform: 'translateY(-50%)'
+    }
+  }
+});
+
+const SYNTAX_HEADS = ['ATXHeading1', 'ATXHeading2', 'ATXHeading3', 'ATXHeading4', 'ATXHeading5', 'ATXHeading6'];
 
 class InlineTags implements PluginValue {
   public decorations: DecorationSet;
@@ -22,12 +37,30 @@ class InlineTags implements PluginValue {
         from,
         to,
         enter: node => {
+          // double mark: **bold**
+          // TODO: Mabybe need to add new syntax node name to handle three mark: ***bold italic***.
           if (node.name === 'StrongEmphasis') {
             decosInProcess.push(filterableReplaceDeco(node.from, node.from + 2, { from: node.from, to: node.to }));
             decosInProcess.push(filterableReplaceDeco(node.to - 2, node.to, { from: node.from, to: node.to }));
           } else if (node.name === 'Emphasis') {
+            // signle mark: *italic*
             decosInProcess.push(filterableReplaceDeco(node.from, node.from + 1, { from: node.from, to: node.to }));
             decosInProcess.push(filterableReplaceDeco(node.to - 1, node.to, { from: node.from, to: node.to }));
+          } else if (node.name === 'InlineCode') {
+            decosInProcess.push(filterableReplaceDeco(node.from, node.from + 1, { from: node.from, to: node.to }));
+            decosInProcess.push(filterableReplaceDeco(node.to - 1, node.to, { from: node.from, to: node.to }));
+          } else if (node.name === 'HorizontalRule') {
+            decosInProcess.push(
+              filterableLineDeco(node.from, node.from, { class: 'cm-horizontal-rule', from: node.from, to: node.to })
+            );
+          } else if (SYNTAX_HEADS.includes(node.name)) {
+            const headLevel = parseInt(node.name[node.name.length - 1]);
+            const diff = node.to - node.from;
+            if (diff > headLevel + 1) {
+              decosInProcess.push(
+                filterableReplaceDeco(node.from, node.from + headLevel + 1, { from: node.from, to: node.to })
+              );
+            }
           }
         }
       });

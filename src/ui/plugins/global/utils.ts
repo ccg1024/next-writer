@@ -1,14 +1,22 @@
 import { Range, RangeSet } from '@codemirror/state';
 import { Decoration, EditorView } from '@codemirror/view';
 
+type LineDecorationSpec = Parameters<typeof Decoration.line>[0];
+
 export type FilterableDecoSpec = {
-  needFilter: boolean;
-  from: number; // the lowest position to check with cursor;
-  to: number; // the highest position to check with cursor;
+  needFilter?: boolean;
+  from?: number; // the lowest position to check with cursor;
+  to?: number; // the highest position to check with cursor;
 };
-export function filterableReplaceDeco(from: number, to: number, spec: Omit<FilterableDecoSpec, 'needFilter'>) {
+export function filterableReplaceDeco(from: number, to: number, spec: FilterableDecoSpec) {
   return { from, to, value: Decoration.replace({ needFilter: true, ...spec }) };
 }
+
+export function filterableLineDeco(from: number, to: number, spec: LineDecorationSpec & FilterableDecoSpec) {
+  return { from, to, value: Decoration.line({ needFilter: true, ...spec }) };
+}
+
+// TODO: Rename, since the filter logic of decoration is same
 export function replaceDecorationFilter(ranges: Range<Decoration>[], view: EditorView) {
   if (!view.hasFocus) {
     return RangeSet.of(ranges, true);
