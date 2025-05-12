@@ -1,6 +1,7 @@
 import { syntaxTree } from '@codemirror/language';
 import { Range, RangeSet } from '@codemirror/state';
 import { Decoration, DecorationSet, EditorView, PluginValue, ViewPlugin, ViewUpdate } from '@codemirror/view';
+import PluginGlobal from '../../global';
 import { filterableReplaceDeco, replaceDecorationFilter } from '../../global/utils';
 
 const theme = EditorView.baseTheme({});
@@ -21,7 +22,6 @@ class InlineTags implements PluginValue {
         from,
         to,
         enter: node => {
-          // TODO: Need change curosr position, when decorantion filter.
           if (node.name === 'StrongEmphasis') {
             decosInProcess.push(filterableReplaceDeco(node.from, node.from + 2, { from: node.from, to: node.to }));
             decosInProcess.push(filterableReplaceDeco(node.to - 2, node.to, { from: node.from, to: node.to }));
@@ -39,6 +39,8 @@ class InlineTags implements PluginValue {
     const syntaxTreeChanged = syntaxTree(update.startState) !== syntaxTree(update.state);
     if (update.docChanged || update.viewportChanged || syntaxTreeChanged) {
       this.stageDecos = this.processDecoration(update.view);
+    } else if (PluginGlobal.get('didMousePress')) {
+      return;
     }
     this.decorations = replaceDecorationFilter(this.stageDecos, update.view);
   }
