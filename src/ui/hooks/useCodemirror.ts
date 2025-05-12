@@ -20,6 +20,7 @@ import { tags, Tag, styleTags } from '@lezer/highlight';
 import { MarkdownConfig } from '@lezer/markdown';
 import ViewPlugins from '../plugins/viewPlugin';
 import PluginGlobal from '../plugins/global';
+import { nextWriterSyntaxExtension } from '../plugins/extension';
 
 import '../css/theme.css';
 
@@ -119,7 +120,7 @@ function defaultExtension() {
       base: markdownLanguage,
       codeLanguages: languages,
       addKeymap: true,
-      extensions: [markdownTagExtension()]
+      extensions: [markdownTagExtension(), ...nextWriterSyntaxExtension.syntax]
     }),
     defaultTheme()
   ];
@@ -331,7 +332,12 @@ export const nwSyntaxHighlight = HighlightStyle.define([
       tags.definition(tags.propertyName)
     ],
     color: '#6F42C1'
-  }
+  },
+
+  // ============================================================
+  // Next Writer syntax extension
+  // ============================================================
+  ...nextWriterSyntaxExtension.tagStyles
 ]);
 
 function defaultTheme() {

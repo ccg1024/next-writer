@@ -37,9 +37,11 @@ class InlineTags implements PluginValue {
         from,
         to,
         enter: node => {
-          // double mark: **bold**
-          // TODO: Mabybe need to add new syntax node name to handle three mark: ***bold italic***.
-          if (node.name === 'StrongEmphasis') {
+          if (node.name === 'BoldItalic') {
+            decosInProcess.push(filterableReplaceDeco(node.from, node.from + 3, { from: node.from, to: node.to }));
+            decosInProcess.push(filterableReplaceDeco(node.to - 3, node.to, { from: node.from, to: node.to }));
+          } else if (node.name === 'StrongEmphasis') {
+            // double mark: **bold**
             decosInProcess.push(filterableReplaceDeco(node.from, node.from + 2, { from: node.from, to: node.to }));
             decosInProcess.push(filterableReplaceDeco(node.to - 2, node.to, { from: node.from, to: node.to }));
           } else if (node.name === 'Emphasis') {
@@ -50,6 +52,7 @@ class InlineTags implements PluginValue {
             decosInProcess.push(filterableReplaceDeco(node.from, node.from + 1, { from: node.from, to: node.to }));
             decosInProcess.push(filterableReplaceDeco(node.to - 1, node.to, { from: node.from, to: node.to }));
           } else if (node.name === 'HorizontalRule') {
+            decosInProcess.push(filterableReplaceDeco(node.from, node.to, { from: node.from, to: node.to }));
             decosInProcess.push(
               filterableLineDeco(node.from, node.from, { class: 'cm-horizontal-rule', from: node.from, to: node.to })
             );
