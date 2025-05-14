@@ -19,6 +19,7 @@ import { StyleSpec } from 'style-mod';
 import { tags, Tag, styleTags } from '@lezer/highlight';
 import { MarkdownConfig } from '@lezer/markdown';
 import ViewPlugins from '../plugins/viewPlugin';
+import FieldPlugins from '../plugins/fieldPlugin';
 import PluginGlobal from '../plugins/global';
 import { nextWriterSyntaxExtension } from '../plugins/extension';
 
@@ -393,8 +394,9 @@ function mountUpdateListener(config?: IMountUpdateListener) {
 }
 
 export const dynamicViewPlugins = new Compartment();
+export const dynamicFieldPlugins = new Compartment();
 function dynamicPlugin() {
-  return [dynamicViewPlugins.of(ViewPlugins())];
+  return [dynamicViewPlugins.of(ViewPlugins()), dynamicFieldPlugins.of(FieldPlugins())];
 }
 
 export default useCodemirror;
