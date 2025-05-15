@@ -267,20 +267,20 @@ export const nwSyntaxHighlight = HighlightStyle.define([
     tag: mdTags.listMark,
     color: 'var(--nw-theme-list-mark)'
   },
-  {
-    tag: mdTags.codeMark,
-    color: 'var(--nw-theme-code-mark)'
-  },
+  // {
+  //   tag: mdTags.codeMark,
+  //   color: 'var(--nw-theme-code-mark)'
+  // },
   {
     tag: mdTags.codeInfo,
     color: 'var(--nw-theme-code-info)'
   },
-  {
-    tag: mdTags.inlineCode,
-    backgroundColor: 'rgba(175, 184, 193, 0.2)',
-    paddingInline: '4px',
-    borderRadius: '4px'
-  },
+  // {
+  //   tag: mdTags.inlineCode,
+  //   backgroundColor: 'rgba(175, 184, 193, 0.2)',
+  //   paddingInline: '4px',
+  //   borderRadius: '4px'
+  // },
   // ============================================================
   // code mark highlight
   // ============================================================
@@ -347,6 +347,9 @@ function defaultTheme() {
       // css in cm-editor
       height: '100%',
       fontSize: '1em'
+    },
+    '.cm-scroller': {
+      lineHeight: 1.5
     },
     '&.cm-focused': {
       outline: 'none'

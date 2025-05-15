@@ -16,6 +16,28 @@ const theme = EditorView.baseTheme({
       borderTop: '2px solid #586EA5',
       transform: 'translateY(-50%)'
     }
+  },
+  '.cm-inline-code': {
+    backgroundColor: 'rgba(175, 184, 193, 0.2)',
+    padding: '0.15em 0.3em',
+    borderRadius: '4px'
+  },
+  '.cm-inline-code-mark': {
+    borderStartStartRadius: '4px',
+    borderEndStartRadius: '4px',
+    backgroundColor: 'rgba(175, 184, 193, 0.2)',
+    color: 'var(--nw-theme-code-mark)',
+    padding: '0.15em 0'
+  },
+  '.cm-inline-code-mark ~ .cm-inline-code': {
+    paddingInline: 0,
+    borderRadius: 0
+  },
+  '.cm-inline-code + .cm-inline-code-mark': {
+    borderStartStartRadius: 0,
+    borderEndStartRadius: 0,
+    borderStartEndRadius: '4px',
+    borderEndEndRadius: '4px'
   }
 });
 
@@ -49,6 +71,22 @@ class InlineTags implements PluginValue {
             decosInProcess.push(filterableReplaceDeco(node.from, node.from + 1, { from: node.from, to: node.to }));
             decosInProcess.push(filterableReplaceDeco(node.to - 1, node.to, { from: node.from, to: node.to }));
           } else if (node.name === 'InlineCode') {
+            // inline-code content
+            decosInProcess.push({
+              from: node.from + 1,
+              to: node.to - 1,
+              value: Decoration.mark({ class: 'cm-inline-code' })
+            });
+            decosInProcess.push({
+              from: node.from,
+              to: node.from + 1,
+              value: Decoration.mark({ class: 'cm-inline-code-mark' })
+            });
+            decosInProcess.push({
+              from: node.to - 1,
+              to: node.to,
+              value: Decoration.mark({ class: 'cm-inline-code-mark' })
+            });
             decosInProcess.push(filterableReplaceDeco(node.from, node.from + 1, { from: node.from, to: node.to }));
             decosInProcess.push(filterableReplaceDeco(node.to - 1, node.to, { from: node.from, to: node.to }));
           } else if (node.name === 'HorizontalRule') {
