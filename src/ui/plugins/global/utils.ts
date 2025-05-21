@@ -43,3 +43,14 @@ export function replaceDecorationFilter(ranges: Range<Decoration>[], view: Edito
     true
   );
 }
+
+function _measureText() {
+  const canvers = document.createElement('canvas');
+  const ctx = canvers.getContext('2d');
+  return (text: string, font: string) => {
+    ctx.font = font;
+    return ctx.measureText(text);
+  };
+}
+
+export const measureText = _measureText();

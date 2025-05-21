@@ -47,6 +47,7 @@ const Home = () => {
         {/* Show current note */}
         <Main ref={mainRef} onLibContentChange={updateLibItem} />
       </BaseLayout>
+      <span id="nw-measure" style={{ display: 'none', fontFamily: 'monospace' }}></span>
     </ThemeProvider>
   );
 };
