@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import useRenderConfig from '../hooks/useRenderConfig';
 import { BaseLayout } from '../modules/layout';
 import LibrarySidebar, { type LibrarySidebarExpoused } from '../modules/library-sidebar';
@@ -6,6 +6,7 @@ import Main, { type ExposedHandler as MainExposed } from '../modules/main';
 import { ThemeProvider } from './module.context';
 import { LibraryTree } from '_types';
 import rendererIpcListener from '../modules/ipc';
+import PluginGlobal from '../plugins/global';
 
 import './index.css';
 
@@ -47,9 +48,19 @@ const Home = () => {
         {/* Show current note */}
         <Main ref={mainRef} onLibContentChange={updateLibItem} />
       </BaseLayout>
-      <span id="nw-measure" style={{ display: 'none', fontFamily: 'monospace' }}></span>
+      <FontMeasure />
     </ThemeProvider>
   );
 };
+
+function FontMeasure() {
+  const ref = useRef<HTMLSpanElement>(null);
+  useLayoutEffect(() => {
+    if (ref.current) {
+      PluginGlobal.set('font', window.getComputedStyle(ref.current).font);
+    }
+  }, []);
+  return <span ref={ref} id="nw-measure" style={{ display: 'none', fontFamily: 'monospace' }}></span>;
+}
 
 export default Home;

@@ -1,6 +1,7 @@
 import { syntaxTree } from '@codemirror/language';
 import { Range, RangeSet } from '@codemirror/state';
 import { Decoration, DecorationSet, EditorView, PluginValue, ViewPlugin, ViewUpdate } from '@codemirror/view';
+import PluginGlobal from '../../global';
 import { measureText } from '../../global/utils';
 
 const theme = EditorView.baseTheme({
@@ -59,8 +60,7 @@ class BlockQuote implements PluginValue {
     return decosInProcess;
   }
   constructor(view: EditorView) {
-    const span = document.querySelector('#nw-measure');
-    const _font = window.getComputedStyle(span).font;
+    const _font = PluginGlobal.get('font') ?? '';
     this.fontInfo = {
       markWidth: measureText('>', _font).width,
       spaceWidth: measureText(' ', _font).width
