@@ -123,7 +123,7 @@ function defaultExtension() {
       addKeymap: true,
       extensions: [markdownTagExtension(), ...nextWriterSyntaxExtension.syntax]
     }),
-    defaultTheme()
+    defaultTheme
   ];
 }
 
@@ -337,38 +337,34 @@ export const nwSyntaxHighlight = HighlightStyle.define([
   ...nextWriterSyntaxExtension.tagStyles
 ]);
 
-function defaultTheme() {
-  const themeCss: { [key: string]: CSSProperties | StyleSpec } = {
-    '&': {
-      // css in cm-editor
-      height: '100%',
-      fontSize: '1em'
-    },
-    '.cm-scroller': {
-      lineHeight: 1.5
-    },
-    '&.cm-focused': {
-      outline: 'none'
-    },
-    '&.cm-focused .cm-cursor': {
-      borderLeftWidth: '2px'
-    },
-    '& .cm-content': {
-      padding: 0,
-      maxWidth: '680px',
-      margin: 'auto'
-    },
-    '& .cm-line': {
-      padding: 0
-    },
-    '&.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground': {
-      backgroundColor: 'rgba(217, 217, 217, 0.5)'
-    }
-  };
-  const theme = EditorView.theme(themeCss as { [key: string]: StyleSpec });
-
-  return [theme, syntaxHighlighting(nwSyntaxHighlight)];
-}
+const defaultThemeCss: { [key: string]: CSSProperties | StyleSpec } = {
+  '&': {
+    // css in cm-editor
+    fontSize: '1em'
+  },
+  '.cm-scroller': {
+    lineHeight: 1.5
+  },
+  '&.cm-focused': {
+    outline: 'none'
+  },
+  '&.cm-focused .cm-cursor': {
+    borderLeftWidth: '2px'
+  },
+  '& .cm-content': {
+    padding: 0,
+    maxWidth: '680px',
+    margin: 'auto'
+  },
+  '& .cm-line': {
+    padding: 0
+  },
+  '&.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground': {
+    backgroundColor: 'rgba(217, 217, 217, 0.5)'
+  }
+};
+const _defaultTheme = EditorView.theme(defaultThemeCss as { [key: string]: StyleSpec });
+const defaultTheme = [_defaultTheme, syntaxHighlighting(nwSyntaxHighlight)];
 
 interface IMountUpdateListener {
   onDocChange?: (view: EditorView) => void;
