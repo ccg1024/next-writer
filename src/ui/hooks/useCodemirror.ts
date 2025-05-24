@@ -176,10 +176,6 @@ export const nwSyntaxHighlight = HighlightStyle.define([
   // content highlight
   // ============================================================
   {
-    tag: tags.content,
-    color: 'black'
-  },
-  {
     tag: tags.list,
     color: 'var(--nw-theme-list-content)'
   },
