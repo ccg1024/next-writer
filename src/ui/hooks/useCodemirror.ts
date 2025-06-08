@@ -22,6 +22,7 @@ import ViewPlugins from '../plugins/viewPlugin';
 import FieldPlugins from '../plugins/fieldPlugin';
 import PluginGlobal from '../plugins/global';
 import { nextWriterSyntaxExtension } from '../plugins/extension';
+import renderStore from '../modules/store';
 
 import '../css/theme.css';
 
@@ -88,10 +89,12 @@ const useCodemirror = <T extends Element>(props: Props): [React.MutableRefObject
     document.addEventListener('mouseup', mouseup, true);
 
     setEditorView(view);
+    renderStore.setEditor(view);
 
     return () => {
       document.removeEventListener('mousedown', mousedown, true);
       document.removeEventListener('mouseup', mouseup, true);
+      renderStore.setEditor(null);
       view.destroy();
     };
   }, [initialEditorState]);

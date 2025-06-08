@@ -1,8 +1,36 @@
-import { syntaxTree } from '@codemirror/language';
+import { ensureSyntaxTree, syntaxTree } from '@codemirror/language';
 import { EditorState, Extension, Range, StateField } from '@codemirror/state';
 import { Decoration, DecorationSet, EditorView, WidgetType } from '@codemirror/view';
-import { createRoot } from 'react-dom/client';
-import MixComponent from 'src/ui/mix-components';
+
+const theme = EditorView.baseTheme({
+  '.cm-image-container': {
+    boxSizing: 'border-box',
+    paddingBlock: '2px',
+    position: 'relative',
+    '&:hover::after': {
+      opacity: 1
+    },
+    '&::after': {
+      content: '""',
+      position: 'absolute',
+      top: '2px',
+      left: 0,
+      width: '100%',
+      height: 'calc(100% - 4px)',
+      opacity: 0,
+      background: 'rgba(0, 0, 0, 0.5)',
+      borderRadius: '2px',
+      transition: 'opacity 0.3s',
+      pointerEvents: 'none'
+    }
+  },
+  '.cm-image-widget': {
+    width: '100%',
+    display: 'block',
+    cursor: 'pointer',
+    borderRadius: '2px'
+  }
+});
 
 interface ImageWidgetParams {
   url: string;
@@ -10,11 +38,15 @@ interface ImageWidgetParams {
 
 class ImageWidget extends WidgetType {
   readonly url;
+  private imgWidget: HTMLImageElement;
 
   constructor({ url }: ImageWidgetParams) {
     super();
 
     this.url = url;
+    this.imgWidget = new Image();
+    this.imgWidget.src = `atom://${this.url}`;
+    this.imgWidget.className = 'cm-image-widget';
   }
 
   eq(imageWidget: ImageWidget) {
@@ -23,10 +55,9 @@ class ImageWidget extends WidgetType {
 
   toDOM() {
     const container = document.createElement('div');
+    container.appendChild(this.imgWidget);
     container.setAttribute('data-id', 'next-writer-image-container');
-    container.style.paddingBlock = '2px';
-    const root = createRoot(container);
-    root.render(<MixComponent.MixImage src={this.url} />);
+    container.className = 'cm-image-container';
     return container;
   }
   get estimatedHeight(): number {
@@ -45,9 +76,10 @@ type RangeImg = {
   to: number;
   img: string;
 };
-const getImageList = (state: EditorState, from: number, to: number) => {
+const getImageList = (state: EditorState, from: number, to: number, ensureTotal?: boolean) => {
   const rangeImgList: RangeImg[] = [];
-  syntaxTree(state).iterate({
+  const tree = ensureTotal ? ensureSyntaxTree(state, to, 500) : syntaxTree(state);
+  tree.iterate({
     from,
     to,
     enter(node) {
@@ -65,7 +97,7 @@ const getImageList = (state: EditorState, from: number, to: number) => {
 
 const imageField = StateField.define<DecorationSet>({
   create(state) {
-    const imgList = getImageList(state, 0, state.doc.length);
+    const imgList = getImageList(state, 0, state.doc.length, true);
     if (imgList.length) {
       const initInProcess: Range<Decoration>[] = [];
       imgList.forEach(img => {
@@ -112,6 +144,6 @@ const imageField = StateField.define<DecorationSet>({
   provide: f => EditorView.decorations.from(f)
 });
 
-const imageExtension: Extension[] = [imageField];
+const imageExtension: Extension[] = [theme, imageField];
 
 export default imageExtension;

@@ -8,6 +8,7 @@ import mainProcess from 'src/ui/libs/main-process';
 import { RendererLibraryTree, RendererListenerAction } from '_types';
 import { debounceFn } from 'src/ui/libs/utils';
 import rendererIpcListener, { RendererIpcActionCallback } from '../ipc';
+import messagePublish from 'src/ui/libs/pub-sub';
 
 import './index.less';
 
@@ -57,8 +58,8 @@ const Main: React.ForwardRefRenderFunction<ExposedHandler, MainProps> = (props, 
 
   const headInProcess = useRef<string>('');
 
-  const onEditorDocChange = useCallback((_view: EditorView) => {
-    // TODO: some thing to run when file is change
+  const onEditorDocChange = useCallback((view: EditorView) => {
+    messagePublish.pub('docChanged', view);
   }, []);
 
   const onEditorChange = useCallback((update: ViewUpdate) => {
@@ -160,6 +161,12 @@ const Main: React.ForwardRefRenderFunction<ExposedHandler, MainProps> = (props, 
       rendererIpcListener.deregister(saveFile);
     };
   }, []);
+
+  useEffect(() => {
+    if (editor) {
+      messagePublish.pub('editorChanged', editor);
+    }
+  }, [editor]);
 
   // ============================================================
   // Render

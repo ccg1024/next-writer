@@ -9,6 +9,7 @@ import rendererIpcListener from '../modules/ipc';
 import PluginGlobal from '../plugins/global';
 
 import './index.css';
+import Outline from '../modules/outline';
 
 const Home = () => {
   const renderConfig = useRenderConfig();
@@ -47,6 +48,7 @@ const Home = () => {
         <LibrarySidebar ref={sidebarRef} onNoteChange={mainRefCallback} />
         {/* Show current note */}
         <Main ref={mainRef} onLibContentChange={updateLibItem} />
+        <Outline />
       </BaseLayout>
       <FontMeasure />
     </ThemeProvider>

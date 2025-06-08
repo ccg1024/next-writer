@@ -1,7 +1,8 @@
 import { Extension } from '@codemirror/state';
 import imageExtension from './image';
+import outlineExtension from './outline';
 
-const extensions = [...imageExtension];
+const extensions = [...imageExtension, ...outlineExtension];
 
 const FieldPlugins = (): Extension => {
   return extensions;
