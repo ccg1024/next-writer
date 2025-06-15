@@ -118,7 +118,7 @@ export type RootWorkstationInfo = {
 // -----------------------------------------------
 // For Renderer process
 // -----------------------------------------------
-const RENDERER_LISTENER_ACTIONS = ['write-file'] as const;
+const RENDERER_LISTENER_ACTIONS = ['write-file', 'toggle-toc'] as const;
 export type RendererListenerAction<T = Record<string, unknown>> = {
   type: (typeof RENDERER_LISTENER_ACTIONS)[number];
   payload?: T;

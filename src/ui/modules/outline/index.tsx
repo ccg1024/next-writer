@@ -3,6 +3,7 @@ import { EditorView } from '@codemirror/view';
 import { useEffect, useState } from 'react';
 import messagePublish from 'src/ui/libs/pub-sub';
 import { HeadField, outlintField } from 'src/ui/plugins/fieldPlugin/outline';
+import rendererIpcListener, { RendererIpcActionCallback } from '../ipc';
 import renderStore from '../store';
 import './index.less';
 
@@ -11,6 +12,8 @@ import './index.less';
 
 const Outline = () => {
   const [headList, setHeadList] = useState<HeadField[]>([]);
+  const [visible, setVisible] = useState(false);
+
   useEffect(() => {
     function handle(view: EditorView) {
       const field = view.state.field(outlintField);
@@ -23,6 +26,19 @@ const Outline = () => {
     return () => {
       messagePublish.unsub('docChanged', handle);
       messagePublish.unsub('editorChanged', handle);
+    };
+  }, []);
+
+  useEffect(() => {
+    const toggleToc: RendererIpcActionCallback = (_e, action) => {
+      if (action.type === 'toggle-toc') {
+        setVisible(!!action.payload);
+      }
+    };
+    toggleToc.type = 'toggle-toc';
+    rendererIpcListener.register(toggleToc);
+    return () => {
+      rendererIpcListener.deregister(toggleToc);
     };
   }, []);
 
@@ -40,7 +56,7 @@ const Outline = () => {
   };
 
   return (
-    <div className="next-writer-outline-wrapper">
+    <div className="next-writer-outline-wrapper" style={{ display: visible ? 'block' : 'none' }}>
       <div className="next-writer-outline-content">
         {headList.map(head => (
           <div

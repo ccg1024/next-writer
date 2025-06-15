@@ -9,6 +9,7 @@ import { TYPES } from '../types';
 import { LibraryTree, RendererListenerAction, RootLibraryTree } from '_types';
 import { MAX_FILE_DESCRIPTION_LENGTH, ROOT_CONFIG_NAME } from 'bin/index.es';
 import INextFileSystem from '../interface/next-file-system';
+import { nextWriterC } from '../inversify.config';
 
 @injectable()
 class NextMenu implements INextMenu {
@@ -76,7 +77,8 @@ class NextMenu implements INextMenu {
         },
         {
           label: '显示/隐藏标题导航',
-          accelerator: this.isMac ? 'Cmd+Shift+h' : 'Ctrl+Shift+h'
+          accelerator: this.isMac ? 'Cmd+Shift+h' : 'Ctrl+Shift+h',
+          click: this.toggleToc
         }
       ]
     };
@@ -165,6 +167,21 @@ class NextMenu implements INextMenu {
   }
   private save(_m: MenuItem, win: BrowserWindow, _event: KeyboardEvent): void {
     win.webContents.send('next-ipc-client', { type: 'write-file' } as RendererListenerAction);
+  }
+  private toggleToc(_m: MenuItem, win: BrowserWindow): void {
+    const store = nextWriterC.get<INextStoreSystem>(TYPES.INextStoreSystem);
+    const menuStatus = store.getConfig('menuStatus') ?? {
+      librarySidebar: false,
+      detailSidebar: false,
+      tocSidebar: false,
+      actionSidebar: false
+    };
+    menuStatus.tocSidebar = !menuStatus.tocSidebar;
+    store.setConfig('menuStatus', menuStatus);
+    win.webContents.send('next-ipc-client', {
+      type: 'toggle-toc',
+      payload: menuStatus.tocSidebar
+    } as RendererListenerAction<boolean>);
   }
 }
 
