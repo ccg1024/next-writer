@@ -2,6 +2,7 @@ import { createRoot } from 'react-dom/client';
 import { ConfigProvider, App } from 'antd';
 // import Home from './components/home'
 import Home from './home';
+import { globalPreview } from './mix-components/image';
 
 // initial global var
 window._next_writer_rendererConfig = {
@@ -10,6 +11,9 @@ window._next_writer_rendererConfig = {
   preview: false,
   plugin: {}
 };
+
+// Mount global image preveiw
+globalPreview.mount();
 
 const root = createRoot(document.getElementById('root'));
 root.render(

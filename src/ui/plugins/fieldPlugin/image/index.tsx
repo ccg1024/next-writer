@@ -1,6 +1,7 @@
 import { ensureSyntaxTree, syntaxTree } from '@codemirror/language';
 import { EditorState, Extension, Range, StateField } from '@codemirror/state';
 import { Decoration, DecorationSet, EditorView, WidgetType } from '@codemirror/view';
+import { nwImage } from 'src/ui/mix-components/image';
 
 const theme = EditorView.baseTheme({
   '.cm-image-container': {
@@ -47,6 +48,9 @@ class ImageWidget extends WidgetType {
     this.imgWidget = new Image();
     this.imgWidget.src = `atom://${this.url}`;
     this.imgWidget.className = 'cm-image-widget';
+    this.imgWidget.onclick = () => {
+      nwImage.preview(this.imgWidget.src);
+    };
   }
 
   eq(imageWidget: ImageWidget) {
