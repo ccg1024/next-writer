@@ -7,17 +7,32 @@ import rendererIpcListener, { RendererIpcActionCallback } from '../ipc';
 import renderStore from '../store';
 import './index.less';
 
+type RenderHeadField = HeadField & {
+  renderLevel: number;
+};
+
 // Using state field to store head info. and when editor update, trigger a publish event to here
 // Using debounce to performance render
 
 const Outline = () => {
-  const [headList, setHeadList] = useState<HeadField[]>([]);
+  const [headList, setHeadList] = useState<RenderHeadField[]>([]);
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
     function handle(view: EditorView) {
       const field = view.state.field(outlintField);
-      setHeadList([...field.map(f => ({ ...f, text: f.text.replace(/^#+ /, '') }))]);
+      const tiers: number[] = [];
+      field.forEach(f => {
+        if (!tiers.includes(f.level)) {
+          tiers.push(f.level);
+        }
+      });
+      tiers.sort();
+      setHeadList([
+        ...field.map(f => {
+          return { ...f, text: f.text.replace(/^#+ /, ''), renderLevel: tiers.indexOf(f.level) };
+        })
+      ]);
     }
 
     messagePublish.sub('docChanged', handle);
@@ -57,6 +72,7 @@ const Outline = () => {
 
   return (
     <div className="next-writer-outline-wrapper" style={{ display: visible ? 'block' : 'none' }}>
+      <div className="next-writer-outline-head">大纲</div>
       <div className="next-writer-outline-content">
         {headList.map(head => (
           <div
@@ -64,7 +80,7 @@ const Outline = () => {
             className="next-writer-outline-item"
             onClick={() => handleHeadClick(head.line)}
           >
-            {head.text}
+            <span style={{ paddingLeft: head.renderLevel * 10 }}>{head.text}</span>
           </div>
         ))}
       </div>

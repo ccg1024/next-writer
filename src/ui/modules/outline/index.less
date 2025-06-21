@@ -1,6 +1,6 @@
 .next-writer-outline-wrapper {
   box-sizing: border-box;
-  width: 300px;
+  width: 240px;
   padding: 16px;
   border-left: 1px solid rgba(0, 0, 0, 0.1);
   flex-shrink: 0;
@@ -8,7 +8,8 @@
   min-width: 0px;
 
   .next-writer-outline-content {
-    margin-top: 40px;
+    overflow: auto;
+    height: calc(100% - 40px);
 
     .next-writer-outline-item {
       padding-block: 4px;
@@ -19,5 +20,13 @@
         background-color: rgba(0, 0, 0, 0.04);
       }
     }
+  }
+
+  .next-writer-outline-head {
+    height: 40px;
+    display: flex;
+    align-items: center;
+    padding-inline: 8px;
+    font-weight: bold;
   }
 }
