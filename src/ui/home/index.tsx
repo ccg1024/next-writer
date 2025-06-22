@@ -7,9 +7,9 @@ import { ThemeProvider } from './module.context';
 import { LibraryTree } from '_types';
 import rendererIpcListener from '../modules/ipc';
 import PluginGlobal from '../plugins/global';
+import Outline from '../modules/outline';
 
 import './index.css';
-import Outline from '../modules/outline';
 
 const Home = () => {
   const renderConfig = useRenderConfig();

@@ -13,13 +13,15 @@ import { TYPES } from '../types';
 const writeFileHandler: INextIpcHandler = {
   type: IPC_CHANNEL.WIRTE_FILE,
   async apply(_: string, reqData: WriteFileRequest) {
+    // The `path` is current file in location
+    // The `nameInRuntime` is the changed file namt of `path`
     const { path, content, nameInRuntime } = reqData ?? {};
     const store = nextWriterC.get<INextStoreSystem>(TYPES.INextStoreSystem);
     const fileSys = nextWriterC.get<INextFileSystem>(TYPES.INextFileSystem);
     const formatPath = fileSys.formatPath(path);
     const rootDir = store.getConfig('rootDir');
     // TODO: figure out path problem, with or without suffix
-    const fullPath = formatPath.startsWith(rootDir) ? formatPath : nodePath.join(rootDir, formatPath + '.md');
+    let fullPath = formatPath.startsWith(rootDir) ? formatPath : nodePath.join(rootDir, formatPath + '.md');
     const relativePath = fullPath.substring(rootDir.length);
     const pathToken = relativePath.split('/').filter(token => !!token);
 
@@ -48,8 +50,15 @@ const writeFileHandler: INextIpcHandler = {
       return Promise.reject(new Error('Some thing wrong when find target lib token'));
     }
 
+    // If have
     if (!isTrulyEmpty(nameInRuntime)) {
-      // TODO: rename a file / folder
+      const dirname = nodePath.dirname(fullPath);
+      const oldFullPath = fullPath;
+      fullPath = nodePath.join(dirname, nameInRuntime + '.md');
+      await nodeFs.promises.rename(oldFullPath, fullPath);
+
+      // Update library tree token
+      target.name = nameInRuntime;
     }
     try {
       // TODO: Access cache system
@@ -60,11 +69,16 @@ const writeFileHandler: INextIpcHandler = {
       target.description = content.substring(0, MAX_FILE_DESCRIPTION_LENGTH);
       await fileSys.writeFile(nodePath.join(rootDir, ROOT_CONFIG_NAME), JSON.stringify(libTree, null, 2));
       store.setConfig('libraryTree', libTree);
-      return { status: 0, data: null, message: '' };
     } catch (e) {
       // TODO: Error catch
+      return { status: -1, data: null, message: '保存文件失败' };
     }
-    return { status: -1, data: null, message: '保存文件失败' };
+
+    // Update library tree
+    await fileSys.writeFile(nodePath.join(rootDir, ROOT_CONFIG_NAME), JSON.stringify(libTree, null, 2));
+    // Restore, althought it is not necessary, the above changes have affected the original object
+    store.setConfig('libraryTree', libTree);
+    return { status: 0, data: null, message: '' };
   }
 };
 

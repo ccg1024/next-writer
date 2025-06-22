@@ -9,6 +9,7 @@ import { RendererLibraryTree, RendererListenerAction } from '_types';
 import { debounceFn } from 'src/ui/libs/utils';
 import rendererIpcListener, { RendererIpcActionCallback } from '../ipc';
 import messagePublish from 'src/ui/libs/pub-sub';
+import { nwSpin } from 'src/ui/mix-components/spin';
 
 import './index.less';
 
@@ -87,11 +88,30 @@ const Main: React.ForwardRefRenderFunction<ExposedHandler, MainProps> = (props, 
     switch (action.type) {
       case 'write-file': {
         const content = editor.state.doc.toString();
-        mainProcess.writeFile({ path: aggregateNote.note.relativePath, content }).then(res => {
-          if (res.status !== 0) {
-            message.error(res.message || '保存文件失败');
-          }
-        });
+        nwSpin.loading(true);
+        console.log('write ', aggregateNote);
+        mainProcess
+          .writeFile({ path: aggregateNote.note.relativePath, content, nameInRuntime: aggregateNote.note.name })
+          .then(res => {
+            if (res.status !== 0) {
+              message.error(res.message || '保存文件失败');
+              return;
+            }
+            // Update relative path
+            const oldRelativePathToken = (aggregateNote.note.relativePath ?? '').split('/');
+            oldRelativePathToken.pop();
+            oldRelativePathToken.push(aggregateNote.note.name);
+            // Update
+            const newAggregateNote = {
+              ...aggregateNote,
+              note: { ...aggregateNote.note, relativePath: oldRelativePathToken.join('/') }
+            };
+            setAggregateNote(newAggregateNote);
+            pubNoteUpdate(newAggregateNote.note);
+          })
+          .finally(() => {
+            nwSpin.loading(false);
+          });
         break;
       }
     }

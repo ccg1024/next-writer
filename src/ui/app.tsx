@@ -3,6 +3,7 @@ import { ConfigProvider, App } from 'antd';
 // import Home from './components/home'
 import Home from './home';
 import { globalPreview } from './mix-components/image';
+import { globalSpin } from './mix-components/spin';
 
 // initial global var
 window._next_writer_rendererConfig = {
@@ -14,6 +15,7 @@ window._next_writer_rendererConfig = {
 
 // Mount global image preveiw
 globalPreview.mount();
+globalSpin.mount();
 
 const root = createRoot(document.getElementById('root'));
 root.render(
