@@ -301,7 +301,7 @@ const LibDetailHeader: FC<LibDetailHeaderProps> = props => {
           )}
         </Col>
         <Col span={8} style={{ textAlign: 'center' }}>
-          <Text>{lib?.name}</Text>
+          <Text style={{ fontWeight: 'bold' }}>{lib?.name}</Text>
         </Col>
         <Col span={8} style={{ textAlign: 'right' }}>
           {showDeleteIcon && (

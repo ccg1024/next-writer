@@ -4,6 +4,8 @@ import zhCN from 'antd/locale/zh_CN';
 import Home from './home';
 import { globalPreview } from './mix-components/image';
 import { globalSpin } from './mix-components/spin';
+import mainProcess from './libs/main-process';
+import { AliasToken } from 'antd/lib/theme/interface';
 
 // initial global var
 window._next_writer_rendererConfig = {
@@ -18,10 +20,19 @@ globalPreview.mount();
 globalSpin.mount();
 
 const root = createRoot(document.getElementById('root'));
-root.render(
-  <ConfigProvider prefixCls="_next_writer" theme={{ hashed: false }} locale={zhCN}>
-    <App style={{ height: '100vh' }}>
-      <Home />
-    </App>
-  </ConfigProvider>
-);
+mainProcess.readConfig().then(res => {
+  const token = {} as AliasToken;
+  if (res && res.status === 0) {
+    const { config } = res.data;
+    if (config?.font) {
+      token.fontFamily = config.font;
+    }
+  }
+  root.render(
+    <ConfigProvider prefixCls="_next_writer" theme={{ hashed: false, token }} locale={zhCN}>
+      <App style={{ height: '100vh' }}>
+        <Home />
+      </App>
+    </ConfigProvider>
+  );
+});

@@ -346,7 +346,8 @@ const defaultThemeCss: { [key: string]: CSSProperties | StyleSpec } = {
     fontSize: '1em'
   },
   '.cm-scroller': {
-    lineHeight: 1.5
+    lineHeight: 1.5,
+    fontFamily: 'inherit'
   },
   '&.cm-focused': {
     outline: 'none'

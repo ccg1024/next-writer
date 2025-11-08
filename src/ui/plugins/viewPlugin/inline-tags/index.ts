@@ -20,14 +20,16 @@ const theme = EditorView.baseTheme({
   '.cm-inline-code': {
     backgroundColor: 'rgba(175, 184, 193, 0.2)',
     padding: '0.15em 0.3em',
-    borderRadius: '4px'
+    borderRadius: '4px',
+    fontFamily: 'var(--nw-editor-code-font-family)'
   },
   '.cm-inline-code-mark': {
     borderStartStartRadius: '4px',
     borderEndStartRadius: '4px',
     backgroundColor: 'rgba(175, 184, 193, 0.2)',
     color: 'var(--nw-theme-code-mark)',
-    padding: '0.15em 0'
+    padding: '0.15em 0',
+    fontFamily: 'var(--nw-editor-code-font-family)'
   },
   '.cm-inline-code-mark ~ .cm-inline-code': {
     paddingInline: 0,

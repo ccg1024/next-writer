@@ -38,6 +38,12 @@ const Home = () => {
         // Generating information
         generateRuntimeInfo(libTree, null);
         setLibraryTree(libTree);
+
+        // change css variable
+        const r = document.querySelector('body');
+        if (config?.code) {
+          r.style.setProperty('--nw-editor-code-font-family', config.code);
+        }
       } else {
         message.error(msg || '读取配置失败');
       }
