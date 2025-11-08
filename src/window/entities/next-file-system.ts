@@ -8,7 +8,7 @@ import INextFileSystem, { ReadFileOptions, WriteFileOptions } from '../interface
 class NextFileSystem implements INextFileSystem {
   formatPath<T extends string | string[]>(path: T): T {
     // Check the path type
-    if (typeof path != 'string' && !Array.isArray(path)) {
+    if (typeof path !== 'string' && !Array.isArray(path)) {
       throw new Error('The type of `path` should be string or string[]');
     }
     const innerPaths = typeof path === 'string' ? [path] : path;

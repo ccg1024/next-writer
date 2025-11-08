@@ -56,15 +56,20 @@ class GlobalSpin {
 
     useLayoutEffect(() => {
       const parent = spinRef.current.parentElement;
-      if (loading) {
-        if (parent) {
-          parent.style.display = 'block';
+      const token = setTimeout(() => {
+        if (loading) {
+          if (parent) {
+            parent.style.display = 'block';
+          }
+        } else {
+          if (parent) {
+            parent.style.display = 'none';
+          }
         }
-      } else {
-        if (parent) {
-          parent.style.display = 'none';
-        }
-      }
+      }, 500);
+      return () => {
+        clearTimeout(token);
+      };
     }, [loading]);
 
     return (

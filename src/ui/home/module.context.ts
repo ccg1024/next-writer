@@ -1,5 +1,5 @@
 import { createContext, useContext } from 'react';
-import { ReadConfigResponse } from '_types';
+import { ReadConfigResponse, RendererLibraryTree } from '_types';
 
 type RenderConfig = ReadConfigResponse;
 
@@ -9,9 +9,12 @@ export interface Library {
 }
 
 export interface IHomeContext {
-  currentLib: Library;
-  renderConfig: RenderConfig;
-  setCurrentLib: (lib: Library) => void;
+  libraryTree: RendererLibraryTree;
+  updateRenderLibrary: (
+    newNode: RendererLibraryTree | ((preLib: RendererLibraryTree, preNote: RendererLibraryTree) => RendererLibraryTree),
+    type?: 'remove' | 'update'
+  ) => void;
+  freshTree: () => void;
 }
 
 const HomeContext = createContext<IHomeContext>(null);
@@ -20,7 +23,6 @@ export const useHomeContext = () => {
   return useContext(HomeContext);
 };
 
-// There is no need to use this context yet.
 export default HomeContext;
 
 interface IThemeContext {

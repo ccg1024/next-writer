@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useImperativeHandle, useMemo, useReducer, useRef, useState } from 'react';
-import { EditorView, ViewUpdate } from '@codemirror/view';
+import React, { FC, useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
+import { ViewUpdate } from '@codemirror/view';
 import { App, Typography } from 'antd';
 import { isTrulyEmpty } from 'src/tools/utils';
 import { VerticalEmpty } from 'src/ui/components/antd/preset/empty';
@@ -10,6 +10,7 @@ import { debounceFn } from 'src/ui/libs/utils';
 import rendererIpcListener, { RendererIpcActionCallback } from '../ipc';
 import messagePublish from 'src/ui/libs/pub-sub';
 import { nwSpin } from 'src/ui/mix-components/spin';
+import { useHomeContext } from 'src/ui/home/module.context';
 
 import './index.less';
 
@@ -23,6 +24,7 @@ export interface ExposedHandler {
 
 interface MainProps {
   onLibContentChange?(libItem: RendererLibraryTree): void;
+  currentNote: RendererLibraryTree;
 }
 
 const editorTransactionActions = ['docChange', 'updateDescription'] as const;
@@ -31,25 +33,18 @@ type EditorTransactionAction = {
   doc?: string;
 };
 
-const Main: React.ForwardRefRenderFunction<ExposedHandler, MainProps> = (props, ref) => {
-  const { onLibContentChange: pubNoteUpdate } = props;
+const Main: FC<MainProps> = props => {
+  const { currentNote } = props;
   const { message } = App.useApp();
-  // Should always keep in mind that aggregatNode and the active lib item of sidebar are two objects representing
-  // the same state, and these two states should be updated synchronously.
-  const [aggregateNote, setAggregateNote] = useState<{
-    noteId: string;
-    note: RendererLibraryTree;
-    parent: RendererLibraryTree;
-  }>(null);
   const [initialEditorState, setInitialEditorState] = useState<InitialEditorState>(null);
-  const [editorTransaction, setEditorTransaction] = useState<EditorTransactionAction>(null);
+  const { updateRenderLibrary } = useHomeContext();
 
+  // 处理自定义编辑器事件
   const debounceEditorTransaction = useMemo(() => {
     function transaction(action: EditorTransactionAction) {
       switch (action.type) {
         case 'updateDescription': {
-          setAggregateNote(pre => ({ ...pre, note: { ...pre.note, description: action.doc } }));
-          setEditorTransaction(action);
+          updateRenderLibrary((_, preNote) => ({ ...preNote, description: action.doc }));
           break;
         }
       }
@@ -59,29 +54,31 @@ const Main: React.ForwardRefRenderFunction<ExposedHandler, MainProps> = (props, 
 
   const headInProcess = useRef<string>('');
 
-  const onEditorDocChange = useCallback((view: EditorView) => {
-    messagePublish.pub('docChanged', view);
+  const onEditorDocChange = useCallback((update: ViewUpdate) => {
+    update.transactions.forEach(tr => {
+      if (tr.changes) {
+        tr.changes.iterChanges(fromA => {
+          // 如果前 MAX_DESCRIPTION_LENGTH 个字符变化，则更新文件描述内容
+          if (fromA <= MAX_DESCRIPTION_LENGTH) {
+            const fullDoc = update.state.doc.toString();
+            const doc =
+              fullDoc.length > MAX_DESCRIPTION_LENGTH ? fullDoc.substring(0, MAX_DESCRIPTION_LENGTH) : fullDoc;
+            // Must using debounce function
+            debounceEditorTransaction({ type: 'updateDescription', doc });
+          }
+        });
+      }
+    });
+    // 通知其他模块，文档变更
+    messagePublish.pub('docChanged', update.view);
   }, []);
 
-  const onEditorChange = useCallback((update: ViewUpdate) => {
-    if (update.docChanged) {
-      update.transactions.forEach(tr => {
-        if (tr.changes) {
-          tr.changes.iterChanges(fromA => {
-            if (fromA <= MAX_DESCRIPTION_LENGTH) {
-              const fullDoc = update.state.doc.toString();
-              const doc =
-                fullDoc.length > MAX_DESCRIPTION_LENGTH ? fullDoc.substring(0, MAX_DESCRIPTION_LENGTH) : fullDoc;
-              // Must using debounce function
-              debounceEditorTransaction({ type: 'updateDescription', doc });
-            }
-          });
-        }
-      });
-    }
+  const onEditorChange = useCallback((_update: ViewUpdate) => {
+    // ..
   }, []);
 
   const [divRef, editor] = useCodemirror<HTMLDivElement>({ initialEditorState, onEditorDocChange, onEditorChange });
+
   // for Ipc action
   const [_ipcAction, dispatchIpcAction] = useReducer(ipcAction, void 0);
   function ipcAction(_: undefined, action: RendererListenerAction) {
@@ -89,25 +86,24 @@ const Main: React.ForwardRefRenderFunction<ExposedHandler, MainProps> = (props, 
       case 'write-file': {
         const content = editor.state.doc.toString();
         nwSpin.loading(true);
-        console.log('write ', aggregateNote);
         mainProcess
-          .writeFile({ path: aggregateNote.note.relativePath, content, nameInRuntime: aggregateNote.note.name })
+          .writeFile({ path: currentNote.relativePath, content, nameInRuntime: currentNote.name })
           .then(res => {
             if (res.status !== 0) {
               message.error(res.message || '保存文件失败');
               return;
             }
             // Update relative path
-            const oldRelativePathToken = (aggregateNote.note.relativePath ?? '').split('/');
+            const oldRelativePathToken = (currentNote.relativePath ?? '').split('/');
             oldRelativePathToken.pop();
-            oldRelativePathToken.push(aggregateNote.note.name);
+            oldRelativePathToken.push(currentNote.name);
             // Update
             const newAggregateNote = {
-              ...aggregateNote,
-              note: { ...aggregateNote.note, relativePath: oldRelativePathToken.join('/') }
+              ...currentNote,
+              relativePath: oldRelativePathToken.join('/')
             };
-            setAggregateNote(newAggregateNote);
-            pubNoteUpdate(newAggregateNote.note);
+            updateRenderLibrary(newAggregateNote);
+            // pubNoteUpdate(newAggregateNote.note);
           })
           .finally(() => {
             nwSpin.loading(false);
@@ -116,38 +112,17 @@ const Main: React.ForwardRefRenderFunction<ExposedHandler, MainProps> = (props, 
       }
     }
   }
-  // ============================================================
-  // Exposed handler
-  // ============================================================
-  useImperativeHandle(
-    ref,
-    () => ({
-      /**
-       * @param noteId A unique id for each note at runtime
-       * @param note The library base struct of current note
-       * @param parent The library tree struct of current note parent
-       */
-      queryFile(noteId, note, parent) {
-        if (isTrulyEmpty(noteId)) {
-          setAggregateNote(null);
-          return;
-        }
-        setAggregateNote({ noteId, note, parent });
-      }
-    }),
-    []
-  );
 
   // ============================================================
   // Effect
   // ============================================================
   useEffect(() => {
-    if (isTrulyEmpty(aggregateNote?.noteId)) {
+    if (isTrulyEmpty(currentNote?.id)) {
       return;
     }
     let shouldUpdate = true;
     const readNote = async () => {
-      const { status, data } = await mainProcess.readFile({ path: aggregateNote.note.relativePath });
+      const { status, data } = await mainProcess.readFile({ path: currentNote.relativePath });
       if (shouldUpdate && status === 0) {
         setInitialEditorState({ initDoc: data.content });
       }
@@ -157,19 +132,7 @@ const Main: React.ForwardRefRenderFunction<ExposedHandler, MainProps> = (props, 
     return () => {
       shouldUpdate = false;
     };
-  }, [aggregateNote?.noteId]);
-
-  useEffect(() => {
-    if (!editorTransaction) {
-      return;
-    }
-    switch (editorTransaction.type) {
-      case 'updateDescription': {
-        pubNoteUpdate(aggregateNote.note);
-        break;
-      }
-    }
-  }, [editorTransaction]);
+  }, [currentNote?.id]);
 
   useEffect(() => {
     const saveFile: RendererIpcActionCallback = (_e, action) => {
@@ -184,6 +147,7 @@ const Main: React.ForwardRefRenderFunction<ExposedHandler, MainProps> = (props, 
 
   useEffect(() => {
     if (editor) {
+      // 通知其他模块编辑器变更
       messagePublish.pub('editorChanged', editor);
     }
   }, [editor]);
@@ -191,7 +155,7 @@ const Main: React.ForwardRefRenderFunction<ExposedHandler, MainProps> = (props, 
   // ============================================================
   // Render
   // ============================================================
-  if (isTrulyEmpty(aggregateNote?.noteId)) {
+  if (isTrulyEmpty(currentNote?.id)) {
     return (
       <div className="main-wrapper">
         <VerticalEmpty description="无笔记" style={{ paddingTop: '48px' }} />
@@ -210,25 +174,24 @@ const Main: React.ForwardRefRenderFunction<ExposedHandler, MainProps> = (props, 
             triggerType: ['text'],
             // editing: headEditState,
             onStart: () => {
-              headInProcess.current = aggregateNote.note.name;
+              headInProcess.current = currentNote.name;
             },
             onChange: text => {
               headInProcess.current = text;
             },
             onEnd: () => {
               const newAggregateNote = {
-                ...aggregateNote,
-                note: { ...aggregateNote.note, name: headInProcess.current }
+                ...currentNote,
+                name: headInProcess.current
               };
               // Update aggregateNote
-              setAggregateNote(newAggregateNote);
-              pubNoteUpdate(newAggregateNote.note);
+              updateRenderLibrary(newAggregateNote);
               // Cleaning the data in process
               headInProcess.current = '';
             }
           }}
         >
-          {aggregateNote.note.name}
+          {currentNote.name}
         </Title>
       </div>
       {/* put codemirror here */}
@@ -237,4 +200,4 @@ const Main: React.ForwardRefRenderFunction<ExposedHandler, MainProps> = (props, 
   );
 };
 
-export default React.forwardRef(Main);
+export default React.memo(Main);

@@ -1,347 +1,293 @@
-import { App, Menu, MenuProps, Typography, Row, Col, FormInstance } from 'antd';
+import { App, Menu, MenuProps, Typography, Row, Col } from 'antd';
 import { DeleteOutlined, EditOutlined, FolderOutlined } from '@ant-design/icons';
 import { motion } from 'framer-motion';
-import React, { FC, useCallback, useImperativeHandle, useLayoutEffect, useRef, useState } from 'react';
-import { isEffectArray, isEffectObject, isTrulyEmpty } from 'src/tools/utils';
+import { FC, useCallback, useRef } from 'react';
+import { isEffectArray, isEffectObject } from 'src/tools/utils';
 import { WindowDragBox } from 'src/ui/components/drag';
-import { LibraryType, RendererLibraryTree } from '_types';
-import InputResolveModal, { InputResolveHandle } from './modal';
+import { RendererLibraryTree } from '_types';
 import { VerticalEmpty } from 'src/ui/components/antd/preset/empty';
 import { useRunmode } from 'src/ui/hooks/useRunmode';
 import { nwSyntaxHighlight } from 'src/ui/hooks/useCodemirror';
-import type { ExposedHandler as MainExpose } from '../main';
 import mainProcess from 'src/ui/libs/main-process';
-import { generateUniqueId } from 'src/ui/libs/utils';
+import { nwSpin } from 'src/ui/mix-components/spin';
+import { useHomeContext } from 'src/ui/home/module.context';
+import { FrowardRenameModal, ExposedHandler as ForwardRenameHandler } from './modal';
+import { generateRuntimeInfo } from 'src/ui/libs/utils';
 
 import './index.less';
 
 const { Text, Title, Paragraph } = Typography;
 type MenuItem = Required<MenuProps>['items'][number];
 
-type RenderLib = Omit<RendererLibraryTree, 'type'> & { type: 'folder' };
-function isRenderLib(lib: RendererLibraryTree | RenderLib): lib is RenderLib {
-  return lib.type === 'folder';
-}
-
-type RenderNote = Omit<RendererLibraryTree, 'type'> & { type: 'file' };
-function isRenderNote(lib: RendererLibraryTree | RenderNote): lib is RenderNote {
-  return lib.type === 'file';
-}
-
-/**
- * Generate a unique id for each lib struct (description of the file or folder) at runtime
- */
-function generateRuntimeInfo(libTree: RendererLibraryTree, parent: RendererLibraryTree | null) {
-  if (isEffectObject(libTree)) {
-    // The first level of LibraryTree struct is point to root folder,
-    // for example, the default root is ~/Documents/nwriter/
-    // the libTree is generated as {children: [{name: 'custom-folder-name'}]}
-    if (isTrulyEmpty(libTree.relativePath)) {
-      libTree.relativePath = parent ? `${parent.relativePath}/${libTree.name}` : `.`;
-    }
-
-    if (isTrulyEmpty(libTree.parent)) {
-      libTree.parent = parent;
-    }
-
-    if (isTrulyEmpty(libTree.id)) {
-      libTree.id = generateUniqueId(libTree.relativePath);
-    }
-
-    if (isEffectArray(libTree.children)) {
-      libTree.children.forEach(child => generateRuntimeInfo(child, libTree));
-    }
-  }
-}
-
-function innerUpdateLibItem(preLib: RendererLibraryTree, libItem: RendererLibraryTree): RendererLibraryTree {
-  let findTarget = false;
-
-  function innerUpdate(preLib: RendererLibraryTree, libItem: RendererLibraryTree): RendererLibraryTree {
-    // find target lib
-    if (preLib.id === libItem.id) {
-      findTarget = true;
-      return { ...libItem };
-    }
-
-    if (!findTarget && isEffectArray(preLib.children)) {
-      preLib.children = preLib.children.map(child => innerUpdate(child, libItem));
-    }
-
-    return preLib;
-  }
-
-  return innerUpdate(preLib, libItem);
-}
-
 // The lib in here means folder, and the lib detail means the files of that folder
 interface LibrarySidebarProps {
-  onNoteChange: MainExpose['queryFile'];
+  currentLib: RendererLibraryTree;
+  setCurrentLib: (lib: RendererLibraryTree) => void;
+  currentNote: RendererLibraryTree;
+  setCurrentNote: (note: RendererLibraryTree) => void;
 }
 
 export interface LibrarySidebarExpoused {
   updateLibItem(libItem: RendererLibraryTree): void;
 }
 
+function findNodeById(ids: string[], tree: RendererLibraryTree) {
+  if (isEffectArray(ids)) {
+    const tempIds = [...ids];
+    let tempTree = tree;
+    while (tempIds.length > 0 && tempTree) {
+      const id = tempIds.shift();
+      tempTree = tempTree.children?.find(child => child.id === id);
+    }
+
+    return tempTree;
+  }
+
+  return void 0;
+}
+
 /**
  * LibrarySidebar is the left sidebar of the app, which is used to show the library tree and the detail of the selected library.
  */
-const LibrarySidebar = React.forwardRef<LibrarySidebarExpoused, LibrarySidebarProps>(
-  ({ onNoteChange: onChange }, ref) => {
-    // For lib side bar of the leftmost
-    const [selectedLib, setSelectedLib] = useState<RenderLib>(null);
-    const [selectedNote, setSelectedNote] = useState<RenderNote>(null);
-    const [storedLibrary, setStoredLibrary] = useState<RendererLibraryTree>(null);
+const LibrarySidebar: FC<LibrarySidebarProps> = props => {
+  // For lib side bar of the leftmost
+  const { currentLib, setCurrentLib, currentNote, setCurrentNote } = props;
+  const { libraryTree, updateRenderLibrary, freshTree } = useHomeContext();
+  const renameRef = useRef<ForwardRenameHandler>(null);
+  const { message, modal } = App.useApp();
 
-    const inputResolveRef = useRef<InputResolveHandle>(null);
-    const { message } = App.useApp();
+  // ============================================================
+  // Effect
+  // ============================================================
 
-    useImperativeHandle(
-      ref,
-      () => ({
-        updateLibItem(libItem: RendererLibraryTree) {
-          setStoredLibrary(preStoredLibrary => ({ ...innerUpdateLibItem(preStoredLibrary, libItem) }));
-        }
-      }),
-      []
-    );
+  // ============================================================
+  // Wrap callback
+  // ============================================================
+  const onNoteChange = useCallback((note: RendererLibraryTree) => {
+    setCurrentNote(note);
+  }, []);
 
-    // ============================================================
-    // Effect
-    // ============================================================
-    useLayoutEffect(() => {
-      mainProcess.readConfig().then(res => {
-        const { status, data, message: msg } = res ?? {};
-
-        if (status === 0) {
-          generateRuntimeInfo(data.libTree, null);
-          setStoredLibrary(data.libTree);
-        } else {
-          message.error(msg || '读取库信息失败');
-        }
-      });
-    }, []);
-
-    // ============================================================
-    // Request to main process
-    // ============================================================
-    async function addNote(parent: RendererLibraryTree, noteName: string) {
-      const fullPath = `${parent.relativePath}/${noteName}`;
-      const res = await mainProcess.updateLib({ operate: 'add', type: 'file', path: fullPath });
-      if (res.status === 0) {
-        const noteToken = res.data;
-        generateRuntimeInfo(noteToken, parent);
-        parent.children.push(noteToken);
-        setStoredLibrary(pre => ({ ...pre }));
-      } else {
-        message.error(res.message || '添加文件失败');
+  // ============================================================
+  // build ui
+  // ============================================================
+  // Build menu items
+  const _wrapMenu = (): MenuItem[] => {
+    // Currently the UI does not support multi-level nesting
+    const inner = (libs: RendererLibraryTree[]) => {
+      if (isEffectArray(libs)) {
+        return libs
+          .filter(lib => lib.type === 'folder')
+          .map(lib => ({
+            key: lib.id,
+            label: (
+              <div style={{ backgroundColor: 'transparent' }}>
+                <Row>
+                  <Col span={16}>{lib.name}</Col>
+                  <Col span={4} style={{ textAlign: 'center' }}>
+                    <motion.div
+                      className="library-sidebar-icon"
+                      whileTap={{ scale: 0.8 }}
+                      onClick={e => {
+                        e.stopPropagation();
+                        if (renameRef.current) {
+                          renameRef.current.show(lib.name, (newName: string) => {
+                            if (lib.parent.children.find(child => child.name === newName && child.id !== lib.id)) {
+                              message.error('名称重复');
+                              return;
+                            }
+                            if (newName !== lib.name) {
+                              const runtimeRelativePath = `${lib.parent.relativePath}/${newName}`;
+                              nwSpin.loading(true);
+                              mainProcess
+                                .updateLib({
+                                  operate: 'update',
+                                  type: 'folder',
+                                  path: lib.relativePath,
+                                  pathInRuntime: runtimeRelativePath
+                                })
+                                .then(res => {
+                                  if (res && res.status === 0) {
+                                    const newLib = { ...lib, name: newName, relativePath: runtimeRelativePath };
+                                    // Update child relative path
+                                    newLib.children.forEach(child => {
+                                      updateNodeRelative(child, newLib);
+                                      child.parent = newLib;
+                                    });
+                                    updateRenderLibrary(newLib);
+                                  }
+                                })
+                                .finally(() => {
+                                  nwSpin.loading(false);
+                                });
+                            }
+                          });
+                        }
+                      }}
+                    >
+                      <EditOutlined />
+                    </motion.div>
+                  </Col>
+                  <Col span={4} style={{ textAlign: 'center' }}>
+                    <motion.div
+                      className="library-sidebar-icon"
+                      whileTap={{ scale: 0.8 }}
+                      onClick={e => {
+                        e.stopPropagation();
+                        if (isEffectArray(lib.children)) {
+                          message.error('存在笔记，无法删除当前库');
+                          return;
+                        }
+                        modal.confirm({
+                          title: `确定删除${lib.name}`,
+                          onOk: () => {
+                            nwSpin.loading(true);
+                            mainProcess
+                              .updateLib({ operate: 'del', type: 'folder', path: lib.relativePath })
+                              .then(res => {
+                                if (res && res.status === 0) {
+                                  updateRenderLibrary(lib, 'remove');
+                                }
+                              })
+                              .finally(() => {
+                                nwSpin.loading(false);
+                              });
+                          }
+                        });
+                      }}
+                    >
+                      <DeleteOutlined />
+                    </motion.div>
+                  </Col>
+                </Row>
+              </div>
+            )
+          }));
       }
+      return [];
+    };
+
+    return inner(libraryTree?.children || []);
+  };
+
+  const onMenuClick: MenuProps['onClick'] = e => {
+    const target = findNodeById(e.keyPath, libraryTree);
+    if (target) {
+      setCurrentLib(target);
     }
+  };
 
-    async function addLib(parent: RendererLibraryTree, libName: string) {
-      const fullPath = `${parent.relativePath}/${libName}`;
-      const res = await mainProcess.updateLib({ operate: 'add', type: 'folder', path: fullPath });
-      if (res.status === 0) {
-        const libToken = res.data;
-        generateRuntimeInfo(libToken, parent);
-        parent.children.push(libToken);
-        setStoredLibrary(pre => ({ ...pre }));
-      } else {
-        message.error(res.message || '添加库失败');
-      }
-    }
+  return (
+    <>
+      <div className="library-sidebar-wrapper">
+        <WindowDragBox style={{ height: '40px', flexShrink: 0 }} />
+        <div className="library-next-writer">NEXT-WRITER</div>
+        <div className="library-sidebar-main">
+          <div className="library-sidebar-menu">
+            <Menu mode="inline" items={_wrapMenu()} onClick={onMenuClick} />
+          </div>
+          <div
+            className="library-sidebar-footer"
+            onClick={() => {
+              if (renameRef.current) {
+                renameRef.current.show(
+                  '',
+                  (name: string) => {
+                    if (libraryTree.children.find(child => child.type === 'folder' && child.name === name)) {
+                      message.error('名称重复');
+                      return;
+                    }
 
-    async function delNote(type: LibraryType, parent: RendererLibraryTree, target: RendererLibraryTree) {
-      if (type === 'file') {
-        const res = await mainProcess.updateLib({ operate: 'del', type: 'file', path: target.relativePath });
-        if (res.status === 0) {
-          parent.children = parent.children.filter(child => child.id !== target.id);
-          setSelectedNote(null);
-          setStoredLibrary(pre => ({ ...pre }));
-          onChange('', null, null); // Trigger note change to other sibling component
-        } else {
-          message.error(res.message || '删除文件失败');
-        }
-      } else {
-        if (target.children.length > 0) {
-          message.info('库笔记不为空，无法删除库: ' + target.name);
-          return;
-        }
-        const res = await mainProcess.updateLib({ operate: 'del', type: 'folder', path: target.relativePath });
-        if (res.status === 0) {
-          parent.children = parent.children.filter(child => child.id !== target.id);
-          // if parent is equal to root
-          if (parent.id === storedLibrary.id) {
-            setStoredLibrary(pre => ({ ...pre, children: pre.children.filter(child => child.id !== target.id) }));
-          } else {
-            setStoredLibrary(pre => ({ ...pre }));
-          }
-          if (target.id === selectedLib.id) {
-            setSelectedLib(null);
-          }
-        } else {
-          message.error(res.message || '删除库失败');
-        }
-      }
-    }
-
-    // ============================================================
-    // Wrap callback
-    // ============================================================
-    const onNoteChange = useCallback(
-      (notePath: string, note: RenderNote, parent: RendererLibraryTree) => {
-        setSelectedNote(note);
-        onChange(notePath, note, parent); // Trigger note change to other sibling component
-      },
-      [onChange]
-    );
-
-    const onAddNoteClick = (lib: RenderLib) => {
-      const resolvePromise = new Promise<FormInstance>((resolve, reject) => {
-        inputResolveRef.current?.open('file', resolve, reject);
-      });
-      resolvePromise.then(form => {
-        const name = form.getFieldValue('name');
-        const hasSameName = selectedLib.children.some(note => note.type === 'file' && note.name === name);
-        if (hasSameName) {
-          message.error('名称重复');
-          return;
-        }
-        addNote(lib, name);
-      });
-    };
-    const onAddLibClick = (parent: RendererLibraryTree) => {
-      const resolvePromise = new Promise<FormInstance>((resolve, reject) => {
-        inputResolveRef.current?.open('folder', resolve, reject);
-      });
-      resolvePromise.then(form => {
-        const name = form.getFieldValue('name');
-        const hasSameName = parent.children.some(child => child.type === 'folder' && child.name === name);
-        if (hasSameName) {
-          message.error('名称重复');
-          return;
-        }
-        addLib(parent, name);
-      });
-    };
-    const onDelNoteClick = (type: LibraryType, target: RendererLibraryTree) => {
-      const resolvePromise = new Promise((resolve, reject) => {
-        if (type === 'file') {
-          inputResolveRef.current?.open('file', resolve, reject, { isDelete: true, note: target });
-        }
-      });
-
-      resolvePromise.then(() => {
-        delNote('file', target.parent, target);
-      });
-    };
-    const onDelLibClick = (type: LibraryType, target: RendererLibraryTree) => {
-      const resolvePromise = new Promise((resolve, reject) => {
-        if (type === 'folder') {
-          inputResolveRef.current?.open('folder', resolve, reject, { isDelete: true, lib: target });
-        }
-      });
-      resolvePromise.then(() => {
-        delNote('folder', target.parent, target);
-      });
-    };
-
-    // ============================================================
-    // build ui
-    // ============================================================
-    // Build menu items
-    const _wrapMenu = (): MenuItem[] => {
-      // Currently the UI does not support multi-level nesting
-      const inner = (libs: RendererLibraryTree[]) => {
-        if (isEffectArray(libs)) {
-          return libs
-            .filter(lib => lib.type === 'folder')
-            .map(lib => ({
-              key: lib.name,
-              label: (
-                <div style={{ backgroundColor: 'transparent' }}>
-                  <Row>
-                    <Col span={20}>{lib.name}</Col>
-                    <Col span={4} style={{ textAlign: 'center' }}>
-                      <motion.div
-                        className="library-sidebar-icon"
-                        whileTap={{ scale: 0.8 }}
-                        onClick={e => {
-                          e.stopPropagation();
-                          onDelLibClick('folder', lib);
-                        }}
-                      >
-                        <DeleteOutlined />
-                      </motion.div>
-                    </Col>
-                  </Row>
-                </div>
-              )
-            }));
-        }
-        return [];
-      };
-
-      return inner(storedLibrary?.children || []);
-    };
-
-    const onMenuClick: MenuProps['onClick'] = e => {
-      setSelectedLib(
-        storedLibrary.children.filter(isRenderLib).find(lib => lib.type === 'folder' && lib.name === e.key)
-      );
-    };
-
-    return (
-      <>
-        <div className="library-sidebar-wrapper">
-          <WindowDragBox style={{ height: '40px', flexShrink: 0 }} />
-          <div className="library-next-writer">NEXT-WRITER</div>
-          <div className="library-sidebar-main">
-            <div className="library-sidebar-menu">
-              <Menu mode="inline" items={_wrapMenu()} onClick={onMenuClick} />
-            </div>
-            <div className="library-sidebar-footer" onClick={() => onAddLibClick(storedLibrary)}>
-              <FolderOutlined />
-              <Text className="footer-text">添加库</Text>
-            </div>
+                    nwSpin.loading(true);
+                    mainProcess
+                      .updateLib({ operate: 'add', type: 'folder', path: `./${name}` })
+                      .then(res => {
+                        const { data, status } = res;
+                        if (status === 0 && isEffectObject(data)) {
+                          generateRuntimeInfo(data, libraryTree);
+                          libraryTree.children.push(data);
+                          freshTree();
+                        }
+                      })
+                      .finally(() => {
+                        nwSpin.loading(false);
+                      });
+                  },
+                  { title: '新建库' }
+                );
+              }
+            }}
+          >
+            <FolderOutlined />
+            <Text className="footer-text">添加库</Text>
           </div>
         </div>
-        <div className="library-detail-wrapper">
-          <LibDetailHeader
-            lib={selectedLib}
-            note={selectedNote}
-            onEditorClick={onAddNoteClick}
-            onDeleteClick={onDelNoteClick}
-          />
-          <div className="library-detail-item-wrapper">
-            {isEffectObject(selectedLib) && isEffectArray(selectedLib.children) ? (
-              selectedLib.children
-                .filter(isRenderNote)
-                .map(note => (
-                  <NoteItem key={note.name} note={note} activeNoteId={selectedNote?.id} onNoteClick={onNoteChange} />
-                ))
-            ) : (
-              <VerticalEmpty description="无笔记" />
-            )}
-          </div>
+      </div>
+
+      {/* middle bar */}
+      <div className="library-detail-wrapper">
+        <LibDetailHeader
+          lib={currentLib}
+          note={currentNote}
+          onAddNote={() => {
+            if (renameRef.current) {
+              renameRef.current.show(
+                '',
+                name => {
+                  name = name.trim();
+                  if (currentLib.children.find(child => child.type === 'file' && child.name === name)) {
+                    message.error('名称重复');
+                    return;
+                  }
+                  nwSpin.loading(true);
+                  mainProcess
+                    .updateLib({ operate: 'add', type: 'file', path: `${currentLib.relativePath}/${name}` })
+                    .then(res => {
+                      if (res && res.status === 0) {
+                        const treeNode = res.data;
+                        generateRuntimeInfo(treeNode, currentLib);
+                        currentLib.children.push(treeNode);
+                        freshTree();
+                      }
+                    })
+                    .finally(() => {
+                      nwSpin.loading(false);
+                    });
+                },
+                { title: '新建笔记' }
+              );
+            }
+          }}
+        />
+        <div className="library-detail-item-wrapper">
+          {isEffectObject(currentLib) && isEffectArray(currentLib.children) ? (
+            currentLib.children
+              .filter(item => item.type === 'file')
+              .map(note => (
+                <NoteItem key={note.name} note={note} activeNoteId={currentNote?.id} onNoteClick={onNoteChange} />
+              ))
+          ) : (
+            <VerticalEmpty description="无笔记" />
+          )}
         </div>
-        <InputResolveModal ref={inputResolveRef} />
-      </>
-    );
-  }
-);
+      </div>
+      <FrowardRenameModal ref={renameRef} />
+    </>
+  );
+};
 
 interface LibDetailHeaderProps {
-  lib: RenderLib;
-  note: RenderNote;
-  onEditorClick: (lib: RenderLib) => void;
-  onDeleteClick: (type: LibraryType, target: RendererLibraryTree) => void;
+  lib: RendererLibraryTree;
+  note: RendererLibraryTree;
+  onAddNote: () => void;
 }
 /**
  * LibDetailHeader is the header of the selected library detail, which shows the name of the library and the edit/delete icon.
  */
 const LibDetailHeader: FC<LibDetailHeaderProps> = props => {
-  const { lib, note, onEditorClick, onDeleteClick } = props;
+  const { lib, note, onAddNote } = props;
+  const { updateRenderLibrary } = useHomeContext();
+  const { modal } = App.useApp();
+
   const showEditIcon = isEffectObject(lib) && lib.type === 'folder';
   const showDeleteIcon = isEffectObject(note) && note.type === 'file' && lib === note.parent;
   return (
@@ -349,7 +295,7 @@ const LibDetailHeader: FC<LibDetailHeaderProps> = props => {
       <Row>
         <Col span={8} style={{ textAlign: 'left' }}>
           {showEditIcon && (
-            <motion.span className="library-detail-icon" whileTap={{ scale: 0.8 }} onClick={() => onEditorClick(lib)}>
+            <motion.span className="library-detail-icon" whileTap={{ scale: 0.8 }} onClick={onAddNote}>
               <EditOutlined />
             </motion.span>
           )}
@@ -362,7 +308,24 @@ const LibDetailHeader: FC<LibDetailHeaderProps> = props => {
             <motion.span
               className="library-detail-icon"
               whileTap={{ scale: 0.8 }}
-              onClick={() => onDeleteClick('file', note)}
+              onClick={() => {
+                modal.confirm({
+                  title: `确定删除笔记：${note.name}？`,
+                  onOk() {
+                    nwSpin.loading(true);
+                    mainProcess
+                      .updateLib({ operate: 'del', type: 'file', path: note.relativePath })
+                      .then(res => {
+                        if (res && res.status === 0) {
+                          updateRenderLibrary(note, 'remove');
+                        }
+                      })
+                      .finally(() => {
+                        nwSpin.loading(false);
+                      });
+                  }
+                });
+              }}
             >
               <DeleteOutlined />
             </motion.span>
@@ -374,9 +337,9 @@ const LibDetailHeader: FC<LibDetailHeaderProps> = props => {
 };
 
 interface NoteItemProps {
-  note: RenderNote;
+  note: RendererLibraryTree;
   activeNoteId: string; // The unique key
-  onNoteClick: MainExpose['queryFile'];
+  onNoteClick: (note: RendererLibraryTree) => void;
 }
 /**
  * NoteItem is the item of the selected library detail, which shows the brief info of the note.
@@ -387,7 +350,7 @@ const NoteItem: FC<NoteItemProps> = props => {
 
   const onClick = (id: string) => {
     if (id && activeNoteId !== id) {
-      onNoteClick(id, note, note.parent);
+      onNoteClick(note);
     }
   };
 
@@ -412,5 +375,15 @@ const NoteItem: FC<NoteItemProps> = props => {
     </div>
   );
 };
+
+function updateNodeRelative(treeNode: RendererLibraryTree, parent: RendererLibraryTree) {
+  if (treeNode) {
+    treeNode.relativePath = `${parent.relativePath}/${treeNode.name}`;
+
+    if (isEffectArray(treeNode.children)) {
+      treeNode.children.forEach(child => updateNodeRelative(child, treeNode));
+    }
+  }
+}
 
 export default LibrarySidebar;

@@ -78,3 +78,13 @@ export function isString(str: unknown): str is string {
   if (typeof str === 'string') return true;
   return false;
 }
+
+export function getPromise<T>(): [Promise<T>, (value: T | PromiseLike<T>) => void, (reason?: unknown) => void] {
+  let resolve, reject;
+  const promise = new Promise<T>((resolve_, reject_) => {
+    resolve = resolve_;
+    reject = reject_;
+  });
+
+  return [promise, resolve, reject];
+}

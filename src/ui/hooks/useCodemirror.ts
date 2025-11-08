@@ -370,7 +370,7 @@ const _defaultTheme = EditorView.theme(defaultThemeCss as { [key: string]: Style
 const defaultTheme = [_defaultTheme, syntaxHighlighting(nwSyntaxHighlight)];
 
 interface IMountUpdateListener {
-  onDocChange?: (view: EditorView) => void;
+  onDocChange?: (update: ViewUpdate) => void;
   onChange?: (update: ViewUpdate) => void;
 }
 /**
@@ -383,7 +383,7 @@ function mountUpdateListener(config?: IMountUpdateListener) {
   return EditorView.updateListener.of(update => {
     if (update.docChanged) {
       // Invoke onDocChange
-      config.onDocChange && config.onDocChange(update.view);
+      config.onDocChange && config.onDocChange(update);
     }
 
     // Invoke onChange

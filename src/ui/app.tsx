@@ -1,6 +1,6 @@
 import { createRoot } from 'react-dom/client';
 import { ConfigProvider, App } from 'antd';
-// import Home from './components/home'
+import zhCN from 'antd/locale/zh_CN';
 import Home from './home';
 import { globalPreview } from './mix-components/image';
 import { globalSpin } from './mix-components/spin';
@@ -19,7 +19,7 @@ globalSpin.mount();
 
 const root = createRoot(document.getElementById('root'));
 root.render(
-  <ConfigProvider prefixCls="_next_writer" theme={{ hashed: false }}>
+  <ConfigProvider prefixCls="_next_writer" theme={{ hashed: false }} locale={zhCN}>
     <App style={{ height: '100vh' }}>
       <Home />
     </App>

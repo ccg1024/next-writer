@@ -1,25 +1,49 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
-import useRenderConfig from '../hooks/useRenderConfig';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { message } from 'antd';
+import { ReadConfigResponse, RendererLibraryTree } from '_types';
 import { BaseLayout } from '../modules/layout';
-import LibrarySidebar, { type LibrarySidebarExpoused } from '../modules/library-sidebar';
-import Main, { type ExposedHandler as MainExposed } from '../modules/main';
-import { ThemeProvider } from './module.context';
-import { LibraryTree } from '_types';
+import LibrarySidebar from '../modules/library-sidebar';
+import Main from '../modules/main';
+import HomeContext, { IHomeContext, ThemeProvider } from './module.context';
 import rendererIpcListener from '../modules/ipc';
 import PluginGlobal from '../plugins/global';
 import Outline from '../modules/outline';
+import mainProcess from '../libs/main-process';
+import { isEffectArray, isEffectObject } from 'src/tools/utils';
+import { generateRuntimeInfo } from '../libs/utils';
 
 import './index.css';
 
-const Home = () => {
-  const renderConfig = useRenderConfig();
+// 全局记录当前展示的文件与文件夹
+let currenNote_: RendererLibraryTree = null;
+let currentLib_: RendererLibraryTree = null;
 
-  const mainRef = useRef<MainExposed>(null);
-  const sidebarRef = useRef<LibrarySidebarExpoused>(null);
+const Home = () => {
+  const [renderConfig, setRenderConfig] = useState(null);
+  const [libraryTree, setLibraryTree] = useState<RendererLibraryTree>(null);
+  const [currentLib, setCurrentLib] = useState<RendererLibraryTree>(null);
+  const [currentNote, setCurrentNote] = useState<RendererLibraryTree>(null);
 
   // ============================================================
   // Effects
   // ============================================================
+  useLayoutEffect(() => {
+    mainProcess.readConfig().then(res => {
+      const { status, data, message: msg } = res || {};
+
+      if (status === 0) {
+        const { config, libTree } = (data ?? {}) as ReadConfigResponse;
+        setRenderConfig(config);
+
+        // Generating information
+        generateRuntimeInfo(libTree, null);
+        setLibraryTree(libTree);
+      } else {
+        message.error(msg || '读取配置失败');
+      }
+    });
+  }, []);
+
   // Start listen ipc event
   useEffect(() => {
     rendererIpcListener.start();
@@ -29,28 +53,88 @@ const Home = () => {
     };
   }, []);
 
-  // This function will be called when change note.
-  const mainRefCallback = useCallback((noteId: string, note: LibraryTree, parent: LibraryTree) => {
-    mainRef.current?.queryFile(noteId, note, parent);
+  useEffect(() => {
+    currenNote_ = currentNote;
+    currentLib_ = currentLib;
+
+    return () => {
+      currenNote_ = null;
+      currentLib_ = null;
+    };
+  }, [currentLib, currentNote]);
+
+  // 变更文件该方法
+  const updateRenderLibrary: IHomeContext['updateRenderLibrary'] = useCallback((newNode, type = 'update') => {
+    const innerNode = typeof newNode === 'function' ? newNode(currentLib_, currenNote_) : newNode;
+    const parent = innerNode.parent;
+    if (isEffectObject(parent)) {
+      parent.children = !isEffectArray(parent.children)
+        ? parent.children
+        : parent.children
+            .map(child => {
+              if (child.id === innerNode.id) {
+                return type === 'remove' ? undefined : innerNode;
+              }
+              return child;
+            })
+            .filter(child => child);
+    }
+
+    // 如果要进行多级文件夹嵌套，这个地方还是有点问题的
+    setLibraryTree(pre => {
+      // 文件夹变更，刷新文件树
+      if (parent === pre) {
+        const newTree = { ...pre };
+        newTree.children.forEach(child => (child.parent = newTree));
+        return newTree;
+      }
+      return pre;
+    });
+
+    // 文件变更总会走这里
+    if (innerNode.id === currenNote_?.id) {
+      setCurrentNote(type === 'remove' ? null : innerNode);
+    } else if (innerNode.id === currentLib_?.id) {
+      setCurrentLib(type === 'remove' ? null : innerNode);
+    }
   }, []);
 
-  // Update lib item information.
-  const updateLibItem = useCallback((libItem: LibraryTree) => {
-    sidebarRef.current && sidebarRef.current.updateLibItem(libItem);
-  }, []);
-
-  const themeConfig = useMemo(() => ({ config: renderConfig?.config }), [renderConfig?.config]);
+  const themeConfig = useMemo(() => ({ config: renderConfig }), [renderConfig]);
+  const homeValue = useMemo(
+    () => ({
+      libraryTree,
+      updateRenderLibrary,
+      freshTree() {
+        setLibraryTree(pre => {
+          if (pre) {
+            const newTree = { ...pre };
+            newTree.children.forEach(child => (child.parent = newTree));
+            return newTree;
+          }
+          return pre;
+        });
+      }
+    }),
+    [libraryTree, updateRenderLibrary]
+  );
 
   return (
     <ThemeProvider value={themeConfig}>
-      <BaseLayout>
-        {/* Show lib bar and detail bar of current lib */}
-        <LibrarySidebar ref={sidebarRef} onNoteChange={mainRefCallback} />
-        {/* Show current note */}
-        <Main ref={mainRef} onLibContentChange={updateLibItem} />
-        <Outline />
-      </BaseLayout>
-      <FontMeasure />
+      <HomeContext.Provider value={homeValue}>
+        <BaseLayout>
+          {/* Show lib bar and detail bar of current lib */}
+          <LibrarySidebar
+            currentLib={currentLib}
+            setCurrentLib={setCurrentLib}
+            currentNote={currentNote}
+            setCurrentNote={setCurrentNote}
+          />
+          {/* Show current note */}
+          <Main currentNote={currentNote} />
+          <Outline />
+        </BaseLayout>
+        <FontMeasure />
+      </HomeContext.Provider>
     </ThemeProvider>
   );
 };

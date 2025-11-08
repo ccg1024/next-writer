@@ -1,5 +1,6 @@
 import { EditorState } from '@codemirror/state';
-import { FileState, IpcRequest, RootWorkstationFolderInfo } from '_types';
+import { isEffectArray, isEffectObject, isTrulyEmpty } from 'src/tools/utils';
+import { FileState, IpcRequest, RendererLibraryTree, RootWorkstationFolderInfo } from '_types';
 
 export function reversePath(path: string, sep?: string) {
   const _sep = sep ? sep : '/';
@@ -563,4 +564,30 @@ export function debounceFn<F extends (...args: unknown[]) => unknown>(fn: F, del
       fn(...args);
     }, delay);
   };
+}
+
+/**
+ * Generate a unique id for each lib struct (description of the file or folder) at runtime
+ */
+export function generateRuntimeInfo(libTree: RendererLibraryTree, parent: RendererLibraryTree | null) {
+  if (isEffectObject(libTree)) {
+    // The first level of LibraryTree struct is point to root folder,
+    // for example, the default root is ~/Documents/nwriter/
+    // the libTree is generated as {children: [{name: 'custom-folder-name'}]}
+    if (isTrulyEmpty(libTree.relativePath)) {
+      libTree.relativePath = parent ? `${parent.relativePath}/${libTree.name}` : `.`;
+    }
+
+    if (isTrulyEmpty(libTree.parent)) {
+      libTree.parent = parent;
+    }
+
+    if (isTrulyEmpty(libTree.id)) {
+      libTree.id = generateUniqueId(libTree.relativePath);
+    }
+
+    if (isEffectArray(libTree.children)) {
+      libTree.children.forEach(child => generateRuntimeInfo(child, libTree));
+    }
+  }
 }

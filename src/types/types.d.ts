@@ -276,7 +276,7 @@ export type RendererLibraryBase = {
   modifiedTime: string;
   description?: string; // Description for file object
   relativePath?: string; // Relative path to curent file or folder [runtime information]
-  parent?: LibraryTree; // Parent node [runtime information]
+  parent?: RendererLibraryTree; // Parent node [runtime information]
 };
 
 export type RendererLibraryTree = RendererLibraryBase & {
@@ -343,9 +343,10 @@ export type WriteFileRequest = {
 };
 
 export type UpdateLibRequest = {
-  operate: 'add' | 'del';
+  operate: 'add' | 'del' | 'update';
   path: string;
   type: 'file' | 'folder';
+  pathInRuntime?: string;
 };
 
 export type UpdateLibResponse = LibraryTree;
