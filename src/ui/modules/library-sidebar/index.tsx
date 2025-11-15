@@ -1,7 +1,7 @@
 import { App, Menu, MenuProps, Typography, Row, Col } from 'antd';
 import { DeleteOutlined, EditOutlined, FolderOutlined } from '@ant-design/icons';
 import { motion } from 'framer-motion';
-import { FC, useCallback, useRef } from 'react';
+import { FC, useCallback, useEffect, useRef, useState } from 'react';
 import { isEffectArray, isEffectObject } from 'src/tools/utils';
 import { WindowDragBox } from 'src/ui/components/drag';
 import { RendererLibraryTree } from '_types';
@@ -13,6 +13,7 @@ import { nwSpin } from 'src/ui/mix-components/spin';
 import { useHomeContext } from 'src/ui/home/module.context';
 import { FrowardRenameModal, ExposedHandler as ForwardRenameHandler } from './modal';
 import { generateRuntimeInfo } from 'src/ui/libs/utils';
+import rendererIpcListener, { RendererIpcActionCallback } from '../ipc';
 
 import './index.less';
 
@@ -52,6 +53,8 @@ function findNodeById(ids: string[], tree: RendererLibraryTree) {
 const LibrarySidebar: FC<LibrarySidebarProps> = props => {
   // For lib side bar of the leftmost
   const { currentLib, setCurrentLib, currentNote, setCurrentNote } = props;
+  const [visibleLib, setVisibleLib] = useState(true);
+  const [visibleDetail, setVisbleDetail] = useState(true);
   const { libraryTree, updateRenderLibrary, freshTree } = useHomeContext();
   const renameRef = useRef<ForwardRenameHandler>(null);
   const { message, modal } = App.useApp();
@@ -59,6 +62,29 @@ const LibrarySidebar: FC<LibrarySidebarProps> = props => {
   // ============================================================
   // Effect
   // ============================================================
+  useEffect(() => {
+    const toggleLib: RendererIpcActionCallback = (_e, action) => {
+      if (action.type === toggleLib.type) {
+        setVisibleLib(!!action.payload);
+      }
+    };
+    toggleLib.type = 'toggle-lib';
+
+    const toggleDetail: RendererIpcActionCallback = (_e, acction) => {
+      if (acction.type === toggleDetail.type) {
+        setVisbleDetail(!!acction.payload);
+      }
+    };
+    toggleDetail.type = 'toggle-lib-detail';
+
+    rendererIpcListener.register(toggleLib);
+    rendererIpcListener.register(toggleDetail);
+
+    return () => {
+      rendererIpcListener.deregister(toggleLib);
+      rendererIpcListener.deregister(toggleDetail);
+    };
+  }, []);
 
   // ============================================================
   // Wrap callback
@@ -178,7 +204,7 @@ const LibrarySidebar: FC<LibrarySidebarProps> = props => {
 
   return (
     <>
-      <div className="library-sidebar-wrapper">
+      <div className="library-sidebar-wrapper" style={{ display: visibleLib ? 'flex' : 'none' }}>
         <WindowDragBox style={{ height: '40px', flexShrink: 0 }} />
         <div className="library-next-writer">NEXT-WRITER</div>
         <div className="library-sidebar-main">
@@ -224,7 +250,13 @@ const LibrarySidebar: FC<LibrarySidebarProps> = props => {
       </div>
 
       {/* middle bar */}
-      <div className="library-detail-wrapper">
+      <div
+        className="library-detail-wrapper"
+        style={{ paddingTop: !visibleLib ? '32px' : '16px', display: visibleDetail ? 'flex' : 'none' }}
+      >
+        {!visibleLib && (
+          <WindowDragBox style={{ height: '32px', top: 0, left: 0, width: '100%', position: 'absolute' }} />
+        )}
         <LibDetailHeader
           lib={currentLib}
           note={currentNote}
@@ -270,6 +302,10 @@ const LibrarySidebar: FC<LibrarySidebarProps> = props => {
           )}
         </div>
       </div>
+
+      {!visibleLib && !visibleDetail && (
+        <WindowDragBox style={{ height: '32px', top: 0, left: 0, width: '100%', position: 'fixed' }} />
+      )}
       <FrowardRenameModal ref={renameRef} />
     </>
   );

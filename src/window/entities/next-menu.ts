@@ -65,11 +65,13 @@ class NextMenu implements INextMenu {
         { type: 'separator' },
         {
           label: '显示/隐藏库',
-          accelerator: this.isMac ? 'Cmd+Shift+s' : 'Ctrl+Shift+s'
+          accelerator: this.isMac ? 'Cmd+Shift+s' : 'Ctrl+Shift+s',
+          click: delegateVisibleToggle('toggle-lib', this)
         },
         {
           label: '显示/隐藏详情',
-          accelerator: this.isMac ? 'Cmd+Shift+d' : 'Ctrl+Shift+d'
+          accelerator: this.isMac ? 'Cmd+Shift+d' : 'Ctrl+Shift+d',
+          click: delegateVisibleToggle('toggle-lib-detail', this)
         },
         {
           label: '显示/隐藏操作菜单',
@@ -183,6 +185,35 @@ class NextMenu implements INextMenu {
       payload: menuStatus.tocSidebar
     } as RendererListenerAction<boolean>);
   }
+}
+
+function delegateVisibleToggle(type: RendererListenerAction['type'], _ctx: NextMenu) {
+  return (_m: MenuItem, win: BrowserWindow) => {
+    const store = nextWriterC.get<INextStoreSystem>(TYPES.INextStoreSystem);
+    const menuStatus = store.getConfig('menuStatus') ?? {
+      librarySidebar: true,
+      detailSidebar: true,
+      tocSidebar: false,
+      actionSidebar: false
+    };
+
+    let payload = null;
+    switch (type) {
+      case 'toggle-lib':
+        menuStatus.librarySidebar = !menuStatus.librarySidebar;
+        payload = menuStatus.librarySidebar;
+        break;
+      case 'toggle-lib-detail':
+        menuStatus.detailSidebar = !menuStatus.detailSidebar;
+        payload = menuStatus.detailSidebar;
+        break;
+    }
+    store.setConfig('menuStatus', menuStatus);
+
+    if (payload !== null) {
+      win.webContents.send('next-ipc-client', { type, payload } as RendererListenerAction<boolean>);
+    }
+  };
 }
 
 export default NextMenu;
