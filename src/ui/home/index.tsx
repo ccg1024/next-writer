@@ -41,8 +41,15 @@ const Home = () => {
 
         // change css variable
         const r = document.querySelector('body');
-        if (config?.code) {
-          r.style.setProperty('--nw-editor-code-font-family', config.code);
+        const c = config ?? {};
+        if (c.codeFont) {
+          r.style.setProperty('--nw-editor-code-font-family', c.codeFont);
+        }
+        if (c.editorFont) {
+          r.style.setProperty('--nw-editor-font-family', c.editorFont);
+        }
+        if (c.editorFontSize) {
+          r.style.setProperty('--nw-editor-font-size', c.editorFontSize);
         }
       } else {
         message.error(msg || '读取配置失败');

@@ -24,8 +24,11 @@ mainProcess.readConfig().then(res => {
   const token = {} as AliasToken;
   if (res && res.status === 0) {
     const { config } = res.data;
-    if (config?.font) {
-      token.fontFamily = config.font;
+    if (config?.uiFont) {
+      token.fontFamily = config.uiFont;
+    }
+    if (config?.uiFontSize) {
+      token.fontSize = config.uiFontSize;
     }
   }
   root.render(
