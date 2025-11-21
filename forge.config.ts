@@ -14,10 +14,10 @@ import { rendererConfig } from './webpack.renderer.config';
 const config: ForgeConfig = {
   packagerConfig: {
     asar: true,
-    icon: './src/icons/icon',
-    osxSign: {
-      preAutoEntitlements: true // some permission config for building application
-    }
+    icon: './src/icons/icon'
+    // osxSign: {
+    //   preAutoEntitlements: true // some permission config for building application
+    // }
   },
   rebuildConfig: {},
   makers: [new MakerSquirrel({}), new MakerZIP({}, ['darwin']), new MakerRpm({}), new MakerDeb({})],

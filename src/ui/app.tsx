@@ -28,7 +28,7 @@ mainProcess.readConfig().then(res => {
       token.fontFamily = config.uiFont;
     }
     if (config?.uiFontSize) {
-      token.fontSize = config.uiFontSize;
+      token.fontSize = parseInt(config.uiFontSize);
     }
   }
   root.render(
