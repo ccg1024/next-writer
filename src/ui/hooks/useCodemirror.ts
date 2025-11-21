@@ -151,7 +151,7 @@ const mdTags = {
   tableRow: Tag.define()
 };
 
-function markdownTagExtension(): MarkdownConfig {
+export function markdownTagExtension(): MarkdownConfig {
   return {
     props: [
       styleTags({
