@@ -310,12 +310,12 @@ export type DeepReadOnly<T extends Record<string | symbol, unknown>> = {
 // Just for Ipc communication -- start
 // ============================================================
 
-export type Request<T> = {
+export type Request<T = unknown> = {
   type: string;
   data?: T;
 };
 
-export type Response<T> = {
+export type Response<T = unknown> = {
   status: number;
   data: T;
   message?: string;
