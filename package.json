@@ -7,7 +7,7 @@
   "scripts": {
     "start": "node bin/shell/index.js DEV && electron-forge start",
     "package": "electron-forge package",
-    "make": "electron-forge make",
+    "make": "node bin/shell/index.js PRO && electron-forge make",
     "publish": "electron-forge publish",
     "lint": "eslint --ext .ts,.tsx ."
   },
