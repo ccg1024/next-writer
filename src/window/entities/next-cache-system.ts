@@ -55,10 +55,16 @@ class NextCacheSystem implements INextCacheSystem {
     return this.__cache?.[key] ? true : false;
   }
 
+  removeCache(key: string): void {
+    if (this.exitCache(key)) {
+      delete this.__cache[key];
+    }
+  }
+
   hasModifed(): boolean {
     if (isEffectObject(this.__cache)) {
       const keys = Object.getOwnPropertyNames(this.__cache);
-      for (const key in keys) {
+      for (const key of keys) {
         if (this.__cache[key].isChange) {
           return true;
         }

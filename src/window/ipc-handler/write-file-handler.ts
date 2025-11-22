@@ -7,6 +7,7 @@ import { WriteFileRequest } from '_types';
 import INextFileSystem from '../interface/next-file-system';
 import INextIpcHandler from '../interface/next-ipc-handler';
 import INextStoreSystem from '../interface/next-store-system';
+import INextCacheSystem from '../interface/next-cache-system';
 import { nextWriterC } from '../inversify.config';
 import { TYPES } from '../types';
 
@@ -18,8 +19,10 @@ const writeFileHandler: INextIpcHandler = {
     const { path, content, nameInRuntime } = reqData ?? {};
     const store = nextWriterC.get<INextStoreSystem>(TYPES.INextStoreSystem);
     const fileSys = nextWriterC.get<INextFileSystem>(TYPES.INextFileSystem);
+    const cache = nextWriterC.get<INextCacheSystem>(TYPES.INextCacheSystem);
     const formatPath = fileSys.formatPath(path);
     const rootDir = store.getConfig('rootDir');
+
     // TODO: figure out path problem, with or without suffix
     let fullPath = formatPath.startsWith(rootDir) ? formatPath : nodePath.join(rootDir, formatPath + '.md');
     const relativePath = fullPath.substring(rootDir.length);
@@ -59,10 +62,16 @@ const writeFileHandler: INextIpcHandler = {
 
       // Update library tree token
       target.name = nameInRuntime;
+
+      // Update cache
+      if (cache.exitCache(oldFullPath)) {
+        cache.removeCache(oldFullPath);
+      }
     }
     try {
-      // TODO: Access cache system
       await fileSys.writeFile(fullPath, content);
+      // add cache
+      cache.addCache(fullPath, { isChange: false, content });
       // update library Tree
       const newStat = nodeFs.promises.stat(fullPath);
       target.modifiedTime = (await newStat).mtime.toLocaleString();

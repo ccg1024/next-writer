@@ -34,6 +34,11 @@ interface INextCacheSystem {
   exitCache(key: string): boolean;
 
   /**
+   * Remove specified cache
+   */
+  removeCache(key: string): void;
+
+  /**
    * Determine whether the cache object with the specified `key` value has an `isChange` flag set to `true`
    */
   hasModifed(): boolean;
