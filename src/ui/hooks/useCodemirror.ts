@@ -74,6 +74,10 @@ const useCodemirror = <T extends Element>(props: Props): [React.MutableRefObject
       parent: containerRef.current
     });
 
+    // It's unclear why there is a deviation?
+    // Ensure the editor scrolls to the top after creating a new view
+    view.dispatch({ effects: EditorView.scrollIntoView(0) });
+
     // ============================================================
     // Register global event of codemirror
     // ============================================================
@@ -186,7 +190,8 @@ export const nwSyntaxHighlight = HighlightStyle.define([
     tag: tags.link,
     color: 'var(--nw-theme-link-content)',
     textDecoration: 'underline',
-    fontWeight: 'bold'
+    fontWeight: 'bold',
+    textUnderlineOffset: '4px'
   },
   {
     tag: tags.quote,
@@ -343,7 +348,8 @@ export const nwSyntaxHighlight = HighlightStyle.define([
 const defaultThemeCss: { [key: string]: CSSProperties | StyleSpec } = {
   '&': {
     // css in cm-editor
-    fontSize: '1em'
+    fontSize: '1em',
+    height: '100%'
   },
   '.cm-scroller': {
     lineHeight: 1.5,
