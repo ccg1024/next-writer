@@ -58,6 +58,7 @@ const LibrarySidebar: FC<LibrarySidebarProps> = props => {
   const { libraryTree, updateRenderLibrary, freshTree } = useHomeContext();
   const renameRef = useRef<ForwardRenameHandler>(null);
   const { message, modal } = App.useApp();
+  const { runtimeConfig } = useHomeContext();
 
   // ============================================================
   // Effect
@@ -85,6 +86,18 @@ const LibrarySidebar: FC<LibrarySidebarProps> = props => {
       rendererIpcListener.deregister(toggleDetail);
     };
   }, []);
+
+  useEffect(() => {
+    if (runtimeConfig) {
+      if (!runtimeConfig.menuStatus.librarySidebar) {
+        setVisibleLib(false);
+      }
+
+      if (!runtimeConfig.menuStatus.detailSidebar) {
+        setVisbleDetail(false);
+      }
+    }
+  }, [runtimeConfig]);
 
   // ============================================================
   // Wrap callback

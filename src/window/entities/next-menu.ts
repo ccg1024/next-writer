@@ -65,21 +65,21 @@ class NextMenu implements INextMenu {
         { type: 'separator' },
         {
           label: '显示/隐藏库',
-          accelerator: this.isMac ? 'Cmd+Shift+s' : 'Ctrl+Shift+s',
+          accelerator: this.isMac ? 'Cmd+b' : 'Ctrl+b',
           click: delegateVisibleToggle('toggle-lib', this)
         },
         {
           label: '显示/隐藏详情',
-          accelerator: this.isMac ? 'Cmd+Shift+d' : 'Ctrl+Shift+d',
+          accelerator: this.isMac ? 'Cmd+Shift+b' : 'Ctrl+Shift+b',
           click: delegateVisibleToggle('toggle-lib-detail', this)
         },
         {
           label: '显示/隐藏操作菜单',
-          accelerator: this.isMac ? 'Cmd+Shift+t' : 'Ctrl+Shift+t'
+          accelerator: this.isMac ? 'Cmd+t' : 'Ctrl+t'
         },
         {
           label: '显示/隐藏标题导航',
-          accelerator: this.isMac ? 'Cmd+Shift+h' : 'Ctrl+Shift+h',
+          accelerator: this.isMac ? 'Cmd+h' : 'Ctrl+h',
           click: this.toggleToc
         }
       ]

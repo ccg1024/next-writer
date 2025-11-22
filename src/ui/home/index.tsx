@@ -11,6 +11,8 @@ import Outline from '../modules/outline';
 import mainProcess from '../libs/main-process';
 import { isEffectArray, isEffectObject } from 'src/tools/utils';
 import { generateRuntimeInfo } from '../libs/utils';
+import renderStore from '../modules/store';
+import type { RuntimeRecord } from '../modules/store';
 
 import './index.css';
 
@@ -23,6 +25,7 @@ const Home = () => {
   const [libraryTree, setLibraryTree] = useState<RendererLibraryTree>(null);
   const [currentLib, setCurrentLib] = useState<RendererLibraryTree>(null);
   const [currentNote, setCurrentNote] = useState<RendererLibraryTree>(null);
+  const [runtimeConfig, setRuntimeConfig] = useState<RuntimeRecord>(null);
 
   // ============================================================
   // Effects
@@ -53,6 +56,15 @@ const Home = () => {
         }
       } else {
         message.error(msg || '读取配置失败');
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    mainProcess.queryRuntimeConfig().then(res => {
+      if (res?.status === 0) {
+        renderStore.runtime = res.data;
+        setRuntimeConfig(res.data);
       }
     });
   }, []);
@@ -126,9 +138,10 @@ const Home = () => {
           }
           return pre;
         });
-      }
+      },
+      runtimeConfig
     }),
-    [libraryTree, updateRenderLibrary]
+    [libraryTree, updateRenderLibrary, runtimeConfig]
   );
 
   return (

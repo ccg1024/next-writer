@@ -97,6 +97,13 @@ class NextApp implements INextApp {
 
     // Create menu
     this._menu.createMenu();
+    // set menu status
+    this._store.setConfig('menuStatus', {
+      librarySidebar: true,
+      detailSidebar: true,
+      tocSidebar: false,
+      actionSidebar: false // 额外操作侧边栏，以前用来放置文件前端文件操作，后面看要不要再用
+    });
 
     if (IS_DEV) {
       this._win.webContents.openDevTools();

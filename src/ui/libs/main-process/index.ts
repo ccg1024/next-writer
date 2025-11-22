@@ -8,6 +8,7 @@ import {
   WriteFileRequest
 } from '_types';
 import api from '../api';
+import type { RuntimeRecord } from '../../modules/store';
 
 async function readConfig() {
   return api<undefined, ReadConfigResponse>({ type: IPC_CHANNEL.READ_CONFIG });
@@ -28,6 +29,10 @@ async function writeFile(data: WriteFileRequest) {
   return api<WriteFileRequest, null>({ type: IPC_CHANNEL.WIRTE_FILE, data });
 }
 
-const mainProcess = { readConfig, readFile, updateLib, writeFile };
+async function queryRuntimeConfig() {
+  return api<unknown, RuntimeRecord>({ type: IPC_CHANNEL.RUNTIME });
+}
+
+const mainProcess = { readConfig, readFile, updateLib, writeFile, queryRuntimeConfig };
 
 export default mainProcess;

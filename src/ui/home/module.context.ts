@@ -1,5 +1,6 @@
 import { createContext, useContext } from 'react';
 import { ReadConfigResponse, RendererLibraryTree } from '_types';
+import type { RuntimeRecord } from '../modules/store';
 
 type RenderConfig = ReadConfigResponse;
 
@@ -15,6 +16,7 @@ export interface IHomeContext {
     type?: 'remove' | 'update'
   ) => void;
   freshTree: () => void;
+  runtimeConfig: RuntimeRecord;
 }
 
 const HomeContext = createContext<IHomeContext>(null);
