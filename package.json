@@ -5,9 +5,9 @@
   "description": "A refectored version of the imarkdown project, focusing on hybrid editing mode",
   "main": ".webpack/main",
   "scripts": {
-    "start": "node bin/shell/index.js DEV && electron-forge start",
+    "start": "electron-forge start",
     "package": "electron-forge package",
-    "make": "node bin/shell/index.js PRO && electron-forge make",
+    "make": "electron-forge make",
     "publish": "electron-forge publish",
     "lint": "eslint --ext .ts,.tsx ."
   },

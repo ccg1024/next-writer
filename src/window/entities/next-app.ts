@@ -1,7 +1,15 @@
 import nodeFs from 'fs';
 import nodePath from 'path';
 import { BrowserWindow, BrowserWindowConstructorOptions, dialog } from 'electron';
-import { CONFIG_DIR_NAME, CONFIG_JSON_NAME, LOG_DIR_NAME, LOG_NAME, NW_CONFIG, ROOT_DIR_NAME } from 'bin/index.es';
+import {
+  CONFIG_DIR_NAME,
+  CONFIG_JSON_NAME,
+  IS_DEV,
+  LOG_DIR_NAME,
+  LOG_NAME,
+  NW_CONFIG,
+  ROOT_DIR_NAME
+} from 'src/config/env';
 import { inject, injectable } from 'inversify';
 import INextApp from '../interface/next-app';
 import INextCacheSystem from '../interface/next-cache-system';
@@ -90,9 +98,9 @@ class NextApp implements INextApp {
     // Create menu
     this._menu.createMenu();
 
-    // if (NW_ENV === 'DEV') {
-    //   this._win.webContents.openDevTools();
-    // }
+    if (IS_DEV) {
+      this._win.webContents.openDevTools();
+    }
 
     // Mount instance event
     this.mountInstanceEvent();
@@ -238,6 +246,7 @@ class NextApp implements INextApp {
       }
 
       this._win.removeAllListeners();
+      this.destroy();
     });
   }
 

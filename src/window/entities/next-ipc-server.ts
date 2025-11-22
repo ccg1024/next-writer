@@ -55,6 +55,7 @@ class NextIpcServer implements INextIpcServer {
   destroy(): void {
     this.handlers = [];
     ipcMain.removeAllListeners(IPC_SERVER_NAME);
+    ipcMain.removeHandler(IPC_SERVER_NAME);
   }
 }
 

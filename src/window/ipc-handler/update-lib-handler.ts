@@ -3,7 +3,7 @@ import nodePath from 'path';
 import { isTrulyEmpty } from 'src/tools/utils';
 import { IPC_CHANNEL } from 'src/tools/config';
 import { LibraryTree, UpdateLibRequest } from '_types';
-import { ROOT_CONFIG_NAME } from 'bin/index.es';
+import { ROOT_CONFIG_NAME } from 'src/config/env';
 import INextFileSystem from '../interface/next-file-system';
 import INextIpcHandler from '../interface/next-ipc-handler';
 import INextStoreSystem from '../interface/next-store-system';

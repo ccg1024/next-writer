@@ -1,4 +1,4 @@
-import { MAX_FILE_DESCRIPTION_LENGTH, ROOT_CONFIG_NAME } from 'bin/index.es';
+import { MAX_FILE_DESCRIPTION_LENGTH, ROOT_CONFIG_NAME } from 'src/config/env';
 import nodeFs from 'fs';
 import nodePath from 'path';
 import { IPC_CHANNEL } from 'src/tools/config';

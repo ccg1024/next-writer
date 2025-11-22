@@ -7,7 +7,7 @@ import nodeFs from 'fs';
 import nodePath from 'path';
 import { TYPES } from '../types';
 import { LibraryTree, RendererListenerAction, RootLibraryTree } from '_types';
-import { MAX_FILE_DESCRIPTION_LENGTH, ROOT_CONFIG_NAME } from 'bin/index.es';
+import { MAX_FILE_DESCRIPTION_LENGTH, ROOT_CONFIG_NAME } from 'src/config/env';
 import INextFileSystem from '../interface/next-file-system';
 import { nextWriterC } from '../inversify.config';
 

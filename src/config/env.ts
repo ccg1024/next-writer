@@ -1,18 +1,18 @@
-// exprot evironemt config
-export const NW_ENV = 'PRO';
+const ENV = process.env.NODE_ENV;
+export const IS_DEV = ENV === 'development';
 
 // Default config file path
-export const CONFIG_DIR_NAME = 'nwriter';
+export const CONFIG_DIR_NAME = IS_DEV ? 'nwriter-dev' : 'nwriter';
 
 export const CONFIG_JSON_NAME = 'nwriter.json';
 
 // Default log file path
-export const LOG_DIR_NAME = 'nwriter';
+export const LOG_DIR_NAME = IS_DEV ? 'nwriter-dev' : 'nwriter';
 
 export const LOG_NAME = 'log';
 
 // Default library name; ~/Documents/${ROOT_DIR_NAME}
-export const ROOT_DIR_NAME = 'nwriter';
+export const ROOT_DIR_NAME = IS_DEV ? 'nwriter-dev' : 'nwriter';
 
 // Default library info; ~/Documents/${ROOT_DIR_NAME}/${ROOT_CONFIG_NAME}
 export const ROOT_CONFIG_NAME = '.nwriter.info.json';
