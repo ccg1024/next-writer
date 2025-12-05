@@ -1,4 +1,4 @@
-import { App, Menu, MenuProps, Typography, Row, Col } from 'antd';
+import { App, Menu, MenuProps, Typography, Row, Col, Popover } from 'antd';
 import { DeleteOutlined, EditOutlined, FolderOutlined } from '@ant-design/icons';
 import { motion } from 'framer-motion';
 import { FC, useCallback, useEffect, useRef, useState } from 'react';
@@ -404,24 +404,40 @@ const NoteItem: FC<NoteItemProps> = props => {
   };
 
   return (
-    <div
-      onClick={() => void onClick(note.id)}
-      className={`library-detail-item ${activeNoteId === note.id ? 'library-detail-item-selected' : ''}`}
-      onMouseEnter={e => void e.currentTarget?.classList.add('library-detail-item-active')}
-      onMouseLeave={e => void e.currentTarget?.classList.remove('library-detail-item-active')}
+    <Popover
+      arrow={false}
+      mouseEnterDelay={0.5}
+      placement="rightTop"
+      content={
+        <div style={{ width: 300, whiteSpace: 'pre-line' }}>
+          <Title level={5} style={{ margin: 0, marginBottom: '12px' }} ellipsis>
+            {note.name}
+          </Title>
+          {spans.map((span, index) => (
+            <span key={index} className={span.style || ''} style={{ fontSize: '14px' }}>
+              {span.text}
+            </span>
+          ))}
+        </div>
+      }
     >
-      <Title level={5} className="library-detail-item-text" ellipsis>
-        {note.name}
-      </Title>
-      <Paragraph className="library-detail-item-text">{note.modifiedTime}</Paragraph>
-      <Paragraph className="library-detail-item-text" ellipsis={{ rows: 2 }} style={{ wordBreak: 'break-all' }}>
-        {spans.map((span, index) => (
-          <span key={index} className={span.style || ''} style={{ fontSize: '14px' }}>
-            {span.text}
-          </span>
-        ))}
-      </Paragraph>
-    </div>
+      <div
+        onClick={() => void onClick(note.id)}
+        className={`library-detail-item ${activeNoteId === note.id ? 'library-detail-item-selected' : ''}`}
+      >
+        <Title level={5} className="library-detail-item-text" ellipsis>
+          {note.name}
+        </Title>
+        <Paragraph className="library-detail-item-text">{note.modifiedTime}</Paragraph>
+        <Paragraph className="library-detail-item-text" ellipsis={{ rows: 2 }} style={{ wordBreak: 'break-all' }}>
+          {spans.map((span, index) => (
+            <span key={index} className={span.style || ''} style={{ fontSize: '14px' }}>
+              {span.text}
+            </span>
+          ))}
+        </Paragraph>
+      </div>
+    </Popover>
   );
 };
 
