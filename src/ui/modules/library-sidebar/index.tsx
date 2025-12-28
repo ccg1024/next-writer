@@ -409,12 +409,12 @@ const NoteItem: FC<NoteItemProps> = props => {
       mouseEnterDelay={0.5}
       placement="rightTop"
       content={
-        <div style={{ width: 300, whiteSpace: 'pre-line' }}>
-          <Title level={5} style={{ margin: 0, marginBottom: '12px' }} ellipsis>
+        <div className="popover-content">
+          <Title level={5} className="popover-title" ellipsis>
             {note.name}
           </Title>
           {spans.map((span, index) => (
-            <span key={index} className={span.style || ''} style={{ fontSize: '14px' }}>
+            <span key={index} className={`${span.style || ''} popover-text`}>
               {span.text}
             </span>
           ))}
