@@ -125,13 +125,7 @@ export type RendererListenerAction<T = Record<string, unknown>> = {
 };
 export type RendererListenerCallback = (event: IpcRendererEvent, action?: RendererListenerAction) => void;
 
-type IpcCallback = (event: IpcRendererEvent, ...args: Array<unknown>) => void;
 export interface IPC {
-  listenEditorChannel: (cb: IpcCallback) => () => void;
-  listenHomeChannel: (cb: IpcCallback) => () => void;
-  listenSidebarChannel: (cb: IpcCallback) => () => void;
-  _invoke_post: (channel: string, req: IpcRequest) => Promise<IpcResponse>;
-  _render_post: (channel: string, req: IpcRequest) => void;
   _post: <T, U>(param: Request<T>) => Promise<Response<U>>;
   rendererListener: (cb: RendererListenerCallback) => () => void;
 }
@@ -161,13 +155,6 @@ export type RenderNewFileType = {
   replyChannel: string; // For component
   replyType: string; // For component inner branch
   pathPrefix: string;
-};
-
-export type HeadNav = {
-  title: string;
-  level: number;
-  number: number;
-  jumpPos: number;
 };
 
 // For nwriter.json config file
@@ -277,6 +264,7 @@ export type RendererLibraryBase = {
   description?: string; // Description for file object
   relativePath?: string; // Relative path to curent file or folder [runtime information]
   parent?: RendererLibraryTree; // Parent node [runtime information]
+  isChange?: boolean // For type 'file', generally, whether file was changed
 };
 
 export type RendererLibraryTree = RendererLibraryBase & {
