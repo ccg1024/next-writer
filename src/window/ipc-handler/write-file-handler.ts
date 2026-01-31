@@ -29,7 +29,7 @@ const writeFileHandler: INextIpcHandler = {
     const pathToken = relativePath.split('/').filter(token => !!token);
 
     if (pathToken.length === 0) {
-      return Promise.reject(new Error('The path is invalid.'));
+      throw new Error('The path is invalid.');
     }
     const targetName = nodePath.basename(pathToken.pop(), '.md');
     const libTree = store.getConfig('libraryTree');
@@ -44,13 +44,13 @@ const writeFileHandler: INextIpcHandler = {
     }
 
     if (isTrulyEmpty(parentLib)) {
-      return Promise.reject(new Error('Cannot find target library path'));
+      throw new Error('Cannot find target library path');
     }
 
     const target = parentLib.children.find(lib => lib.name === targetName);
 
     if (isTrulyEmpty(target)) {
-      return Promise.reject(new Error('Some thing wrong when find target lib token'));
+      throw new Error('Some thing wrong when find target lib token');
     }
 
     // If have
@@ -79,15 +79,13 @@ const writeFileHandler: INextIpcHandler = {
       await fileSys.writeFile(nodePath.join(rootDir, ROOT_CONFIG_NAME), JSON.stringify(libTree, null, 2));
       store.setConfig('libraryTree', libTree);
     } catch (e) {
-      // TODO: Error catch
-      return { status: -1, data: null, message: '保存文件失败' };
+      throw new Error('保存文件失败');
     }
 
     // Update library tree
     await fileSys.writeFile(nodePath.join(rootDir, ROOT_CONFIG_NAME), JSON.stringify(libTree, null, 2));
     // Restore, althought it is not necessary, the above changes have affected the original object
     store.setConfig('libraryTree', libTree);
-    return { status: 0, data: null, message: '' };
   }
 };
 

@@ -3,7 +3,6 @@ import INextIpcHandler from '../interface/next-ipc-handler';
 import INextStoreSystem from '../interface/next-store-system';
 import { nextWriterC } from '../inversify.config';
 import { TYPES } from '../types';
-import { ReadConfigResponse } from '_types';
 
 /**
  * Reading renderer config and library tree data
@@ -13,11 +12,10 @@ const readConfigHandler: INextIpcHandler = {
   apply: async () => {
     const store = nextWriterC.get<INextStoreSystem>(TYPES.INextStoreSystem);
 
-    const data: ReadConfigResponse = {
+    return {
       config: store.getConfig('renderConfig'),
       libTree: store.getConfig('libraryTree')
     };
-    return { status: 0, data };
   }
 };
 

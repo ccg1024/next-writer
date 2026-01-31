@@ -9,12 +9,7 @@ const runtimeHandler: INextIpcHandler = {
   apply: async () => {
     const store = nextWriterC.get<INextStoreSystem>(TYPES.INextStoreSystem);
     const menuStatus = store.getConfig('menuStatus');
-    return {
-      status: 0,
-      data: {
-        menuStatus
-      }
-    };
+    return { menuStatus };
   }
 };
 

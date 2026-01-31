@@ -127,7 +127,7 @@ const updateLibHandler: INextIpcHandler = {
     await fileSys.writeFile(nodePath.join(rootDir, ROOT_CONFIG_NAME), JSON.stringify(libTree, null, 2));
     // Restore, althought it is not necessary, the above changes have affected the original object
     store.setConfig('libraryTree', libTree);
-    return { status: 0, data: resolveData ?? {}, message: '' };
+    return resolveData ?? {};
   }
 };
 

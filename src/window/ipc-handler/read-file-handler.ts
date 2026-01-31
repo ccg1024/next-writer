@@ -1,6 +1,6 @@
 import nodePath from 'path';
 import { IPC_CHANNEL } from 'src/tools/config';
-import { ReadFileRequest, ReadFileResponse } from '_types';
+import { ReadFileRequest } from '_types';
 import INextFileSystem from '../interface/next-file-system';
 import INextIpcHandler from '../interface/next-ipc-handler';
 import INextStoreSystem from '../interface/next-store-system';
@@ -29,8 +29,8 @@ const readFileHandler: INextIpcHandler = {
     if (!buffer) {
       cache.addCache(fullPath, { isChange: false, content });
     }
-    const data: ReadFileResponse = { content };
-    return { status: 0, data };
+
+    return { content };
   }
 };
 

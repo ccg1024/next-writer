@@ -28,15 +28,22 @@ class NextIpcServer implements INextIpcServer {
   }
 
   async dispatch(type: string, data?: unknown): Promise<Response<unknown>> {
-    // Just find the first handler to process event.
     const handler = this.handlers.find(handler => handler.type === type);
 
-    // The request type and response type are determined by the specific handler
-    if (handler) {
-      return handler.apply(type, data);
+    if (!handler) {
+      return { status: -1, data: null, message: 'Do not attach handler to handle such request.' };
     }
 
-    return { status: -1, data: null, message: 'Do not attach handler to handle such request.' };
+    try {
+      const result = await handler.apply(type, data);
+      return { status: 0, data: result };
+    } catch (error) {
+      return {
+        status: -1,
+        data: null,
+        message: error instanceof Error ? error.message : String(error)
+      };
+    }
   }
 
   registerHandler(handler: INextIpcHandler) {
