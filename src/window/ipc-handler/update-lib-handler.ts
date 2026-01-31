@@ -1,26 +1,13 @@
 import nodeFs from 'fs';
-import nodePath from 'path';
 import { isTrulyEmpty } from 'src/tools/utils';
 import { IPC_CHANNEL } from 'src/tools/config';
 import { LibraryTree, UpdateLibRequest } from '_types';
-import { ROOT_CONFIG_NAME } from 'src/config/env';
 import INextFileSystem from '../interface/next-file-system';
 import INextIpcHandler from '../interface/next-ipc-handler';
 import INextStoreSystem from '../interface/next-store-system';
 import { nextWriterC } from '../inversify.config';
 import { TYPES } from '../types';
-
-function getPathInfo(path: string, rootDir: string, fileSys: INextFileSystem) {
-  const formatPath = fileSys.formatPath(path);
-  if (isTrulyEmpty(formatPath)) {
-    return void 0;
-  }
-  const relativePath = formatPath.startsWith(rootDir) ? formatPath.substring(rootDir.length) : formatPath.substring(2);
-  const fullPath = nodePath.join(rootDir, relativePath);
-  const pathToken = relativePath.split('/').filter(token => !!token);
-
-  return { relativePath, fullPath, pathToken };
-}
+import { parsePathInfo, findParentLibNode, persistLibTree } from '../utils/lib-tree-utils';
 
 /**
  * Update library tree object, which locate in main process store
@@ -33,38 +20,33 @@ const updateLibHandler: INextIpcHandler = {
     const fileSys = nextWriterC.get<INextFileSystem>(TYPES.INextFileSystem);
 
     if (isTrulyEmpty(path)) {
-      return Promise.reject(new Error('The library path is empty.'));
+      throw new Error('The library path is empty.');
     }
 
     if (type !== 'file' && type !== 'folder') {
-      return Promise.reject(new Error('Some thing wrong with file type.'));
+      throw new Error('Some thing wrong with file type.');
     }
 
     const store = nextWriterC.get<INextStoreSystem>(TYPES.INextStoreSystem);
     const rootDir = store.getConfig('rootDir');
 
-    const pathInfo = getPathInfo(path, rootDir, fileSys);
-    const pathInfoRuntime = pathInRuntime ? getPathInfo(pathInRuntime, rootDir, fileSys) : null;
+    const pathInfo = parsePathInfo(path, rootDir, fileSys);
+    const pathInfoRuntime = pathInRuntime ? parsePathInfo(pathInRuntime, rootDir, fileSys) : null;
 
-    if (pathInfo.pathToken.length === 0) {
-      return Promise.reject(new Error('The path is invalid.'));
+    if (!pathInfo || pathInfo.pathToken.length === 0) {
+      throw new Error('The path is invalid.');
     }
 
+    // 提取目标名称（⚠️ 会修改 pathInfo.pathToken 原数组）
     const targetName = pathInfo.pathToken.pop();
     const targetNameInRuntime = pathInfoRuntime ? pathInfoRuntime.pathToken.pop() : '';
     const libTree = store.getConfig('libraryTree');
 
-    // get target lib parent
-    let parentLib = libTree;
-    for (let i = 0; i < pathInfo.pathToken.length; i += 1) {
-      if (parentLib === undefined || parentLib === null) {
-        break;
-      }
-      parentLib = parentLib.children.find(lib => lib.name === pathInfo.pathToken[i] && lib.type === 'folder');
-    }
+    // 此时 pathInfo.pathToken 已不包含目标名称，可用于查找父节点
+    const parentLib = findParentLibNode(libTree, pathInfo.pathToken);
 
     if (isTrulyEmpty(parentLib)) {
-      return Promise.reject(new Error('Cannot find target library path'));
+      throw new Error('Cannot find target library path');
     }
 
     let resolveData = null;
@@ -106,7 +88,7 @@ const updateLibHandler: INextIpcHandler = {
       case 'del-folder': {
         const targetToken = parentLib.children.find(lib => lib.name === targetName && lib.type === 'folder');
         if (targetToken.children.length > 0) {
-          return Promise.reject(new Error('The folder content is not empty.'));
+          throw new Error('The folder content is not empty.');
         }
         await nodeFs.promises.rmdir(pathInfo.fullPath);
         parentLib.children = parentLib.children.filter(lib => !(lib.name === targetName && lib.type === 'folder'));
@@ -115,7 +97,7 @@ const updateLibHandler: INextIpcHandler = {
       case 'update-folder': {
         const targetToken = parentLib.children.find(child => child.name === targetName && child.type === 'folder');
         if (!targetToken) {
-          return Promise.reject(new Error('The library is not found.'));
+          throw new Error('The library is not found.');
         }
         targetToken.name = targetNameInRuntime;
         await nodeFs.promises.rename(pathInfo.fullPath, pathInfoRuntime.fullPath);
@@ -124,9 +106,7 @@ const updateLibHandler: INextIpcHandler = {
     }
 
     // Write libTree to root config info
-    await fileSys.writeFile(nodePath.join(rootDir, ROOT_CONFIG_NAME), JSON.stringify(libTree, null, 2));
-    // Restore, althought it is not necessary, the above changes have affected the original object
-    store.setConfig('libraryTree', libTree);
+    await persistLibTree(libTree, rootDir, store, fileSys);
     return resolveData ?? {};
   }
 };

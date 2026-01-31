@@ -1,4 +1,4 @@
-import { MAX_FILE_DESCRIPTION_LENGTH, ROOT_CONFIG_NAME } from 'src/config/env';
+import { MAX_FILE_DESCRIPTION_LENGTH } from 'src/config/env';
 import nodeFs from 'fs';
 import nodePath from 'path';
 import { IPC_CHANNEL } from 'src/tools/config';
@@ -10,6 +10,7 @@ import INextStoreSystem from '../interface/next-store-system';
 import INextCacheSystem from '../interface/next-cache-system';
 import { nextWriterC } from '../inversify.config';
 import { TYPES } from '../types';
+import { parsePathInfo, findParentLibNode, persistLibTree } from '../utils/lib-tree-utils';
 
 const writeFileHandler: INextIpcHandler = {
   type: IPC_CHANNEL.WIRTE_FILE,
@@ -20,28 +21,23 @@ const writeFileHandler: INextIpcHandler = {
     const store = nextWriterC.get<INextStoreSystem>(TYPES.INextStoreSystem);
     const fileSys = nextWriterC.get<INextFileSystem>(TYPES.INextFileSystem);
     const cache = nextWriterC.get<INextCacheSystem>(TYPES.INextCacheSystem);
-    const formatPath = fileSys.formatPath(path);
     const rootDir = store.getConfig('rootDir');
 
-    // TODO: figure out path problem, with or without suffix
-    let fullPath = formatPath.startsWith(rootDir) ? formatPath : nodePath.join(rootDir, formatPath + '.md');
-    const relativePath = fullPath.substring(rootDir.length);
-    const pathToken = relativePath.split('/').filter(token => !!token);
+    const pathInfo = parsePathInfo(path, rootDir, fileSys, { suffix: '.md' });
 
-    if (pathToken.length === 0) {
+    if (!pathInfo || pathInfo.pathToken.length === 0) {
       throw new Error('The path is invalid.');
     }
+
+    let fullPath = pathInfo.fullPath;
+    const pathToken = pathInfo.pathToken;
+
+    // 提取目标名称（⚠️ 会修改 pathToken 数组）
     const targetName = nodePath.basename(pathToken.pop(), '.md');
     const libTree = store.getConfig('libraryTree');
 
-    // get target lib parent
-    let parentLib = libTree;
-    for (let i = 0; i < pathToken.length; i += 1) {
-      if (parentLib === undefined || parentLib === null) {
-        break;
-      }
-      parentLib = parentLib.children.find(lib => lib.name === pathToken[i] && lib.type === 'folder');
-    }
+    // 此时 pathToken 已不包含目标名称，可用于查找父节点
+    const parentLib = findParentLibNode(libTree, pathToken);
 
     if (isTrulyEmpty(parentLib)) {
       throw new Error('Cannot find target library path');
@@ -76,16 +72,12 @@ const writeFileHandler: INextIpcHandler = {
       const newStat = nodeFs.promises.stat(fullPath);
       target.modifiedTime = (await newStat).mtime.toLocaleString();
       target.description = content.substring(0, MAX_FILE_DESCRIPTION_LENGTH);
-      await fileSys.writeFile(nodePath.join(rootDir, ROOT_CONFIG_NAME), JSON.stringify(libTree, null, 2));
-      store.setConfig('libraryTree', libTree);
     } catch (e) {
       throw new Error('保存文件失败');
     }
 
     // Update library tree
-    await fileSys.writeFile(nodePath.join(rootDir, ROOT_CONFIG_NAME), JSON.stringify(libTree, null, 2));
-    // Restore, althought it is not necessary, the above changes have affected the original object
-    store.setConfig('libraryTree', libTree);
+    await persistLibTree(libTree, rootDir, store, fileSys);
   }
 };
 
