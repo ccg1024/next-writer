@@ -5,13 +5,15 @@ import readFileHandler from './read-file-handler';
 import updateLibHandler from './update-lib-handler';
 import writeFileHandler from './write-file-handler';
 import runtimeHandler from './runtime-handler';
+import updateCacheHandler from './update-cache-handler';
 
 const ipcHanlders: Array<INextIpcHandler> = [
   readConfigHandler,
   readFileHandler,
   updateLibHandler,
   writeFileHandler,
-  runtimeHandler
+  runtimeHandler,
+  updateCacheHandler
 ];
 
 export default ipcHanlders;

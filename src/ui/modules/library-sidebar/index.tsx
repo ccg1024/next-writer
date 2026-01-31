@@ -425,9 +425,12 @@ const NoteItem: FC<NoteItemProps> = props => {
         onClick={() => void onClick(note.id)}
         className={`library-detail-item ${activeNoteId === note.id ? 'library-detail-item-selected' : ''}`}
       >
-        <Title level={5} className="library-detail-item-text" ellipsis>
-          {note.name}
-        </Title>
+        <div className="library-detail-item-title-row">
+          <Title level={5} className="library-detail-item-text" ellipsis>
+            {note.name}
+          </Title>
+          {note.isChange && <span className="unsaved-indicator" />}
+        </div>
         <Paragraph className="library-detail-item-text">{note.modifiedTime}</Paragraph>
         <Paragraph className="library-detail-item-text" ellipsis={{ rows: 2 }} style={{ wordBreak: 'break-all' }}>
           {spans.map((span, index) => (

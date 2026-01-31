@@ -5,6 +5,7 @@ import {
   ReadFileResponse,
   UpdateLibRequest,
   UpdateLibResponse,
+  UpdateCacheRequest,
   WriteFileRequest
 } from '_types';
 import api from '../api';
@@ -33,6 +34,10 @@ async function queryRuntimeConfig() {
   return api<unknown, RuntimeRecord>({ type: IPC_CHANNEL.RUNTIME });
 }
 
-const mainProcess = { readConfig, readFile, updateLib, writeFile, queryRuntimeConfig };
+async function updateCache(data: UpdateCacheRequest) {
+  return api<UpdateCacheRequest, { success: boolean }>({ type: IPC_CHANNEL.UPDATE_CACHE, data });
+}
+
+const mainProcess = { readConfig, readFile, updateLib, writeFile, queryRuntimeConfig, updateCache };
 
 export default mainProcess;

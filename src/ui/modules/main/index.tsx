@@ -38,6 +38,9 @@ const Main: FC<MainProps> = props => {
   const { message } = App.useApp();
   const [initialEditorState, setInitialEditorState] = useState<InitialEditorState>(null);
   const { updateRenderLibrary } = useHomeContext();
+  const cacheUpdateTimerRef = useRef<NodeJS.Timeout | null>(null);
+  // Track whether current file is already marked as modified
+  const isModifiedRef = useRef<boolean>(false);
 
   // 处理自定义编辑器事件
   const debounceEditorTransaction = useMemo(() => {
@@ -69,9 +72,57 @@ const Main: FC<MainProps> = props => {
         });
       }
     });
+
+    // Immediate state update: only if transitioning to modified
+    if (!isModifiedRef.current && currentNote?.relativePath) {
+      isModifiedRef.current = true;
+
+      // Update UI state immediately (no delay)
+      updateRenderLibrary((_, preNote) => ({
+        ...preNote,
+        isChange: true
+      }));
+
+      // Update cache state immediately (no delay)
+      mainProcess.updateCache({
+        path: currentNote.relativePath,
+        content: update.view.state.doc.toString(),
+        isChange: true
+      });
+
+      // Start content caching timer after first immediate update
+      cacheUpdateTimerRef.current = setTimeout(() => {
+        const content = update.view.state.doc.toString();
+        if (currentNote?.relativePath) {
+          mainProcess.updateCache({
+            path: currentNote.relativePath,
+            content,
+            isChange: isModifiedRef.current
+          });
+        }
+        cacheUpdateTimerRef.current = null;
+      }, 1000);
+      return; // Skip the debounced update below
+    }
+
+    // Content caching: debounced (only for subsequent edits)
+    if (!cacheUpdateTimerRef.current) {
+      cacheUpdateTimerRef.current = setTimeout(() => {
+        const content = update.view.state.doc.toString();
+        if (currentNote?.relativePath) {
+          mainProcess.updateCache({
+            path: currentNote.relativePath,
+            content,
+            isChange: isModifiedRef.current
+          });
+        }
+        cacheUpdateTimerRef.current = null;
+      }, 1000); // Debounce: update after 1 second of inactivity
+    }
+
     // 通知其他模块，文档变更
     messagePublish.pub('docChanged', update.view);
-  }, []);
+  }, [currentNote, updateRenderLibrary, debounceEditorTransaction]);
 
   const onEditorChange = useCallback((_update: ViewUpdate) => {
     // ..
@@ -93,14 +144,19 @@ const Main: FC<MainProps> = props => {
               message.error(res.message || '保存文件失败');
               return;
             }
+
+            // Reset modified state immediately
+            isModifiedRef.current = false;
+
             // Update relative path
             const oldRelativePathToken = (currentNote.relativePath ?? '').split('/');
             oldRelativePathToken.pop();
             oldRelativePathToken.push(currentNote.name);
-            // Update
+            // Update with isChange: false
             const newAggregateNote = {
               ...currentNote,
-              relativePath: oldRelativePathToken.join('/')
+              relativePath: oldRelativePathToken.join('/'),
+              isChange: false
             };
             updateRenderLibrary(newAggregateNote);
             // pubNoteUpdate(newAggregateNote.note);
@@ -120,6 +176,10 @@ const Main: FC<MainProps> = props => {
     if (isTrulyEmpty(currentNote?.id)) {
       return;
     }
+
+    // Reset modified state when loading a new file
+    isModifiedRef.current = currentNote.isChange ?? false;
+
     let shouldUpdate = true;
     const readNote = async () => {
       const { status, data } = await mainProcess.readFile({ path: currentNote.relativePath });

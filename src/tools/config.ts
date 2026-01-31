@@ -17,5 +17,6 @@ export const IPC_CHANNEL = {
   READ_FILE: 'read-file',
   UPDATE_LIB: 'update-lib',
   WIRTE_FILE: 'write-file',
-  RUNTIME: 'runtime' // 运行时配置
+  RUNTIME: 'runtime', // 运行时配置
+  UPDATE_CACHE: 'update-cache'
 };

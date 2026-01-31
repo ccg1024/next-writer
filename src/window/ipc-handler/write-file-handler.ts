@@ -66,8 +66,12 @@ const writeFileHandler: INextIpcHandler = {
     }
     try {
       await fileSys.writeFile(fullPath, content);
-      // add cache
-      cache.addCache(fullPath, { isChange: false, content });
+      // Update cache with isChange: false
+      if (cache.exitCache(fullPath)) {
+        cache.update(fullPath, { isChange: false, content });
+      } else {
+        cache.addCache(fullPath, { isChange: false, content });
+      }
       // update library Tree
       const newStat = nodeFs.promises.stat(fullPath);
       target.modifiedTime = (await newStat).mtime.toLocaleString();

@@ -27,6 +27,15 @@ class NextCacheSystem implements INextCacheSystem {
       ...(this.__cache ?? {}),
       [key]: cacheContent
     };
+
+    // Update window document edited state
+    const win = this.__sotre.getConfig('win');
+
+    if (!win) {
+      return;
+    }
+
+    win.setDocumentEdited(this.hasModifed());
   }
 
   update(key: string, updateContent: Partial<CacheContent>): void {
@@ -58,6 +67,15 @@ class NextCacheSystem implements INextCacheSystem {
   removeCache(key: string): void {
     if (this.exitCache(key)) {
       delete this.__cache[key];
+
+      // Update window document edited state
+      const win = this.__sotre.getConfig('win');
+
+      if (!win) {
+        return;
+      }
+
+      win.setDocumentEdited(this.hasModifed());
     }
   }
 

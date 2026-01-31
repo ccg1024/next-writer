@@ -79,6 +79,11 @@ class NextApp implements INextApp {
       this._win.removeAllListeners();
     }
 
+    // Clean up IPC handlers before re-registration to prevent duplicate handlers
+    if (this._ipc) {
+      this._ipc.destroy();
+    }
+
     this._win = new BrowserWindow(DEFAULT_WINDOW);
 
     // Store the current brwoserWindow
@@ -238,7 +243,10 @@ class NextApp implements INextApp {
 
     this._win.on('close', async e => {
       if (this._cache.hasModifed()) {
-        const stopClose = await dialog.showMessageBox(this._win, {
+        // 立即阻止默认关闭行为，等待用户确认
+        e.preventDefault();
+
+        const result = await dialog.showMessageBox(this._win, {
           type: 'warning',
           buttons: ['取消', '确认'],
           defaultId: 1,
@@ -246,10 +254,20 @@ class NextApp implements INextApp {
           title: '通知'
         });
 
-        if (stopClose) {
-          e.preventDefault();
+        // response: 0 = "取消" (Cancel), 1 = "确认" (Confirm)
+        if (result.response === 0) {
+          // 用户选择取消，什么都不做，窗口保持打开
           return;
         }
+
+        // 用户选择确认，执行清理逻辑然后关闭窗口
+        // 先移除监听器，避免再次触发 close 事件
+        this._win.removeAllListeners();
+        // 先关闭窗口（此时 this._win 还不是 null）
+        this._win.close();
+        // 执行清理逻辑（会将 this._win 设为 null）
+        this.destroy();
+        return;
       }
 
       this._win.removeAllListeners();

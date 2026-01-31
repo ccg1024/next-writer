@@ -169,6 +169,12 @@ export type UpdateLibRequest = {
 };
 
 export type UpdateLibResponse = LibraryTree;
+
+export type UpdateCacheRequest = {
+  path: string;
+  content: string;
+  isChange: boolean;
+};
 // ============================================================
 // end -- just for ipc communication
 // ============================================================
