@@ -41,6 +41,8 @@ const Main: FC<MainProps> = props => {
   const cacheUpdateTimerRef = useRef<NodeJS.Timeout | null>(null);
   // Track whether current file is already marked as modified
   const isModifiedRef = useRef<boolean>(false);
+  // Track previous file info for cleanup on switch
+  const prevNoteInfoRef = useRef<{ relativePath?: string; id?: string }>({});
 
   // 处理自定义编辑器事件
   const debounceEditorTransaction = useMemo(() => {
@@ -145,6 +147,12 @@ const Main: FC<MainProps> = props => {
               return;
             }
 
+            // Clear any pending cache updates since file is now saved
+            if (cacheUpdateTimerRef.current) {
+              clearTimeout(cacheUpdateTimerRef.current);
+              cacheUpdateTimerRef.current = null;
+            }
+
             // Reset modified state immediately
             isModifiedRef.current = false;
 
@@ -152,10 +160,16 @@ const Main: FC<MainProps> = props => {
             const oldRelativePathToken = (currentNote.relativePath ?? '').split('/');
             oldRelativePathToken.pop();
             oldRelativePathToken.push(currentNote.name);
+            const newRelativePath = oldRelativePathToken.join('/');
+            // Update prevNoteInfoRef with new path after save
+            prevNoteInfoRef.current = {
+              ...prevNoteInfoRef.current,
+              relativePath: newRelativePath
+            };
             // Update with isChange: false
             const newAggregateNote = {
               ...currentNote,
-              relativePath: oldRelativePathToken.join('/'),
+              relativePath: newRelativePath,
               isChange: false
             };
             updateRenderLibrary(newAggregateNote);
@@ -172,6 +186,7 @@ const Main: FC<MainProps> = props => {
   // ============================================================
   // Effect
   // ============================================================
+  // Effect 1: Read file content when note changes
   useEffect(() => {
     if (isTrulyEmpty(currentNote?.id)) {
       return;
@@ -194,6 +209,37 @@ const Main: FC<MainProps> = props => {
     };
   }, [currentNote?.id]);
 
+  // Effect 2: Flush cache before editor unmounts (file switch or component unmount)
+  useEffect(() => {
+    if (isTrulyEmpty(currentNote?.id) || !editor) {
+      return;
+    }
+
+    // Initialize cache info when editor mounts or note switches
+    prevNoteInfoRef.current = {
+      relativePath: currentNote.relativePath,
+      id: currentNote.id
+    };
+
+    return () => {
+      // Before unmounting, flush pending timer and update cache
+      if (cacheUpdateTimerRef.current) {
+        clearTimeout(cacheUpdateTimerRef.current);
+        cacheUpdateTimerRef.current = null;
+      }
+
+      // Always update cache with latest content when switching files
+      if (prevNoteInfoRef.current.relativePath) {
+        mainProcess.updateCache({
+          path: prevNoteInfoRef.current.relativePath,
+          content: editor.state.doc.toString(),
+          isChange: isModifiedRef.current
+        });
+      }
+    };
+  }, [editor, currentNote?.id]);
+
+  // Effect 3: Register save file IPC listener
   useEffect(() => {
     const saveFile: RendererIpcActionCallback = (_e, action) => {
       dispatchIpcAction(action);
