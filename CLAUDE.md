@@ -16,6 +16,12 @@ npm run make             # Build for distribution
 npm run lint             # Run ESLint
 ```
 
+## Task Completion
+
+After completing any task, you MUST output the following message:
+
+`+_+ 还有什么需要嘛？`
+
 ## Architecture
 
 This is an Electron application with separate main and renderer processes:
