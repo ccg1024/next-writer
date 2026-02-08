@@ -59,72 +59,75 @@ const Main: FC<MainProps> = props => {
 
   const headInProcess = useRef<string>('');
 
-  const onEditorDocChange = useCallback((update: ViewUpdate) => {
-    update.transactions.forEach(tr => {
-      if (tr.changes) {
-        tr.changes.iterChanges(fromA => {
-          // 如果前 MAX_DESCRIPTION_LENGTH 个字符变化，则更新文件描述内容
-          if (fromA <= MAX_DESCRIPTION_LENGTH) {
-            const fullDoc = update.state.doc.toString();
-            const doc =
-              fullDoc.length > MAX_DESCRIPTION_LENGTH ? fullDoc.substring(0, MAX_DESCRIPTION_LENGTH) : fullDoc;
-            // Must using debounce function
-            debounceEditorTransaction({ type: 'updateDescription', doc });
-          }
-        });
-      }
-    });
-
-    // Immediate state update: only if transitioning to modified
-    if (!isModifiedRef.current && currentNote?.relativePath) {
-      isModifiedRef.current = true;
-
-      // Update UI state immediately (no delay)
-      updateRenderLibrary((_, preNote) => ({
-        ...preNote,
-        isChange: true
-      }));
-
-      // Update cache state immediately (no delay)
-      mainProcess.updateCache({
-        path: currentNote.relativePath,
-        content: update.view.state.doc.toString(),
-        isChange: true
+  const onEditorDocChange = useCallback(
+    (update: ViewUpdate) => {
+      update.transactions.forEach(tr => {
+        if (tr.changes) {
+          tr.changes.iterChanges(fromA => {
+            // 如果前 MAX_DESCRIPTION_LENGTH 个字符变化，则更新文件描述内容
+            if (fromA <= MAX_DESCRIPTION_LENGTH) {
+              const fullDoc = update.state.doc.toString();
+              const doc =
+                fullDoc.length > MAX_DESCRIPTION_LENGTH ? fullDoc.substring(0, MAX_DESCRIPTION_LENGTH) : fullDoc;
+              // Must using debounce function
+              debounceEditorTransaction({ type: 'updateDescription', doc });
+            }
+          });
+        }
       });
 
-      // Start content caching timer after first immediate update
-      cacheUpdateTimerRef.current = setTimeout(() => {
-        const content = update.view.state.doc.toString();
-        if (currentNote?.relativePath) {
-          mainProcess.updateCache({
-            path: currentNote.relativePath,
-            content,
-            isChange: isModifiedRef.current
-          });
-        }
-        cacheUpdateTimerRef.current = null;
-      }, 1000);
-      return; // Skip the debounced update below
-    }
+      // Immediate state update: only if transitioning to modified
+      if (!isModifiedRef.current && currentNote?.relativePath) {
+        isModifiedRef.current = true;
 
-    // Content caching: debounced (only for subsequent edits)
-    if (!cacheUpdateTimerRef.current) {
-      cacheUpdateTimerRef.current = setTimeout(() => {
-        const content = update.view.state.doc.toString();
-        if (currentNote?.relativePath) {
-          mainProcess.updateCache({
-            path: currentNote.relativePath,
-            content,
-            isChange: isModifiedRef.current
-          });
-        }
-        cacheUpdateTimerRef.current = null;
-      }, 1000); // Debounce: update after 1 second of inactivity
-    }
+        // Update UI state immediately (no delay)
+        updateRenderLibrary((_, preNote) => ({
+          ...preNote,
+          isChange: true
+        }));
 
-    // 通知其他模块，文档变更
-    messagePublish.pub('docChanged', update.view);
-  }, [currentNote, updateRenderLibrary, debounceEditorTransaction]);
+        // Update cache state immediately (no delay)
+        mainProcess.updateCache({
+          path: currentNote.relativePath,
+          content: update.view.state.doc.toString(),
+          isChange: true
+        });
+
+        // Start content caching timer after first immediate update
+        cacheUpdateTimerRef.current = setTimeout(() => {
+          const content = update.view.state.doc.toString();
+          if (currentNote?.relativePath) {
+            mainProcess.updateCache({
+              path: currentNote.relativePath,
+              content,
+              isChange: isModifiedRef.current
+            });
+          }
+          cacheUpdateTimerRef.current = null;
+        }, 1000);
+        return; // Skip the debounced update below
+      }
+
+      // Content caching: debounced (only for subsequent edits)
+      if (!cacheUpdateTimerRef.current) {
+        cacheUpdateTimerRef.current = setTimeout(() => {
+          const content = update.view.state.doc.toString();
+          if (currentNote?.relativePath) {
+            mainProcess.updateCache({
+              path: currentNote.relativePath,
+              content,
+              isChange: isModifiedRef.current
+            });
+          }
+          cacheUpdateTimerRef.current = null;
+        }, 1000); // Debounce: update after 1 second of inactivity
+      }
+
+      // 通知其他模块，文档变更
+      messagePublish.pub('docChanged', update.view);
+    },
+    [currentNote, updateRenderLibrary, debounceEditorTransaction]
+  );
 
   const onEditorChange = useCallback((_update: ViewUpdate) => {
     // ..
@@ -237,7 +240,7 @@ const Main: FC<MainProps> = props => {
         });
       }
     };
-  }, [editor, currentNote?.id]);
+  }, [editor]);
 
   // Effect 3: Register save file IPC listener
   useEffect(() => {

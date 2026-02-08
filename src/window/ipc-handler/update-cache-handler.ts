@@ -15,9 +15,7 @@ const updateCacheHandler: INextIpcHandler = {
     const cache = nextWriterC.get<INextCacheSystem>(TYPES.INextCacheSystem);
     const rootDir = store.getConfig('rootDir');
 
-    const fullPath = path.startsWith(rootDir)
-      ? path
-      : nodePath.join(rootDir, path + '.md');
+    const fullPath = path.startsWith(rootDir) ? path : nodePath.join(rootDir, path + '.md');
 
     // Update or add cache with isChange flag
     if (cache.exitCache(fullPath)) {

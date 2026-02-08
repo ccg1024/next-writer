@@ -24,10 +24,10 @@ const readFileHandler: INextIpcHandler = {
     // Get cache
     const buffer = cache.getCache(fullPath);
     // If cache content is empty, read from file system to avoid hot-reload issues
-    const isCacheContentEmpty = buffer && (buffer.content === '' || buffer.content === undefined || buffer.content === null);
-    const content = (buffer && !isCacheContentEmpty)
-      ? buffer.content
-      : await fileSys.readFile(fullPath, { encoding: 'utf8' });
+    const isCacheContentEmpty =
+      buffer && (buffer.content === '' || buffer.content === undefined || buffer.content === null);
+    const content =
+      buffer && !isCacheContentEmpty ? buffer.content : await fileSys.readFile(fullPath, { encoding: 'utf8' });
 
     // update cache
     if (!buffer || isCacheContentEmpty) {
