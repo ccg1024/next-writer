@@ -5,6 +5,7 @@
 当前侧边栏使用半透明背景色 `rgba(235, 235, 235, 0.8)`，在操作系统深色模式下会与黑色文字产生对比度问题，导致可读性下降。
 
 ### 现有问题
+
 - 左侧栏：`rgba(235, 235, 235, 0.8)` - 半透明，深色模式下透出黑色背景
 - 选中项/悬停态：使用 `rgba(0, 0, 0, alpha)` - 在深色背景下不可见
 - 文字颜色：硬编码为黑色，深色模式下无对比度
@@ -21,7 +22,7 @@
 // 默认（浅色主题）
 :root {
   // 左侧库列表栏
-  --sidebar-bg: rgba(235, 235, 235, 1);           // 从 0.8 改为 1，不透明
+  --sidebar-bg: rgba(235, 235, 235, 1); // 从 0.8 改为 1，不透明
   --sidebar-border: rgba(0, 0, 0, 0.04);
   --sidebar-text-primary: rgba(0, 0, 0, 0.88);
   --sidebar-text-secondary: rgba(0, 0, 0, 0.65);
@@ -54,7 +55,7 @@
 @media (prefers-color-scheme: dark) {
   :root {
     // 左侧库列表栏
-    --sidebar-bg: rgba(40, 40, 40, 1);            // 深灰，不透明
+    --sidebar-bg: rgba(40, 40, 40, 1); // 深灰，不透明
     --sidebar-border: rgba(255, 255, 255, 0.08);
     --sidebar-text-primary: rgba(255, 255, 255, 0.9);
     --sidebar-text-secondary: rgba(255, 255, 255, 0.65);
@@ -69,7 +70,7 @@
     --sidebar-footer-hover-bg: rgba(255, 255, 255, 0.1);
 
     // 中间详情栏
-    --detail-bg: rgba(50, 50, 50, 1);             // 比侧边栏略亮的深灰
+    --detail-bg: rgba(50, 50, 50, 1); // 比侧边栏略亮的深灰
     --detail-border: rgba(255, 255, 255, 0.1);
     --detail-text-primary: rgba(255, 255, 255, 0.9);
     --detail-text-secondary: rgba(255, 255, 255, 0.45);
@@ -80,7 +81,7 @@
     --detail-icon-hover-bg: rgba(255, 255, 255, 0.1);
 
     // 未保存指示器
-    --unsaved-indicator-bg: #ff7875;             // 稍微柔和一点的红色
+    --unsaved-indicator-bg: #ff7875; // 稍微柔和一点的红色
   }
 }
 ```
@@ -99,13 +100,13 @@
   border-right: 1px solid var(--sidebar-border);
   cursor: default;
   user-select: none;
-  background-color: var(--sidebar-bg);          // 替换 rgba(235, 235, 235, 0.8)
+  background-color: var(--sidebar-bg); // 替换 rgba(235, 235, 235, 0.8)
   display: flex;
   flex-direction: column;
   flex-flow: column;
   flex-shrink: 0;
   min-width: 0;
-  color: var(--sidebar-text-primary);           // 添加文字颜色
+  color: var(--sidebar-text-primary); // 添加文字颜色
 
   .library-sidebar-main {
     overflow: auto;
@@ -126,7 +127,7 @@
       padding-left: 28px;
       line-height: 40px;
       background-color: var(--sidebar-footer-bg);
-      color: var(--sidebar-text-secondary);     // 添加文字颜色
+      color: var(--sidebar-text-secondary); // 添加文字颜色
 
       &:hover {
         cursor: pointer;
@@ -145,7 +146,7 @@
     padding-block-end: 8px;
     font-weight: bold;
     flex-shrink: 0;
-    color: var(--sidebar-text-primary);         // 添加文字颜色
+    color: var(--sidebar-text-primary); // 添加文字颜色
   }
 
   ._next_writer-menu-root {
@@ -161,12 +162,12 @@
     border-radius: 4px;
     display: inline-flex;
     vertical-align: -2px;
-    opacity: .1;
+    opacity: 0.1;
 
     &:hover {
       cursor: pointer;
       opacity: 1;
-      background-color: var(--menu-icon-hover-bg);  // 替换 rgba(0, 0, 0, 0.08)
+      background-color: var(--menu-icon-hover-bg); // 替换 rgba(0, 0, 0, 0.08)
     }
   }
 
@@ -179,7 +180,7 @@
 .library-detail-wrapper {
   width: 300px;
   border-right: 1px solid var(--detail-border);
-  background-color: var(--detail-bg);               // 替换 white
+  background-color: var(--detail-bg); // 替换 white
   padding: 16px;
   flex-shrink: 0;
   min-width: 0;
@@ -189,7 +190,7 @@
   flex-direction: column;
   flex-flow: column;
   position: relative;
-  color: var(--detail-text-primary);                // 添加文字颜色
+  color: var(--detail-text-primary); // 添加文字颜色
 }
 
 .library-detail-header {
@@ -201,7 +202,7 @@
   flex-shrink: 0;
   min-height: 0;
   box-sizing: border-box;
-  color: var(--detail-text-primary);                // 添加文字颜色
+  color: var(--detail-text-primary); // 添加文字颜色
 
   .library-detail-icon {
     padding: 4px;
@@ -225,10 +226,10 @@
   padding: 10px;
   cursor: pointer;
   border-radius: 2px;
-  color: var(--detail-text-primary);                // 添加文字颜色
+  color: var(--detail-text-primary); // 添加文字颜色
 
   &:not(.library-detail-item-selected):hover {
-    background-color: var(--detail-item-hover-bg);  // 替换 rgba(0, 0, 0, 0.02)
+    background-color: var(--detail-item-hover-bg); // 替换 rgba(0, 0, 0, 0.02)
   }
 
   .library-detail-item-text {
@@ -246,7 +247,7 @@
   .unsaved-indicator {
     width: 8px;
     height: 8px;
-    background-color: var(--unsaved-indicator-bg);  // 替换 #ff4d4f
+    background-color: var(--unsaved-indicator-bg); // 替换 #ff4d4f
     border-radius: 50%;
     display: inline-block;
     flex-shrink: 0;
@@ -255,9 +256,15 @@
   }
 
   @keyframes pulse {
-    0% { opacity: 1; }
-    50% { opacity: 0.5; }
-    100% { opacity: 1; }
+    0% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
+    100% {
+      opacity: 1;
+    }
   }
 }
 
@@ -274,23 +281,24 @@
 
 ## 配色对比表
 
-| 元素 | 浅色主题 | 深色主题 |
-|------|----------|----------|
-| **左侧栏背景** | `#ebebeb` | `#282828` |
-| **详情栏背景** | `#ffffff` | `#323232` |
-| **边框颜色** | `rgba(0,0,0,0.04)` | `rgba(255,255,255,0.08)` |
-| **主要文字** | `rgba(0,0,0,0.88)` | `rgba(255,255,255,0.9)` |
-| **次要文字** | `rgba(0,0,0,0.65)` | `rgba(255,255,255,0.65)` |
-| **菜单选中** | `rgba(0,0,0,0.06)` | `rgba(255,255,255,0.08)` |
-| **笔记选中** | `rgba(0,0,0,0.06)` | `rgba(255,255,255,0.12)` |
-| **悬停态** | `rgba(0,0,0,0.02~0.08)` | `rgba(255,255,255,0.05~0.1)` |
-| **未保存指示器** | `#ff4d4f` | `#ff7875` |
+| 元素             | 浅色主题                | 深色主题                     |
+| ---------------- | ----------------------- | ---------------------------- |
+| **左侧栏背景**   | `#ebebeb`               | `#282828`                    |
+| **详情栏背景**   | `#ffffff`               | `#323232`                    |
+| **边框颜色**     | `rgba(0,0,0,0.04)`      | `rgba(255,255,255,0.08)`     |
+| **主要文字**     | `rgba(0,0,0,0.88)`      | `rgba(255,255,255,0.9)`      |
+| **次要文字**     | `rgba(0,0,0,0.65)`      | `rgba(255,255,255,0.65)`     |
+| **菜单选中**     | `rgba(0,0,0,0.06)`      | `rgba(255,255,255,0.08)`     |
+| **笔记选中**     | `rgba(0,0,0,0.06)`      | `rgba(255,255,255,0.12)`     |
+| **悬停态**       | `rgba(0,0,0,0.02~0.08)` | `rgba(255,255,255,0.05~0.1)` |
+| **未保存指示器** | `#ff4d4f`               | `#ff7875`                    |
 
 ---
 
 ## 实施步骤
 
 1. **创建主题变量文件**
+
    ```bash
    src/ui/styles/themes.less
    ```

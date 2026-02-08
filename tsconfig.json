@@ -26,4 +26,3 @@
   "include": ["src/**/*"],
   "exclude": ["src/**/unused/*"]
 }
-

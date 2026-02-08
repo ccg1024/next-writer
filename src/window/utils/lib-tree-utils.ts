@@ -63,9 +63,7 @@ export function parsePathInfo(
     return null;
   }
 
-  const relativePath = formatPath.startsWith(rootDir)
-    ? formatPath.substring(rootDir.length)
-    : formatPath.substring(2);
+  const relativePath = formatPath.startsWith(rootDir) ? formatPath.substring(rootDir.length) : formatPath.substring(2);
 
   const fullPath = options?.suffix
     ? nodePath.join(rootDir, relativePath + options.suffix)
@@ -82,16 +80,11 @@ export function parsePathInfo(
  * @param pathTokens - 路径标记数组（不包含目标名称）
  * @returns 父级节点，未找到返回 undefined
  */
-export function findParentLibNode(
-  libTree: LibraryTree,
-  pathTokens: string[]
-): LibraryTree | undefined {
+export function findParentLibNode(libTree: LibraryTree, pathTokens: string[]): LibraryTree | undefined {
   let parentLib = libTree;
   for (let i = 0; i < pathTokens.length; i += 1) {
     if (!parentLib) break;
-    parentLib = parentLib.children.find(
-      lib => lib.name === pathTokens[i] && lib.type === 'folder'
-    );
+    parentLib = parentLib.children.find(lib => lib.name === pathTokens[i] && lib.type === 'folder');
   }
   return parentLib;
 }
@@ -109,10 +102,7 @@ export async function persistLibTree(
   store: INextStoreSystem,
   fileSys: INextFileSystem
 ): Promise<void> {
-  await fileSys.writeFile(
-    nodePath.join(rootDir, ROOT_CONFIG_NAME),
-    JSON.stringify(libTree, null, 2)
-  );
+  await fileSys.writeFile(nodePath.join(rootDir, ROOT_CONFIG_NAME), JSON.stringify(libTree, null, 2));
   store.setConfig('libraryTree', libTree);
 }
 
@@ -142,9 +132,7 @@ export function extractTargetAndParent(
     throw new Error('Cannot extract target name from empty path tokens');
   }
 
-  const targetName = options?.stripExtension
-    ? popped.replace(/\.[^.]+$/, '')
-    : popped;
+  const targetName = options?.stripExtension ? popped.replace(/\.[^.]+$/, '') : popped;
 
   return {
     targetName,
@@ -167,14 +155,9 @@ export function extractTargetAndParent(
  * // tokens: ['folder1', 'folder2', 'myfile'] ✅ 原数组不变
  * ```
  */
-export function getTargetName(
-  pathTokens: string[],
-  options?: { stripExtension?: boolean }
-): string {
+export function getTargetName(pathTokens: string[], options?: { stripExtension?: boolean }): string {
   const lastName = pathTokens[pathTokens.length - 1];
-  return options?.stripExtension
-    ? lastName.replace(/\.[^.]+$/, '')
-    : lastName;
+  return options?.stripExtension ? lastName.replace(/\.[^.]+$/, '') : lastName;
 }
 
 /**
@@ -194,4 +177,3 @@ export function getTargetName(
 export function getParentPathTokens(pathTokens: string[]): string[] {
   return pathTokens.slice(0, -1);
 }
-
