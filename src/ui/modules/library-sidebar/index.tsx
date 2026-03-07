@@ -406,7 +406,7 @@ const NoteItem: FC<NoteItemProps> = props => {
   return (
     <Popover
       arrow={false}
-      mouseEnterDelay={0.5}
+      mouseEnterDelay={2}
       placement="rightTop"
       content={
         <div className="popover-content">
