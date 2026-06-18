@@ -1,10 +1,11 @@
+// eslint-disable-next-line import/default
 import CopyWebpackPlugin from 'copy-webpack-plugin';
 import path from 'path';
 import type { Configuration } from 'webpack';
 import { plugins } from './webpack.plugins';
 import { rules } from './webpack.rules';
 
-const assets = ['svg', 'img'];
+const assets = ['img'];
 
 const copyPlugins = [
   new CopyWebpackPlugin({

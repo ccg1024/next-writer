@@ -5,17 +5,6 @@ export type NormalObject = Record<
   string | number | symbol | null | undefined | bigint | boolean | NormalObject
 >;
 
-type Primitive = string | number | null | undefined | symbol | bigint | boolean;
-export type Obj = {
-  [key: string]: Primitive | Obj;
-};
-
-export type FrontMatter = {
-  tittle: string;
-  description: string;
-};
-
-
 // -----------------------------------------------
 // For Renderer process
 // -----------------------------------------------
@@ -66,8 +55,6 @@ declare global {
 // ============================================================
 // ==                    New Type define                     ==
 // ============================================================
-export const NEXT_WRITER_VERSION = 'v0.0.1';
-
 export type LibraryType = 'folder' | 'file';
 
 export type LibraryBase = {
@@ -119,10 +106,6 @@ export type MainProcessMenuStatus = {
   detailSidebar: boolean;
   tocSidebar: boolean;
   actionSidebar: boolean; // The Drawer component sidebar which contain delete, rename, etc option for a library or a library's file
-};
-
-export type DeepReadOnly<T extends Record<string | symbol, unknown>> = {
-  readonly [K in keyof T]: DeepReadOnly<T[K]>;
 };
 
 // ============================================================
@@ -178,10 +161,3 @@ export type UpdateCacheRequest = {
 // ============================================================
 // end -- just for ipc communication
 // ============================================================
-
-export type RequestAddLibOrFile = {
-  type: 'file' | 'folder';
-  path: string;
-};
-
-export type RequestDelLibOrFile = RequestAddLibOrFile;

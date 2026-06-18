@@ -155,7 +155,7 @@ const mdTags = {
   tableRow: Tag.define()
 };
 
-export function markdownTagExtension(): MarkdownConfig {
+function markdownTagExtension(): MarkdownConfig {
   return {
     props: [
       styleTags({
@@ -398,8 +398,8 @@ function mountUpdateListener(config?: IMountUpdateListener) {
   });
 }
 
-export const dynamicViewPlugins = new Compartment();
-export const dynamicFieldPlugins = new Compartment();
+const dynamicViewPlugins = new Compartment();
+const dynamicFieldPlugins = new Compartment();
 function dynamicPlugin() {
   return [dynamicViewPlugins.of(ViewPlugins()), dynamicFieldPlugins.of(FieldPlugins())];
 }
