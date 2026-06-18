@@ -1,86 +1,41 @@
-# AGENTS.md - Next Writer Development Guide
+# Repository Guidelines
 
-## Build & Development Commands
+## Project Structure & Module Organization
+- `src/` contains app code for the Electron main/renderer split.
+  - `src/window/` is the main process (IPC, window management, file system).
+  - `src/ui/` is the React renderer (modules, components, plugins, hooks).
+  - `src/preload.ts` bridges IPC between processes.
+- `public/` holds static assets.
+- `test/` contains manual test fixtures (markdown files and trace data).
+- Build/config files live at the root: `forge.config.ts`, `webpack.*.ts`, `tsconfig.json`.
 
-- `npm start` - Start development server with hot reload
-- `npm run make` - Package application for distribution
-- `npm run lint` - Run ESLint code quality checks
-- `npm run package` - Create package without distribution
-- `npm run publish` - Publish to distribution channels
+## Build, Test, and Development Commands
+- `npm start`: run Electron Forge dev mode with hot reload.
+- `npm run make`: build distributables.
+- `npm run package`: package without making installers.
+- `npm run lint`: run ESLint checks.
+- `npm run format`: format with Prettier (all supported file types).
+- `npm run format:check`: verify formatting without writing.
 
-## Code Style Guidelines
+## Coding Style & Naming Conventions
+- Indentation: 2 spaces; line width: 120; semicolons required; single quotes.
+- Formatting is enforced by Prettier (`prettier.config.js`); ESLint is quality-only.
+- Naming:
+  - Files: `kebab-case` (e.g., `detail-bar.tsx`).
+  - Components/Classes/Types: `PascalCase` (interfaces often `I*`).
+  - Variables/Functions: `camelCase`.
+  - Constants: `UPPER_SNAKE_CASE`.
+- Import order: React, third-party libs, local modules, then types.
 
-### Imports Order
+## Testing Guidelines
+- No automated test framework is configured.
+- Use `test/` fixtures (e.g., `test/test1.md`) for manual regression checks.
+- Verify hot-reload behaviors around editor cache and IPC changes.
 
-1. React imports (`import { FC, useEffect } from 'react'`)
-2. Third-party libraries (CodeMirror, Ant Design, Emotion)
-3. Local modules (hooks, libs, components)
-4. Type imports (`import { FileState } from '_types'`)
+## Commit & Pull Request Guidelines
+- Commit messages follow a conventional style like `feat: ...` (see `git log`).
+- PRs should include: summary, testing performed, and UI screenshots when relevant.
 
-### Formatting (Prettier)
-
-- Single quotes, 2-space indentation
-- 120 character print width
-- Semicolons required
-- No trailing commas
-- Arrow parens: avoid when single parameter
-
-### TypeScript
-
-- Strict mode enabled (`noImplicitAny: true`)
-- Use explicit types, avoid `any`
-- Experimental decorators enabled for InversifyJS
-- Path aliases: `src/*`, `_types`, `bin/*`
-
-### Naming Conventions
-
-- **Files**: kebab-case (e.g., `detail-bar.tsx`, `use-editor.tsx`)
-- **Variables/Functions**: camelCase
-- **Components/Classes**: PascalCase
-- **Interfaces/Types**: PascalCase (often prefixed with `I` for interfaces)
-- **Constants**: UPPER_SNAKE_CASE
-
-### React Components
-
-- Use function components with TypeScript
-- Define props interfaces
-- Use `FC<Props>` type for components
-- Prefer hooks over class components
-
-### Error Handling
-
-- Use TypeScript type system for compile-time safety
-- Avoid runtime type checking when possible
-- Use optional chaining and nullish coalescing
-- Follow existing patterns in IPC handlers
-
-### Project Architecture
-
-- **Main Process**: `src/window/` - Electron main process code
-- **Renderer Process**: `src/ui/` - React UI components
-- **Plugins**: `src/ui/plugins/` - CodeMirror extension system
-- **Dependency Injection**: InversifyJS in `src/window/inversify.config/`
-- **Unused Code**: `src/**/unused/` - Do not modify these directories
-
-### Key Technologies
-
-- Electron + React + TypeScript
-- CodeMirror 6 for editor functionality
-- Ant Design for UI components
-- Emotion for CSS-in-JS styling
-- InversifyJS for dependency injection
-- PubSub-js for event communication
-
-### Testing
-
-- No test framework currently configured
-- Manual testing with markdown files in `test/` directory
-- Focus on functional testing of editor features
-
-### Development Notes
-
-- macOS-only development (not adapted for Windows/Linux)
-- Hybrid editing mode with hidden markdown syntax
-- Image preview and full-screen functionality
-- Typewriter mode support
-- Real-time file saving via IPC handlers
+## Platform & Architecture Notes
+- App targets macOS currently (Windows/Linux not adapted).
+- Electron Forge + Webpack handles builds; keep main vs renderer boundaries clear.
