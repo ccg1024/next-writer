@@ -1,13 +1,13 @@
-import React, { FC, useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
+import React, { FC, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ViewUpdate } from '@codemirror/view';
 import { App, Typography } from 'antd';
 import { isTrulyEmpty } from 'src/tools/utils';
 import { VerticalEmpty } from 'src/ui/components/antd/preset/empty';
 import useCodemirror, { InitialEditorState } from 'src/ui/hooks/useCodemirror';
+import { useRendererIpcAction } from 'src/ui/hooks/use-renderer-ipc-action';
 import mainProcess from 'src/ui/libs/main-process';
-import { RendererLibraryTree, RendererListenerAction } from '_types';
+import { RendererLibraryTree } from '_types';
 import { debounceFn } from 'src/ui/libs/utils';
-import rendererIpcListener, { RendererIpcActionCallback } from '../ipc';
 import messagePublish from 'src/ui/libs/pub-sub';
 import { nwSpin } from 'src/ui/mix-components/spin';
 import { useHomeContext } from 'src/ui/home/module.context';
@@ -55,7 +55,7 @@ const Main: FC<MainProps> = props => {
       }
     }
     return debounceFn(transaction);
-  }, []);
+  }, [updateRenderLibrary]);
 
   const headInProcess = useRef<string>('');
 
@@ -135,56 +135,55 @@ const Main: FC<MainProps> = props => {
 
   const [divRef, editor] = useCodemirror<HTMLDivElement>({ initialEditorState, onEditorDocChange, onEditorChange });
 
-  // for Ipc action
-  const [_ipcAction, dispatchIpcAction] = useReducer(ipcAction, void 0);
-  function ipcAction(_: undefined, action: RendererListenerAction) {
-    switch (action.type) {
-      case 'write-file': {
-        const content = editor.state.doc.toString();
-        nwSpin.loading(true);
-        mainProcess
-          .writeFile({ path: currentNote.relativePath, content, nameInRuntime: currentNote.name })
-          .then(res => {
-            if (res.status !== 0) {
-              message.error(res.message || '保存文件失败');
-              return;
-            }
-
-            // Clear any pending cache updates since file is now saved
-            if (cacheUpdateTimerRef.current) {
-              clearTimeout(cacheUpdateTimerRef.current);
-              cacheUpdateTimerRef.current = null;
-            }
-
-            // Reset modified state immediately
-            isModifiedRef.current = false;
-
-            // Update relative path
-            const oldRelativePathToken = (currentNote.relativePath ?? '').split('/');
-            oldRelativePathToken.pop();
-            oldRelativePathToken.push(currentNote.name);
-            const newRelativePath = oldRelativePathToken.join('/');
-            // Update prevNoteInfoRef with new path after save
-            prevNoteInfoRef.current = {
-              ...prevNoteInfoRef.current,
-              relativePath: newRelativePath
-            };
-            // Update with isChange: false
-            const newAggregateNote = {
-              ...currentNote,
-              relativePath: newRelativePath,
-              isChange: false
-            };
-            updateRenderLibrary(newAggregateNote);
-            // pubNoteUpdate(newAggregateNote.note);
-          })
-          .finally(() => {
-            nwSpin.loading(false);
-          });
-        break;
-      }
+  const handleWriteFile = useCallback(() => {
+    if (!editor || !currentNote?.relativePath) {
+      return;
     }
-  }
+
+    const content = editor.state.doc.toString();
+    nwSpin.loading(true);
+    mainProcess
+      .writeFile({ path: currentNote.relativePath, content, nameInRuntime: currentNote.name })
+      .then(res => {
+        if (res.status !== 0) {
+          message.error(res.message || '保存文件失败');
+          return;
+        }
+
+        // Clear any pending cache updates since file is now saved
+        if (cacheUpdateTimerRef.current) {
+          clearTimeout(cacheUpdateTimerRef.current);
+          cacheUpdateTimerRef.current = null;
+        }
+
+        // Reset modified state immediately
+        isModifiedRef.current = false;
+
+        // Update relative path
+        const oldRelativePathToken = (currentNote.relativePath ?? '').split('/');
+        oldRelativePathToken.pop();
+        oldRelativePathToken.push(currentNote.name);
+        const newRelativePath = oldRelativePathToken.join('/');
+        // Update prevNoteInfoRef with new path after save
+        prevNoteInfoRef.current = {
+          ...prevNoteInfoRef.current,
+          relativePath: newRelativePath
+        };
+        // Update with isChange: false
+        const newAggregateNote = {
+          ...currentNote,
+          relativePath: newRelativePath,
+          isChange: false
+        };
+        updateRenderLibrary(newAggregateNote);
+        // pubNoteUpdate(newAggregateNote.note);
+      })
+      .finally(() => {
+        nwSpin.loading(false);
+      });
+  }, [currentNote, editor, message, updateRenderLibrary]);
+
+  useRendererIpcAction('write-file', handleWriteFile);
 
   // ============================================================
   // Effect
@@ -241,18 +240,6 @@ const Main: FC<MainProps> = props => {
       }
     };
   }, [editor]);
-
-  // Effect 3: Register save file IPC listener
-  useEffect(() => {
-    const saveFile: RendererIpcActionCallback = (_e, action) => {
-      dispatchIpcAction(action);
-    };
-    saveFile.type = 'write-file';
-    rendererIpcListener.register(saveFile);
-    return () => {
-      rendererIpcListener.deregister(saveFile);
-    };
-  }, []);
 
   useEffect(() => {
     if (editor) {

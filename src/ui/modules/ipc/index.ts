@@ -34,11 +34,14 @@ class RendererIpcListener {
   }
 
   register(actionCallback: RendererIpcActionCallback) {
+    if (this.callbacks.some(cb => Object.is(cb, actionCallback))) {
+      return;
+    }
     this.callbacks.push(actionCallback);
   }
 
   deregister(actionCallback: RendererIpcActionCallback) {
-    this.callbacks = this.callbacks.filter(cb => Object.is(cb, actionCallback));
+    this.callbacks = this.callbacks.filter(cb => !Object.is(cb, actionCallback));
   }
 }
 

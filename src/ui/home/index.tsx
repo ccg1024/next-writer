@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { message } from 'antd';
 import { ReadConfigResponse, RendererLibraryTree } from '_types';
 import { BaseLayout } from '../modules/layout';
@@ -9,22 +9,89 @@ import rendererIpcListener from '../modules/ipc';
 import PluginGlobal from '../plugins/global';
 import Outline from '../modules/outline';
 import mainProcess from '../libs/main-process';
-import { isEffectArray, isEffectObject } from 'src/tools/utils';
-import { generateRuntimeInfo } from '../libs/utils';
+import {
+  findRendererNodeById,
+  refreshRendererTree,
+  RendererTreeOperation,
+  updateRendererTree
+} from '../libs/renderer-tree';
 import renderStore from '../modules/store';
 import type { RuntimeRecord } from '../modules/store';
 
 import './index.css';
 
-// 全局记录当前展示的文件与文件夹
-let currenNote_: RendererLibraryTree = null;
-let currentLib_: RendererLibraryTree = null;
+type LibraryState = {
+  libraryTree: RendererLibraryTree;
+  currentLib: RendererLibraryTree;
+  currentNote: RendererLibraryTree;
+};
+
+type LibraryAction =
+  | { type: 'fresh-tree' }
+  | { type: 'set-current-lib'; node: RendererLibraryTree }
+  | { type: 'set-current-note'; node: RendererLibraryTree }
+  | { type: 'set-library-tree'; tree: RendererLibraryTree }
+  | {
+      type: 'update-node';
+      newNode:
+        | RendererLibraryTree
+        | ((preLib: RendererLibraryTree, preNote: RendererLibraryTree) => RendererLibraryTree);
+      operation: RendererTreeOperation;
+    };
+
+const initialLibraryState: LibraryState = {
+  libraryTree: null,
+  currentLib: null,
+  currentNote: null
+};
+
+function libraryReducer(state: LibraryState, action: LibraryAction): LibraryState {
+  switch (action.type) {
+    case 'set-library-tree':
+      return {
+        libraryTree: refreshRendererTree(action.tree),
+        currentLib: null,
+        currentNote: null
+      };
+    case 'set-current-lib':
+      return { ...state, currentLib: action.node };
+    case 'set-current-note':
+      return { ...state, currentNote: action.node };
+    case 'fresh-tree': {
+      if (!state.libraryTree) {
+        return state;
+      }
+      const libraryTree = refreshRendererTree(state.libraryTree);
+      return syncSelectedNodes(state, libraryTree);
+    }
+    case 'update-node': {
+      const innerNode =
+        typeof action.newNode === 'function' ? action.newNode(state.currentLib, state.currentNote) : action.newNode;
+      if (!state.libraryTree || !innerNode) {
+        return state;
+      }
+      const libraryTree = updateRendererTree(state.libraryTree, innerNode, action.operation);
+      return syncSelectedNodes(state, libraryTree);
+    }
+    default:
+      return state;
+  }
+}
+
+function syncSelectedNodes(state: LibraryState, libraryTree: RendererLibraryTree): LibraryState {
+  return {
+    libraryTree,
+    currentLib: findRendererNodeById(libraryTree, state.currentLib?.id),
+    currentNote: findRendererNodeById(libraryTree, state.currentNote?.id)
+  };
+}
 
 const Home = () => {
   const [renderConfig, setRenderConfig] = useState(null);
-  const [libraryTree, setLibraryTree] = useState<RendererLibraryTree>(null);
-  const [currentLib, setCurrentLib] = useState<RendererLibraryTree>(null);
-  const [currentNote, setCurrentNote] = useState<RendererLibraryTree>(null);
+  const [{ libraryTree, currentLib, currentNote }, dispatchLibraryAction] = useReducer(
+    libraryReducer,
+    initialLibraryState
+  );
   const [runtimeConfig, setRuntimeConfig] = useState<RuntimeRecord>(null);
 
   // ============================================================
@@ -39,8 +106,7 @@ const Home = () => {
         setRenderConfig(config);
 
         // Generating information
-        generateRuntimeInfo(libTree, null);
-        setLibraryTree(libTree);
+        dispatchLibraryAction({ type: 'set-library-tree', tree: libTree as RendererLibraryTree });
 
         // change css variable
         const r = document.querySelector('body');
@@ -78,50 +144,17 @@ const Home = () => {
     };
   }, []);
 
-  useEffect(() => {
-    currenNote_ = currentNote;
-    currentLib_ = currentLib;
-
-    return () => {
-      currenNote_ = null;
-      currentLib_ = null;
-    };
-  }, [currentLib, currentNote]);
-
   // 变更文件该方法
   const updateRenderLibrary: IHomeContext['updateRenderLibrary'] = useCallback((newNode, type = 'update') => {
-    const innerNode = typeof newNode === 'function' ? newNode(currentLib_, currenNote_) : newNode;
-    const parent = innerNode.parent;
-    if (isEffectObject(parent)) {
-      parent.children = !isEffectArray(parent.children)
-        ? parent.children
-        : parent.children
-            .map(child => {
-              if (child.id === innerNode.id) {
-                return type === 'remove' ? undefined : innerNode;
-              }
-              return child;
-            })
-            .filter(child => child);
-    }
+    dispatchLibraryAction({ type: 'update-node', newNode, operation: type });
+  }, []);
 
-    // 如果要进行多级文件夹嵌套，这个地方还是有点问题的
-    setLibraryTree(pre => {
-      // 文件夹变更，刷新文件树
-      if (parent === pre) {
-        const newTree = { ...pre };
-        newTree.children.forEach(child => (child.parent = newTree));
-        return newTree;
-      }
-      return pre;
-    });
+  const setCurrentLib = useCallback((node: RendererLibraryTree) => {
+    dispatchLibraryAction({ type: 'set-current-lib', node });
+  }, []);
 
-    // 文件变更总会走这里
-    if (innerNode.id === currenNote_?.id) {
-      setCurrentNote(type === 'remove' ? null : innerNode);
-    } else if (innerNode.id === currentLib_?.id) {
-      setCurrentLib(type === 'remove' ? null : innerNode);
-    }
+  const setCurrentNote = useCallback((node: RendererLibraryTree) => {
+    dispatchLibraryAction({ type: 'set-current-note', node });
   }, []);
 
   const themeConfig = useMemo(() => ({ config: renderConfig }), [renderConfig]);
@@ -130,14 +163,7 @@ const Home = () => {
       libraryTree,
       updateRenderLibrary,
       freshTree() {
-        setLibraryTree(pre => {
-          if (pre) {
-            const newTree = { ...pre };
-            newTree.children.forEach(child => (child.parent = newTree));
-            return newTree;
-          }
-          return pre;
-        });
+        dispatchLibraryAction({ type: 'fresh-tree' });
       },
       runtimeConfig
     }),

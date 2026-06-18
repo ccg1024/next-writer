@@ -13,7 +13,7 @@ export interface IHomeContext {
   libraryTree: RendererLibraryTree;
   updateRenderLibrary: (
     newNode: RendererLibraryTree | ((preLib: RendererLibraryTree, preNote: RendererLibraryTree) => RendererLibraryTree),
-    type?: 'remove' | 'update'
+    type?: 'append' | 'remove' | 'update'
   ) => void;
   freshTree: () => void;
   runtimeConfig: RuntimeRecord;

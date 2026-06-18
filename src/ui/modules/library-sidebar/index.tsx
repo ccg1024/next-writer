@@ -12,8 +12,7 @@ import mainProcess from 'src/ui/libs/main-process';
 import { nwSpin } from 'src/ui/mix-components/spin';
 import { useHomeContext } from 'src/ui/home/module.context';
 import { FrowardRenameModal, ExposedHandler as ForwardRenameHandler } from './modal';
-import { generateRuntimeInfo } from 'src/ui/libs/utils';
-import rendererIpcListener, { RendererIpcActionCallback } from '../ipc';
+import { useRendererIpcAction } from 'src/ui/hooks/use-renderer-ipc-action';
 
 import './index.less';
 
@@ -55,7 +54,7 @@ const LibrarySidebar: FC<LibrarySidebarProps> = props => {
   const { currentLib, setCurrentLib, currentNote, setCurrentNote } = props;
   const [visibleLib, setVisibleLib] = useState(true);
   const [visibleDetail, setVisbleDetail] = useState(true);
-  const { libraryTree, updateRenderLibrary, freshTree } = useHomeContext();
+  const { libraryTree, updateRenderLibrary } = useHomeContext();
   const renameRef = useRef<ForwardRenameHandler>(null);
   const { message, modal } = App.useApp();
   const { runtimeConfig } = useHomeContext();
@@ -63,29 +62,13 @@ const LibrarySidebar: FC<LibrarySidebarProps> = props => {
   // ============================================================
   // Effect
   // ============================================================
-  useEffect(() => {
-    const toggleLib: RendererIpcActionCallback = (_e, action) => {
-      if (action.type === toggleLib.type) {
-        setVisibleLib(!!action.payload);
-      }
-    };
-    toggleLib.type = 'toggle-lib';
+  useRendererIpcAction('toggle-lib', (_e, action) => {
+    setVisibleLib(!!action.payload);
+  });
 
-    const toggleDetail: RendererIpcActionCallback = (_e, acction) => {
-      if (acction.type === toggleDetail.type) {
-        setVisbleDetail(!!acction.payload);
-      }
-    };
-    toggleDetail.type = 'toggle-lib-detail';
-
-    rendererIpcListener.register(toggleLib);
-    rendererIpcListener.register(toggleDetail);
-
-    return () => {
-      rendererIpcListener.deregister(toggleLib);
-      rendererIpcListener.deregister(toggleDetail);
-    };
-  }, []);
+  useRendererIpcAction('toggle-lib-detail', (_e, action) => {
+    setVisbleDetail(!!action.payload);
+  });
 
   useEffect(() => {
     if (runtimeConfig) {
@@ -147,11 +130,6 @@ const LibrarySidebar: FC<LibrarySidebarProps> = props => {
                                 .then(res => {
                                   if (res && res.status === 0) {
                                     const newLib = { ...lib, name: newName, relativePath: runtimeRelativePath };
-                                    // Update child relative path
-                                    newLib.children.forEach(child => {
-                                      updateNodeRelative(child, newLib);
-                                      child.parent = newLib;
-                                    });
                                     updateRenderLibrary(newLib);
                                   }
                                 })
@@ -242,9 +220,7 @@ const LibrarySidebar: FC<LibrarySidebarProps> = props => {
                       .then(res => {
                         const { data, status } = res;
                         if (status === 0 && isEffectObject(data)) {
-                          generateRuntimeInfo(data, libraryTree);
-                          libraryTree.children.push(data);
-                          freshTree();
+                          updateRenderLibrary({ ...data, parent: libraryTree } as RendererLibraryTree, 'append');
                         }
                       })
                       .finally(() => {
@@ -288,10 +264,7 @@ const LibrarySidebar: FC<LibrarySidebarProps> = props => {
                     .updateLib({ operate: 'add', type: 'file', path: `${currentLib.relativePath}/${name}` })
                     .then(res => {
                       if (res && res.status === 0) {
-                        const treeNode = res.data;
-                        generateRuntimeInfo(treeNode, currentLib);
-                        currentLib.children.push(treeNode);
-                        freshTree();
+                        updateRenderLibrary({ ...res.data, parent: currentLib } as RendererLibraryTree, 'append');
                       }
                     })
                     .finally(() => {
@@ -443,15 +416,5 @@ const NoteItem: FC<NoteItemProps> = props => {
     </Popover>
   );
 };
-
-function updateNodeRelative(treeNode: RendererLibraryTree, parent: RendererLibraryTree) {
-  if (treeNode) {
-    treeNode.relativePath = `${parent.relativePath}/${treeNode.name}`;
-
-    if (isEffectArray(treeNode.children)) {
-      treeNode.children.forEach(child => updateNodeRelative(child, treeNode));
-    }
-  }
-}
 
 export default LibrarySidebar;

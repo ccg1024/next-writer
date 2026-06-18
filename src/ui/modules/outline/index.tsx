@@ -1,9 +1,9 @@
 import { Line } from '@codemirror/state';
 import { EditorView } from '@codemirror/view';
 import { useEffect, useState } from 'react';
+import { useRendererIpcAction } from 'src/ui/hooks/use-renderer-ipc-action';
 import messagePublish from 'src/ui/libs/pub-sub';
 import { HeadField, outlintField } from 'src/ui/plugins/fieldPlugin/outline';
-import rendererIpcListener, { RendererIpcActionCallback } from '../ipc';
 import renderStore from '../store';
 import './index.less';
 
@@ -44,18 +44,9 @@ const Outline = () => {
     };
   }, []);
 
-  useEffect(() => {
-    const toggleToc: RendererIpcActionCallback = (_e, action) => {
-      if (action.type === 'toggle-toc') {
-        setVisible(!!action.payload);
-      }
-    };
-    toggleToc.type = 'toggle-toc';
-    rendererIpcListener.register(toggleToc);
-    return () => {
-      rendererIpcListener.deregister(toggleToc);
-    };
-  }, []);
+  useRendererIpcAction('toggle-toc', (_e, action) => {
+    setVisible(!!action.payload);
+  });
 
   const handleHeadClick = (line: Line) => {
     if (line) {
