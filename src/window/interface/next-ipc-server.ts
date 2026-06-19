@@ -1,5 +1,5 @@
 import type { IpcMainInvokeEvent } from 'electron';
-import { NormalObject, Request, Response } from '_types';
+import { Request, Response } from '_types';
 import INextIpcHandler from './next-ipc-handler';
 
 interface INextIpcServer {
@@ -21,7 +21,7 @@ interface INextIpcServer {
   /**
    * Dispatch task to deal with renderer process request
    */
-  dispatch(type: string, data?: NormalObject): Promise<Response>;
+  dispatch(e: IpcMainInvokeEvent, type: string, data?: unknown): Promise<Response>;
 
   /**
    * Register a handler to hanlder list.

@@ -1,8 +1,7 @@
-import { IpcRendererEvent } from 'electron';
 import { RendererListenerAction } from '_types';
 
 export interface RendererIpcActionCallback {
-  (event: IpcRendererEvent, action: RendererListenerAction): void;
+  (event: null, action: RendererListenerAction): void;
   type: RendererListenerAction['type'];
 }
 
@@ -25,10 +24,10 @@ class RendererIpcListener {
     this.removeListener && this.removeListener();
   }
 
-  private dispatch(event: IpcRendererEvent, action: RendererListenerAction) {
+  private dispatch(action: RendererListenerAction) {
     this.callbacks.forEach(cb => {
       if (cb.type === action.type) {
-        cb(event, action);
+        cb(null, action);
       }
     });
   }

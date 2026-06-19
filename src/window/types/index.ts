@@ -9,8 +9,20 @@ const TYPES = {
   INextStoreSystem: Symbol.for('INextStoreSystem'),
   INextCacheSystem: Symbol.for('INextCacheSystem'),
   INextIpcServer: Symbol.for('INextIpcServer'),
+  INextIpcHandler: Symbol.for('INextIpcHandler'),
   INextMenu: Symbol.for('INextMenu'),
-  INextApp: Symbol.for('INextApp')
+  INextApp: Symbol.for('INextApp'),
+  IApplication: Symbol.for('IApplication'),
+  IGlobalErrorReporter: Symbol.for('IGlobalErrorReporter'),
+  IMainWindowFactory: Symbol.for('IMainWindowFactory'),
+  IWindowRegistry: Symbol.for('IWindowRegistry'),
+  IProtocolService: Symbol.for('IProtocolService'),
+  IPathResolver: Symbol.for('IPathResolver'),
+  IConfigService: Symbol.for('IConfigService'),
+  IWorkspaceService: Symbol.for('IWorkspaceService'),
+  ILibraryService: Symbol.for('ILibraryService'),
+  IDocumentService: Symbol.for('IDocumentService'),
+  IMenuActionService: Symbol.for('IMenuActionService')
 };
 
 export { TYPES };

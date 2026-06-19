@@ -2,16 +2,14 @@ import { inject, injectable } from 'inversify';
 import { isEffectObject, isTrulyEmpty } from 'src/tools/utils';
 import { Cache, CacheContent } from '_types';
 import INextCacheSystem from '../interface/next-cache-system';
-import INextStoreSystem from '../interface/next-store-system';
+import IWindowRegistry from '../interface/window-registry';
 import { TYPES } from '../types';
 
 @injectable()
 class NextCacheSystem implements INextCacheSystem {
   private __cache: Cache;
-  private __sotre: INextStoreSystem;
-  constructor(@inject(TYPES.INextStoreSystem) nextSotreSystem: INextStoreSystem) {
+  constructor(@inject(TYPES.IWindowRegistry) private windowRegistry: IWindowRegistry) {
     this.init();
-    this.__sotre = nextSotreSystem;
   }
 
   init(): void {
@@ -29,13 +27,7 @@ class NextCacheSystem implements INextCacheSystem {
     };
 
     // Update window document edited state
-    const win = this.__sotre.getConfig('win');
-
-    if (!win) {
-      return;
-    }
-
-    win.setDocumentEdited(this.hasModifed());
+    this.updateDocumentEditedState();
   }
 
   update(key: string, updateContent: Partial<CacheContent>): void {
@@ -51,13 +43,7 @@ class NextCacheSystem implements INextCacheSystem {
       }
     };
 
-    const win = this.__sotre.getConfig('win');
-
-    if (!win) {
-      return;
-    }
-
-    win.setDocumentEdited(this.hasModifed());
+    this.updateDocumentEditedState();
   }
 
   exitCache(key: string): boolean {
@@ -69,13 +55,7 @@ class NextCacheSystem implements INextCacheSystem {
       delete this.__cache[key];
 
       // Update window document edited state
-      const win = this.__sotre.getConfig('win');
-
-      if (!win) {
-        return;
-      }
-
-      win.setDocumentEdited(this.hasModifed());
+      this.updateDocumentEditedState();
     }
   }
 
@@ -94,6 +74,11 @@ class NextCacheSystem implements INextCacheSystem {
   destroy(): void {
     this.__cache = null;
     this.init();
+  }
+
+  private updateDocumentEditedState(): void {
+    const win = this.windowRegistry.getCurrentWindow();
+    win?.setDocumentEdited(this.hasModifed());
   }
 }
 

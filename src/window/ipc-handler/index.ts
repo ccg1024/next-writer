@@ -1,19 +1,7 @@
 // This file is to collect ipc event handler, which will be call the `apply` function of target handler for every ipc event
-import INextIpcHandler from '../interface/next-ipc-handler';
-import readConfigHandler from './read-config-handler';
-import readFileHandler from './read-file-handler';
-import updateLibHandler from './update-lib-handler';
-import writeFileHandler from './write-file-handler';
-import runtimeHandler from './runtime-handler';
-import updateCacheHandler from './update-cache-handler';
-
-const ipcHanlders: Array<INextIpcHandler> = [
-  readConfigHandler,
-  readFileHandler,
-  updateLibHandler,
-  writeFileHandler,
-  runtimeHandler,
-  updateCacheHandler
-];
-
-export default ipcHanlders;
+export { default as ReadConfigHandler } from './read-config-handler';
+export { default as ReadFileHandler } from './read-file-handler';
+export { default as UpdateLibHandler } from './update-lib-handler';
+export { default as WriteFileHandler } from './write-file-handler';
+export { default as RuntimeHandler } from './runtime-handler';
+export { default as UpdateCacheHandler } from './update-cache-handler';

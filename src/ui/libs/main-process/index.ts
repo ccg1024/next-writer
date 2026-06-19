@@ -1,41 +1,30 @@
-import { IPC_CHANNEL } from 'src/tools/config';
-import {
-  ReadConfigResponse,
-  ReadFileRequest,
-  ReadFileResponse,
-  UpdateLibRequest,
-  UpdateLibResponse,
-  UpdateCacheRequest,
-  WriteFileRequest
-} from '_types';
-import api from '../api';
-import type { RuntimeRecord } from '../../modules/store';
+import { ReadFileRequest, UpdateLibRequest, UpdateCacheRequest, WriteFileRequest } from '_types';
 
 async function readConfig() {
-  return api<undefined, ReadConfigResponse>({ type: IPC_CHANNEL.READ_CONFIG });
+  return window.ipc.readConfig();
 }
 
 async function readFile(data: ReadFileRequest) {
-  return api<ReadFileRequest, ReadFileResponse>({ type: IPC_CHANNEL.READ_FILE, data });
+  return window.ipc.readFile(data);
 }
 
 async function updateLib(data: UpdateLibRequest) {
-  return api<UpdateLibRequest, UpdateLibResponse>({ type: IPC_CHANNEL.UPDATE_LIB, data });
+  return window.ipc.updateLib(data);
 }
 
 /**
  * Save file or rename exist file if the name has changed
  */
 async function writeFile(data: WriteFileRequest) {
-  return api<WriteFileRequest, null>({ type: IPC_CHANNEL.WIRTE_FILE, data });
+  return window.ipc.writeFile(data);
 }
 
 async function queryRuntimeConfig() {
-  return api<unknown, RuntimeRecord>({ type: IPC_CHANNEL.RUNTIME });
+  return window.ipc.queryRuntimeConfig();
 }
 
 async function updateCache(data: UpdateCacheRequest) {
-  return api<UpdateCacheRequest, { success: boolean }>({ type: IPC_CHANNEL.UPDATE_CACHE, data });
+  return window.ipc.updateCache(data);
 }
 
 const mainProcess = { readConfig, readFile, updateLib, writeFile, queryRuntimeConfig, updateCache };

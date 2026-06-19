@@ -1,5 +1,5 @@
 interface INextApp {
-  createWindow(): void;
+  createWindow(): Promise<void>;
   destroy(): void;
 }
 

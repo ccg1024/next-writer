@@ -1,32 +1,21 @@
 import { inject, injectable } from 'inversify';
 import { app, Menu, MenuItemConstructorOptions, MenuItem, BrowserWindow, KeyboardEvent } from 'electron';
 import INextMenu from '../interface/next-menu';
-import INextStoreSystem from '../interface/next-store-system';
-import { isTrulyEmpty } from 'src/tools/utils';
-import nodeFs from 'fs';
-import nodePath from 'path';
 import { TYPES } from '../types';
-import { LibraryTree, RendererListenerAction, RootLibraryTree } from '_types';
-import { MAX_FILE_DESCRIPTION_LENGTH, ROOT_CONFIG_NAME } from 'src/config/env';
-import INextFileSystem from '../interface/next-file-system';
-import { nextWriterC } from '../inversify.config';
+import { RendererListenerAction } from '_types';
+import IMenuActionService from '../interface/menu-action-service';
 
 @injectable()
 class NextMenu implements INextMenu {
   private isMac: boolean;
-  private _store: INextStoreSystem;
-  private _fileSystem: INextFileSystem;
-  constructor(
-    @inject(TYPES.INextStoreSystem) store: INextStoreSystem,
-    @inject(TYPES.INextFileSystem) fileSystem: INextFileSystem
-  ) {
+  constructor(@inject(TYPES.IMenuActionService) private menuActions: IMenuActionService) {
     this.isMac = process.platform === 'darwin';
-    this._store = store;
-    this._fileSystem = fileSystem;
 
     // bind methods
     this.synchronousLibrary = this.synchronousLibrary.bind(this);
     this.save = this.save.bind(this);
+    this.toggleToc = this.toggleToc.bind(this);
+    this.toggleVisible = this.toggleVisible.bind(this);
   }
   getMenuTemplate(): MenuItemConstructorOptions[] {
     const appInfo: MenuItemConstructorOptions[] = this.isMac
@@ -124,95 +113,23 @@ class NextMenu implements INextMenu {
   }
 
   private async synchronousLibrary(_m: MenuItem, win: BrowserWindow, _event: KeyboardEvent): Promise<void> {
-    const root = this._store.getConfig('rootDir');
-    const rootLib: RootLibraryTree = { isRoot: true, children: [] };
-    if (!isTrulyEmpty(root)) {
-      const traverseDirectory = async (dir: string, workInProcess: LibraryTree | RootLibraryTree): Promise<void> => {
-        const files = await nodeFs.promises.readdir(dir, { withFileTypes: true });
-        const sortedFiles = files.sort((a, b) => {
-          if (a.isDirectory() && b.isFile()) return -1; // folder first
-          if (a.isFile() && b.isDirectory()) return 1; // file after folder
-          return 0; // keep original order for same type
-        });
-
-        for (const file of sortedFiles) {
-          const fullPath = nodePath.join(dir, file.name);
-          const fileState = await nodeFs.promises.stat(fullPath);
-          const fileInProcess: LibraryTree = {
-            name: file.isDirectory() ? file.name : nodePath.basename(file.name, nodePath.extname(file.name)),
-            type: file.isDirectory() ? 'folder' : 'file',
-            birthTime: fileState.birthtime.toLocaleString(),
-            modifiedTime: fileState.mtime.toLocaleString(),
-            children: []
-          };
-          if ('isRoot' in workInProcess && workInProcess.isRoot) {
-            file.isDirectory() && workInProcess.children.push(fileInProcess);
-          } else {
-            workInProcess.children.push(fileInProcess);
-          }
-          if (file.isDirectory()) {
-            await traverseDirectory(fullPath, fileInProcess); // recursively traverse subdirectory
-          } else if (!('isRoot' in workInProcess && workInProcess.isRoot)) {
-            const content = await nodeFs.promises.readFile(fullPath, { encoding: 'utf8' });
-            fileInProcess.description = content.substring(0, MAX_FILE_DESCRIPTION_LENGTH);
-          }
-        }
-      };
-      await traverseDirectory(root, rootLib);
-      delete rootLib.isRoot; // Remove isRoot property from the object
-      // Write to file
-      const recordPath = nodePath.resolve(root, ROOT_CONFIG_NAME);
-      this._fileSystem.writeFile(recordPath, JSON.stringify(rootLib, null, 2));
-      this._store.setConfig('libraryTree', rootLib as unknown as LibraryTree);
-      win.webContents.reload();
-    }
+    await this.menuActions.synchronizeLibrary(win);
   }
   private save(_m: MenuItem, win: BrowserWindow, _event: KeyboardEvent): void {
-    win.webContents.send('next-ipc-client', { type: 'write-file' } as RendererListenerAction);
+    this.menuActions.save(win);
   }
   private toggleToc(_m: MenuItem, win: BrowserWindow): void {
-    const store = nextWriterC.get<INextStoreSystem>(TYPES.INextStoreSystem);
-    const menuStatus = store.getConfig('menuStatus') ?? {
-      librarySidebar: false,
-      detailSidebar: false,
-      tocSidebar: false,
-      actionSidebar: false
-    };
-    menuStatus.tocSidebar = !menuStatus.tocSidebar;
-    store.setConfig('menuStatus', menuStatus);
-    win.webContents.send('next-ipc-client', {
-      type: 'toggle-toc',
-      payload: menuStatus.tocSidebar
-    } as RendererListenerAction<boolean>);
+    this.menuActions.toggleToc(win);
+  }
+
+  toggleVisible(type: RendererListenerAction['type'], win: BrowserWindow): void {
+    this.menuActions.toggleVisible(type, win);
   }
 }
 
-function delegateVisibleToggle(type: RendererListenerAction['type'], _ctx: NextMenu) {
+function delegateVisibleToggle(type: RendererListenerAction['type'], ctx: NextMenu) {
   return (_m: MenuItem, win: BrowserWindow) => {
-    const store = nextWriterC.get<INextStoreSystem>(TYPES.INextStoreSystem);
-    const menuStatus = store.getConfig('menuStatus') ?? {
-      librarySidebar: true,
-      detailSidebar: true,
-      tocSidebar: false,
-      actionSidebar: false
-    };
-
-    let payload = null;
-    switch (type) {
-      case 'toggle-lib':
-        menuStatus.librarySidebar = !menuStatus.librarySidebar;
-        payload = menuStatus.librarySidebar;
-        break;
-      case 'toggle-lib-detail':
-        menuStatus.detailSidebar = !menuStatus.detailSidebar;
-        payload = menuStatus.detailSidebar;
-        break;
-    }
-    store.setConfig('menuStatus', menuStatus);
-
-    if (payload !== null) {
-      win.webContents.send('next-ipc-client', { type, payload } as RendererListenerAction<boolean>);
-    }
+    ctx.toggleVisible(type, win);
   };
 }
 

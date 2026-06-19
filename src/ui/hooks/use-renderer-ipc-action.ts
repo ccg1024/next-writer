@@ -1,11 +1,10 @@
 import { useEffect, useRef } from 'react';
-import { IpcRendererEvent } from 'electron';
 import { RendererListenerAction } from '_types';
 import rendererIpcListener, { RendererIpcActionCallback } from '../modules/ipc';
 
 export function useRendererIpcAction(
   type: RendererListenerAction['type'],
-  handler: (event: IpcRendererEvent, action: RendererListenerAction) => void
+  handler: (event: null, action: RendererListenerAction) => void
 ) {
   const handlerRef = useRef(handler);
 

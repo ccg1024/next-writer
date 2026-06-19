@@ -1,43 +1,22 @@
-import nodePath from 'path';
 import { IPC_CHANNEL } from 'src/tools/config';
-import { ReadFileRequest } from '_types';
-import INextFileSystem from '../interface/next-file-system';
+import { inject, injectable } from 'inversify';
+import { ReadFileRequest, ReadFileResponse } from '_types';
+import IDocumentService from '../interface/document-service';
 import INextIpcHandler from '../interface/next-ipc-handler';
-import INextStoreSystem from '../interface/next-store-system';
-import INextCacheSystem from '../interface/next-cache-system';
-import { nextWriterC } from '../inversify.config';
 import { TYPES } from '../types';
 
 /**
  * Reading the specified file information
  */
-const readFileHandler: INextIpcHandler = {
-  type: IPC_CHANNEL.READ_FILE,
-  apply: async (_: string, reqData: ReadFileRequest) => {
-    const { path } = reqData || {};
-    const store = nextWriterC.get<INextStoreSystem>(TYPES.INextStoreSystem);
-    const fileSys = nextWriterC.get<INextFileSystem>(TYPES.INextFileSystem);
-    const rootDir = store.getConfig('rootDir');
-    const cache = nextWriterC.get<INextCacheSystem>(TYPES.INextCacheSystem);
+@injectable()
+class ReadFileHandler implements INextIpcHandler<ReadFileRequest, ReadFileResponse> {
+  channel = IPC_CHANNEL.READ_FILE;
 
-    const fullPath = path.startsWith(rootDir) ? path : nodePath.join(rootDir, path + '.md');
-    // Get cache
-    const buffer = cache.getCache(fullPath);
-    // If cache content is empty, read from file system to avoid hot-reload issues
-    const isCacheContentEmpty =
-      buffer && (buffer.content === '' || buffer.content === undefined || buffer.content === null);
-    const content =
-      buffer && !isCacheContentEmpty ? buffer.content : await fileSys.readFile(fullPath, { encoding: 'utf8' });
+  constructor(@inject(TYPES.IDocumentService) private documentService: IDocumentService) {}
 
-    // update cache
-    if (!buffer || isCacheContentEmpty) {
-      cache.addCache(fullPath, { isChange: false, content });
-    }
-
-    return { content };
+  async handle(reqData: ReadFileRequest): Promise<ReadFileResponse> {
+    return this.documentService.readFile(reqData);
   }
-};
+}
 
-Object.setPrototypeOf(readFileHandler, null);
-
-export default readFileHandler;
+export default ReadFileHandler;

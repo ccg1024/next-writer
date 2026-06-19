@@ -1,4 +1,4 @@
-import { BrowserWindow, IpcRendererEvent } from 'electron';
+import type { BrowserWindow } from 'electron';
 
 export type NormalObject = Record<
   string | symbol,
@@ -13,10 +13,16 @@ export type RendererListenerAction<T = Record<string, unknown>> = {
   type: (typeof RENDERER_LISTENER_ACTIONS)[number];
   payload?: T;
 };
-export type RendererListenerCallback = (event: IpcRendererEvent, action?: RendererListenerAction) => void;
+export type RendererListenerCallback = (action?: RendererListenerAction) => void;
 
 export interface IPC {
   _post: <T, U>(param: Request<T>) => Promise<Response<U>>;
+  readConfig: () => Promise<Response<ReadConfigResponse>>;
+  readFile: (data: ReadFileRequest) => Promise<Response<ReadFileResponse>>;
+  updateLib: (data: UpdateLibRequest) => Promise<Response<UpdateLibResponse>>;
+  writeFile: (data: WriteFileRequest) => Promise<Response<null>>;
+  queryRuntimeConfig: () => Promise<Response<{ menuStatus: MainProcessMenuStatus }>>;
+  updateCache: (data: UpdateCacheRequest) => Promise<Response<{ success: boolean }>>;
   rendererListener: (cb: RendererListenerCallback) => () => void;
 }
 
@@ -92,6 +98,7 @@ export type RendererLibraryTree = RendererLibraryBase & {
 };
 
 export type MainProcessConfig = Partial<{
+  /** @deprecated Use WindowRegistry instead. */
   win: BrowserWindow; // Current BrowserWindow instance
   rootDir: string; // Absolute path of library
   configDir: string; // next-writer configuration path
