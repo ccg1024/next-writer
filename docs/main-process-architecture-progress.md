@@ -107,10 +107,14 @@ Completed in the latest main process refactor:
 - Extracted `ConfigService`, `WorkspaceService`, `DocumentService`, `LibraryService`, and `MenuActionService`.
 - Kept legacy data shape and menu behavior intact.
 - Added correct `IPC_CHANNEL.WRITE_FILE` while keeping deprecated `WIRTE_FILE` compatibility.
+- Added focused automated tests for main-process path and protocol boundaries:
+  - `PathResolver` now covers root allowlist validation, traversal rejection, root-contained absolute Markdown paths, single `.md` suffix handling, and empty path failures.
+  - `ProtocolService` now covers one-time handler registration, `atom://` root-contained files, external image compatibility, external non-image rejection, and `static://` renderer-bundle traversal rejection.
 
 Validation performed:
 
 - `npm run lint` passes.
+- `npm test -- --runInBand` passes with 5 suites and 21 tests.
 - `npm run package` passes.
 - `npm run format:check` still fails only because existing `AGENTS.md` is not Prettier-formatted.
 
@@ -120,49 +124,48 @@ Validation performed:
 - `NextApp`, `NextMenu`, and `NextIpcServer` still keep their legacy names, but their responsibilities are now narrower.
 - `atom://` intentionally allows external absolute image files for compatibility with existing Markdown content. This is narrower than the old behavior because non-image files outside the library root remain blocked.
 - `_post` remains available for renderer compatibility, but new renderer code should prefer explicit preload methods.
-- No automated test framework exists yet, so regression coverage is currently lint, package, and manual Electron checks.
+- Focused automated coverage now exists for document cache revisions, path resolution, protocol boundaries, and library-tree utilities. Broader Electron integration behavior still depends on package/lint checks and manual regression until an app-level harness is added.
 
 ## Next Steps
 
 Recommended next implementation order:
 
-1. Add focused tests or test harnesses for path and protocol behavior.
-   - `resolveWithinRoot` should reject path traversal.
-   - `resolveLibraryPath` should preserve absolute `.md` paths without appending `.md` twice.
-   - `atom://` should allow root-contained files and external image files only.
-   - `static://` should reject traversal outside `.webpack/renderer`.
-
-2. Finish IPC contract hardening.
+1. Finish IPC contract hardening.
    - Add per-channel request validation.
    - Replace stringly typed `Request.type` with a typed channel map.
    - Make handler response types explicit end to end.
    - Remove direct use of deprecated `WIRTE_FILE` from new code.
 
-3. Continue shrinking legacy entities.
+2. Continue shrinking legacy entities.
    - Move remaining window lifecycle guard logic out of `NextApp`.
    - Rename `NextApp` to a clearer window/session coordinator once call sites are stable.
    - Rename `NextMenu` or split it into menu template and menu action bindings.
    - Keep file moves separate from behavior changes where possible.
 
-4. Improve state boundaries.
+3. Improve state boundaries.
    - Remove `win` from `MainProcessConfig` after confirming there are no external consumers.
    - Split runtime menu state from persisted render config.
    - Consider immutable updates for library tree operations to reduce accidental shared mutation.
 
-5. Improve protocol and image compatibility.
+4. Improve protocol and image compatibility.
    - Decide whether external image paths should be persisted as absolute local paths, copied into the library, or mediated by an import workflow.
    - Add clearer error logging for blocked `atom://` requests.
    - Consider separate protocol handlers for library files and external image previews.
 
-6. Improve close/save lifecycle.
+5. Improve close/save lifecycle.
    - Move unsaved-change close confirmation out of `NextApp`.
    - Ensure cache state, document edited state, and renderer dirty state stay consistent after save, rename, and window close.
 
-7. Add development documentation.
+6. Add development documentation.
    - Document main-process folder responsibilities.
    - Document IPC channel creation steps.
    - Document Electron security assumptions and exceptions.
    - Document manual regression scenarios until automated tests exist.
+
+7. Expand automated regression coverage.
+   - Add tests for IPC sender validation, unknown channel handling, and duplicate handler detection.
+   - Add tests for close/save lifecycle coordination around dirty cache state.
+   - Consider an Electron-level smoke harness for startup, preload isolation, and menu shortcuts.
 
 ## Manual Regression Checklist
 
