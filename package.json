@@ -11,7 +11,9 @@
     "publish": "electron-forge publish",
     "lint": "eslint --ext .ts,.tsx .",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,css,less,md}\"",
-    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,css,less,md}\""
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,css,less,md}\"",
+    "test": "jest",
+    "test:watch": "jest --watch"
   },
   "devDependencies": {
     "@electron-forge/cli": "^7.3.0",
@@ -23,6 +25,9 @@
     "@electron-forge/plugin-fuses": "^7.2.0",
     "@electron-forge/plugin-webpack": "^7.3.0",
     "@electron/fuses": "^1.7.0",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@types/jest": "^30.0.0",
     "@types/react": "^18.2.57",
     "@types/react-dom": "^18.2.19",
     "@typescript-eslint/eslint-plugin": "^5.0.0",
@@ -35,11 +40,15 @@
     "eslint-import-resolver-alias": "^1.1.2",
     "eslint-plugin-import": "^2.25.0",
     "fork-ts-checker-webpack-plugin": "^7.2.13",
+    "identity-obj-proxy": "^3.0.0",
+    "jest": "^30.4.2",
+    "jest-environment-jsdom": "^30.4.1",
     "less": "^4.2.0",
     "less-loader": "^12.2.0",
     "node-loader": "^2.0.0",
     "prettier": "^3.8.1",
     "style-loader": "^3.0.0",
+    "ts-jest": "^29.4.11",
     "ts-loader": "^9.2.2",
     "ts-node": "^10.0.0",
     "typescript": "~4.5.4"

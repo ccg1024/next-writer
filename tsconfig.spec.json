@@ -1,0 +1,7 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": ["@emotion/react/types/css-prop", "reflect-metadata", "jest", "@testing-library/jest-dom", "node"]
+  },
+  "include": ["src/**/*", "jest.setup.ts"]
+}

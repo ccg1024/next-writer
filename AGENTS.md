@@ -28,9 +28,11 @@
 - Import order: React, third-party libs, local modules, then types.
 
 ## Testing Guidelines
-- No automated test framework is configured.
+- Jest is configured for automated tests; keep main/window tests in Node and renderer tests in jsdom.
 - Use `test/` fixtures (e.g., `test/test1.md`) for manual regression checks.
 - Verify hot-reload behaviors around editor cache and IPC changes.
+- When adding test files, make sure test-only globals and matcher extensions are visible to both Jest and the editor
+  LSP; prefer local type references when the main TS project does not include those types.
 
 ## Commit & Pull Request Guidelines
 - Commit messages follow a conventional style like `feat: ...` (see `git log`).
