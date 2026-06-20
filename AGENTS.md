@@ -30,6 +30,12 @@
   - Constants: `UPPER_SNAKE_CASE`.
 - Import order: React, third-party libs, local modules, then types.
 
+## Development Constraints
+
+- Main process and renderer process code must follow the minimal-change principle and single-function principle.
+- Main process code in `src/window/` must follow JavaScript OOP best practices, SOLID principles, and Electron official best practices.
+- Renderer process code in `src/ui/` must follow React development best practices and AOP programming conventions.
+
 ## Testing Guidelines
 
 - Jest is configured for automated tests; keep main/window tests in Node and renderer tests in jsdom.
