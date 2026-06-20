@@ -1,22 +1,23 @@
 import { inject, injectable } from 'inversify';
 import { app, Menu, MenuItemConstructorOptions, MenuItem, BrowserWindow, KeyboardEvent } from 'electron';
-import INextMenu from '../interface/next-menu';
-import { TYPES } from '../types';
 import { RendererListenerAction } from '_types';
+import IAppMenu from '../interface/app-menu';
 import IMenuActionService from '../interface/menu-action-service';
+import { TYPES } from '../types';
 
 @injectable()
-class NextMenu implements INextMenu {
+class AppMenu implements IAppMenu {
   private isMac: boolean;
+
   constructor(@inject(TYPES.IMenuActionService) private menuActions: IMenuActionService) {
     this.isMac = process.platform === 'darwin';
 
-    // bind methods
     this.synchronousLibrary = this.synchronousLibrary.bind(this);
     this.save = this.save.bind(this);
     this.toggleToc = this.toggleToc.bind(this);
     this.toggleVisible = this.toggleVisible.bind(this);
   }
+
   getMenuTemplate(): MenuItemConstructorOptions[] {
     const appInfo: MenuItemConstructorOptions[] = this.isMac
       ? [
@@ -93,6 +94,7 @@ class NextMenu implements INextMenu {
         { label: '插入图片' }
       ]
     };
+
     return [
       ...appInfo,
       file,
@@ -115,9 +117,11 @@ class NextMenu implements INextMenu {
   private async synchronousLibrary(_m: MenuItem, win: BrowserWindow, _event: KeyboardEvent): Promise<void> {
     await this.menuActions.synchronizeLibrary(win);
   }
+
   private save(_m: MenuItem, win: BrowserWindow, _event: KeyboardEvent): void {
     this.menuActions.save(win);
   }
+
   private toggleToc(_m: MenuItem, win: BrowserWindow): void {
     this.menuActions.toggleToc(win);
   }
@@ -127,10 +131,10 @@ class NextMenu implements INextMenu {
   }
 }
 
-function delegateVisibleToggle(type: RendererListenerAction['type'], ctx: NextMenu) {
+function delegateVisibleToggle(type: RendererListenerAction['type'], ctx: AppMenu) {
   return (_m: MenuItem, win: BrowserWindow) => {
     ctx.toggleVisible(type, win);
   };
 }
 
-export default NextMenu;
+export default AppMenu;

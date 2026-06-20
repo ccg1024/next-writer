@@ -10,7 +10,7 @@ const TYPES = {
   INextCacheSystem: Symbol.for('INextCacheSystem'),
   INextIpcServer: Symbol.for('INextIpcServer'),
   INextIpcHandler: Symbol.for('INextIpcHandler'),
-  INextMenu: Symbol.for('INextMenu'),
+  IAppMenu: Symbol.for('IAppMenu'),
   IApplication: Symbol.for('IApplication'),
   IGlobalErrorReporter: Symbol.for('IGlobalErrorReporter'),
   IMainWindowFactory: Symbol.for('IMainWindowFactory'),

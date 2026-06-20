@@ -110,9 +110,7 @@ describe('ProtocolService', () => {
     service.handleProtocols();
     const staticHandler = getProtocolHandler('static');
 
-    expect(() => staticHandler({ url: 'static://../secret.js' })).toThrow(
-      'The path is outside of the allowed root.'
-    );
+    expect(() => staticHandler({ url: 'static://../secret.js' })).toThrow('The path is outside of the allowed root.');
     expect(net.fetch).not.toHaveBeenCalled();
   });
 
@@ -140,7 +138,9 @@ describe('ProtocolService', () => {
   }
 
   function getProtocolHandler(scheme: string): CapturedProtocolHandler {
-    const registration = (protocol.handle as jest.Mock).mock.calls.find(([registeredScheme]) => registeredScheme === scheme);
+    const registration = (protocol.handle as jest.Mock).mock.calls.find(
+      ([registeredScheme]) => registeredScheme === scheme
+    );
 
     if (!registration) {
       throw new Error(`No protocol handler registered for ${scheme}`);

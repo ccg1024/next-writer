@@ -1,11 +1,11 @@
 import type { MenuItemConstructorOptions } from 'electron';
 
 /**
- * Next Writer menu interface, whice to create a application menu system
+ * Creates and installs the application menu.
  */
-interface INextMenu {
+interface IAppMenu {
   getMenuTemplate(): MenuItemConstructorOptions[];
   createMenu(): void;
 }
 
-export default INextMenu;
+export default IAppMenu;

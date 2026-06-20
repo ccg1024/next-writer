@@ -111,6 +111,8 @@ Completed in the latest main process refactor:
 - Extracted IPC sender trust checks into injectable `SenderValidator`.
 - Normalized `write-file` success responses to `data: null`.
 - Extracted `ConfigService`, `WorkspaceService`, `DocumentService`, `LibraryService`, and `MenuActionService`.
+- Moved legacy `NextMenu` out of `entities/` into `menu/AppMenu` as `app-menu.ts`.
+- Renamed the menu DI boundary from `INextMenu` / `TYPES.INextMenu` to `IAppMenu` / `TYPES.IAppMenu`.
 - Extracted `WindowCloseService` so unsaved-change close confirmation is no longer embedded in the window session
   coordinator.
 - Kept existing close behavior intact: cancel blocks closing, confirm closes the window and discards unsaved changes.
@@ -129,18 +131,21 @@ Completed in the latest main process refactor:
   - `WindowCloseService` now covers clean close, canceling dirty close, and confirming dirty close.
   - `WindowCloseController` now covers close cancellation, confirmed dirty close cleanup, and clean close cleanup.
   - `WindowSessionCoordinator` now covers window creation, session cleanup, and replacing an existing live window.
+- Added focused automated tests for the application menu boundary:
+  - `AppMenu` now covers menu installation and delegation for save, library synchronization, sidebar toggles, and TOC toggles.
+- Formatted the previously failing `src/window/protocol/protocol-service.test.ts` file.
 
 Validation performed:
 
 - `npm run lint` passes.
-- `npm test -- --runInBand` passes with 10 suites and 46 tests.
+- `npm test -- --runInBand` passes with 11 suites and 50 tests.
 - `npm run package` passes.
-- `npm run format:check` still fails only because existing `src/window/protocol/protocol-service.test.ts` is not Prettier-formatted.
+- `npm run format:check` passes.
 
 ## Current Design Tradeoffs
 
 - `entities/` still exists because the migration is incremental. New code is placed by responsibility, while old implementation classes remain in place to avoid a large file-move-only diff.
-- `NextMenu` and `NextIpcServer` still keep their legacy names, but their responsibilities are now narrower.
+- `NextIpcServer` still keeps its legacy name, but its responsibility is now narrower.
 - `atom://` intentionally allows external absolute image files for compatibility with existing Markdown content. This is narrower than the old behavior because non-image files outside the library root remain blocked.
 - `_post` remains available for renderer compatibility, but new renderer code should prefer explicit preload methods.
 - Focused automated coverage now exists for document cache revisions, path resolution, protocol boundaries, IPC routing/validation, close lifecycle behavior, and library-tree utilities. Broader Electron integration behavior still depends on package/lint checks and manual regression until an app-level harness is added.
@@ -150,7 +155,7 @@ Validation performed:
 Recommended next implementation order:
 
 1. Continue shrinking legacy entities.
-   - Rename `NextMenu` or split it into menu template and menu action bindings.
+   - Move or rename `NextIpcServer` into the final IPC router structure once behavior is stable.
    - Keep file moves separate from behavior changes where possible.
 
 2. Improve state boundaries.

@@ -1,8 +1,8 @@
 import type { BrowserWindow } from 'electron';
 import { inject, injectable } from 'inversify';
 import { IS_DEV } from 'src/config/env';
+import IAppMenu from '../interface/app-menu';
 import INextCacheSystem from '../interface/next-cache-system';
-import INextMenu from '../interface/next-menu';
 import INextStoreSystem from '../interface/next-store-system';
 import IMainWindowFactory from '../interface/main-window-factory';
 import IWindowCloseController from '../interface/window-close-controller';
@@ -20,7 +20,7 @@ class WindowSessionCoordinator implements IWindowSessionCoordinator {
   constructor(
     @inject(TYPES.INextCacheSystem) private cache: INextCacheSystem,
     @inject(TYPES.INextStoreSystem) private store: INextStoreSystem,
-    @inject(TYPES.INextMenu) private menu: INextMenu,
+    @inject(TYPES.IAppMenu) private menu: IAppMenu,
     @inject(TYPES.IMainWindowFactory) private windowFactory: IMainWindowFactory,
     @inject(TYPES.IWindowCloseController) private windowCloseController: IWindowCloseController,
     @inject(TYPES.IWindowRegistry) private windowRegistry: IWindowRegistry,
