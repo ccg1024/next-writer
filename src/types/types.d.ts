@@ -16,7 +16,6 @@ export type RendererListenerAction<T = Record<string, unknown>> = {
 export type RendererListenerCallback = (action?: RendererListenerAction) => void;
 
 export interface IPC {
-  _post: <T, U>(param: Request<T>) => Promise<Response<U>>;
   readConfig: () => Promise<Response<ReadConfigResponse>>;
   readFile: (data: ReadFileRequest) => Promise<Response<ReadFileResponse>>;
   updateLib: (data: UpdateLibRequest) => Promise<Response<UpdateLibResponse>>;

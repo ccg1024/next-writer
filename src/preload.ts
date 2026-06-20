@@ -2,7 +2,6 @@
 // https://www.electronjs.org/docs/latest/tutorial/process-model#preload-scripts
 import { contextBridge, ipcRenderer } from 'electron';
 import type { IpcRendererEvent } from 'electron';
-import type { AnyIpcRequest } from 'src/window/ipc/ipc-contract';
 import { IPC_CHANNEL, IPC_SERVER_NAME } from 'src/window/ipc/ipc-contract';
 import { validateIpcRequest } from 'src/window/ipc/request-validator';
 
@@ -20,14 +19,6 @@ function post(param: unknown) {
 
 // Expose protected methods that allow the renderer process to use
 contextBridge.exposeInMainWorld('ipc', {
-  // IOC
-  /**
-   * Renderer to main bidirectional channel (mock http)
-   * @deprecated Use explicit methods instead.
-   */
-  _post(param: AnyIpcRequest) {
-    return post(param);
-  },
 
   readConfig() {
     return post({ type: IPC_CHANNEL.READ_CONFIG });
