@@ -6,8 +6,8 @@ import INextStoreSystem from '../interface/next-store-system';
 import NextStoreSystem from '../entities/next-store-system';
 import INextCacheSystem from '../interface/next-cache-system';
 import NextCacheSystem from '../entities/next-cache-system';
-import INextIpcServer from '../interface/next-ipc-server';
-import NextIpcServer from '../entities/next-ipc-server';
+import IIpcRouter from '../interface/ipc-router';
+import IpcRouter from '../ipc/ipc-router';
 import IAppMenu from '../interface/app-menu';
 import AppMenu from '../menu/app-menu';
 import { TYPES } from '../types';
@@ -41,7 +41,7 @@ import IMenuActionService from '../interface/menu-action-service';
 import MenuActionService from '../menu/menu-action-service';
 import ISenderValidator from '../interface/sender-validator';
 import SenderValidator from '../ipc/sender-validator';
-import INextIpcHandler from '../interface/next-ipc-handler';
+import IIpcHandler from '../interface/ipc-handler';
 import {
   ReadConfigHandler,
   ReadFileHandler,
@@ -49,42 +49,42 @@ import {
   UpdateCacheHandler,
   UpdateLibHandler,
   WriteFileHandler
-} from '../ipc-handler';
+} from '../ipc/handlers';
 
 /**
  * Inversify js container for next writer application
  */
-const nextWriterC = new Container();
+const container = new Container();
 
-nextWriterC.bind<INextFileSystem>(TYPES.INextFileSystem).to(NextFileSystem).inSingletonScope();
-nextWriterC.bind<INextStoreSystem>(TYPES.INextStoreSystem).to(NextStoreSystem).inSingletonScope();
-nextWriterC.bind<INextCacheSystem>(TYPES.INextCacheSystem).to(NextCacheSystem).inSingletonScope();
-nextWriterC.bind<INextIpcServer>(TYPES.INextIpcServer).to(NextIpcServer).inSingletonScope();
-nextWriterC.bind<IAppMenu>(TYPES.IAppMenu).to(AppMenu).inSingletonScope();
-nextWriterC.bind<IApplication>(TYPES.IApplication).to(Application).inSingletonScope();
-nextWriterC.bind<IGlobalErrorReporter>(TYPES.IGlobalErrorReporter).to(GlobalErrorReporter).inSingletonScope();
-nextWriterC.bind<IMainWindowFactory>(TYPES.IMainWindowFactory).to(MainWindowFactory).inSingletonScope();
-nextWriterC.bind<IWindowCloseController>(TYPES.IWindowCloseController).to(WindowCloseController).inSingletonScope();
-nextWriterC.bind<IWindowCloseService>(TYPES.IWindowCloseService).to(WindowCloseService).inSingletonScope();
-nextWriterC.bind<IWindowRegistry>(TYPES.IWindowRegistry).to(WindowRegistry).inSingletonScope();
-nextWriterC
+container.bind<INextFileSystem>(TYPES.INextFileSystem).to(NextFileSystem).inSingletonScope();
+container.bind<INextStoreSystem>(TYPES.INextStoreSystem).to(NextStoreSystem).inSingletonScope();
+container.bind<INextCacheSystem>(TYPES.INextCacheSystem).to(NextCacheSystem).inSingletonScope();
+container.bind<IIpcRouter>(TYPES.IIpcRouter).to(IpcRouter).inSingletonScope();
+container.bind<IAppMenu>(TYPES.IAppMenu).to(AppMenu).inSingletonScope();
+container.bind<IApplication>(TYPES.IApplication).to(Application).inSingletonScope();
+container.bind<IGlobalErrorReporter>(TYPES.IGlobalErrorReporter).to(GlobalErrorReporter).inSingletonScope();
+container.bind<IMainWindowFactory>(TYPES.IMainWindowFactory).to(MainWindowFactory).inSingletonScope();
+container.bind<IWindowCloseController>(TYPES.IWindowCloseController).to(WindowCloseController).inSingletonScope();
+container.bind<IWindowCloseService>(TYPES.IWindowCloseService).to(WindowCloseService).inSingletonScope();
+container.bind<IWindowRegistry>(TYPES.IWindowRegistry).to(WindowRegistry).inSingletonScope();
+container
   .bind<IWindowSessionCoordinator>(TYPES.IWindowSessionCoordinator)
   .to(WindowSessionCoordinator)
   .inSingletonScope();
-nextWriterC.bind<IProtocolService>(TYPES.IProtocolService).to(ProtocolService).inSingletonScope();
-nextWriterC.bind<IPathResolver>(TYPES.IPathResolver).to(PathResolver).inSingletonScope();
-nextWriterC.bind<IConfigService>(TYPES.IConfigService).to(ConfigService).inSingletonScope();
-nextWriterC.bind<IWorkspaceService>(TYPES.IWorkspaceService).to(WorkspaceService).inSingletonScope();
-nextWriterC.bind<ILibraryService>(TYPES.ILibraryService).to(LibraryService).inSingletonScope();
-nextWriterC.bind<IDocumentService>(TYPES.IDocumentService).to(DocumentService).inSingletonScope();
-nextWriterC.bind<IMenuActionService>(TYPES.IMenuActionService).to(MenuActionService).inSingletonScope();
-nextWriterC.bind<ISenderValidator>(TYPES.ISenderValidator).to(SenderValidator).inSingletonScope();
+container.bind<IProtocolService>(TYPES.IProtocolService).to(ProtocolService).inSingletonScope();
+container.bind<IPathResolver>(TYPES.IPathResolver).to(PathResolver).inSingletonScope();
+container.bind<IConfigService>(TYPES.IConfigService).to(ConfigService).inSingletonScope();
+container.bind<IWorkspaceService>(TYPES.IWorkspaceService).to(WorkspaceService).inSingletonScope();
+container.bind<ILibraryService>(TYPES.ILibraryService).to(LibraryService).inSingletonScope();
+container.bind<IDocumentService>(TYPES.IDocumentService).to(DocumentService).inSingletonScope();
+container.bind<IMenuActionService>(TYPES.IMenuActionService).to(MenuActionService).inSingletonScope();
+container.bind<ISenderValidator>(TYPES.ISenderValidator).to(SenderValidator).inSingletonScope();
 
-nextWriterC.bind<INextIpcHandler>(TYPES.INextIpcHandler).to(ReadConfigHandler).inSingletonScope();
-nextWriterC.bind<INextIpcHandler>(TYPES.INextIpcHandler).to(ReadFileHandler).inSingletonScope();
-nextWriterC.bind<INextIpcHandler>(TYPES.INextIpcHandler).to(UpdateLibHandler).inSingletonScope();
-nextWriterC.bind<INextIpcHandler>(TYPES.INextIpcHandler).to(WriteFileHandler).inSingletonScope();
-nextWriterC.bind<INextIpcHandler>(TYPES.INextIpcHandler).to(RuntimeHandler).inSingletonScope();
-nextWriterC.bind<INextIpcHandler>(TYPES.INextIpcHandler).to(UpdateCacheHandler).inSingletonScope();
+container.bind<IIpcHandler>(TYPES.IIpcHandler).to(ReadConfigHandler).inSingletonScope();
+container.bind<IIpcHandler>(TYPES.IIpcHandler).to(ReadFileHandler).inSingletonScope();
+container.bind<IIpcHandler>(TYPES.IIpcHandler).to(UpdateLibHandler).inSingletonScope();
+container.bind<IIpcHandler>(TYPES.IIpcHandler).to(WriteFileHandler).inSingletonScope();
+container.bind<IIpcHandler>(TYPES.IIpcHandler).to(RuntimeHandler).inSingletonScope();
+container.bind<IIpcHandler>(TYPES.IIpcHandler).to(UpdateCacheHandler).inSingletonScope();
 
-export { nextWriterC };
+export { container };

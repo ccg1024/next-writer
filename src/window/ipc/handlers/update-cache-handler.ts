@@ -1,12 +1,12 @@
 import { inject, injectable } from 'inversify';
 import { UpdateCacheRequest } from '_types';
-import IDocumentService from '../interface/document-service';
-import { IPC_CHANNEL } from '../ipc/ipc-contract';
-import INextIpcHandler from '../interface/next-ipc-handler';
-import { TYPES } from '../types';
+import IDocumentService from '../../interface/document-service';
+import IIpcHandler from '../../interface/ipc-handler';
+import { TYPES } from '../../types';
+import { IPC_CHANNEL } from '../ipc-contract';
 
 @injectable()
-class UpdateCacheHandler implements INextIpcHandler<typeof IPC_CHANNEL.UPDATE_CACHE> {
+class UpdateCacheHandler implements IIpcHandler<typeof IPC_CHANNEL.UPDATE_CACHE> {
   channel = IPC_CHANNEL.UPDATE_CACHE;
 
   constructor(@inject(TYPES.IDocumentService) private documentService: IDocumentService) {}

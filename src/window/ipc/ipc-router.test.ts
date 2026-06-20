@@ -3,10 +3,10 @@
 import 'reflect-metadata';
 import type { BrowserWindow, IpcMainInvokeEvent } from 'electron';
 import { ipcMain } from 'electron';
-import INextIpcHandler from '../interface/next-ipc-handler';
+import IIpcHandler from '../interface/ipc-handler';
 import ISenderValidator from '../interface/sender-validator';
-import { IPC_CHANNEL, IPC_SERVER_NAME } from '../ipc/ipc-contract';
-import NextIpcServer from './next-ipc-server';
+import { IPC_CHANNEL, IPC_SERVER_NAME } from './ipc-contract';
+import IpcRouter from './ipc-router';
 
 jest.mock('electron', () => ({
   ipcMain: {
@@ -16,9 +16,9 @@ jest.mock('electron', () => ({
   }
 }));
 
-describe('NextIpcServer', () => {
+describe('IpcRouter', () => {
   let senderValidator: jest.Mocked<ISenderValidator>;
-  let server: NextIpcServer;
+  let router: IpcRouter;
   let event: IpcMainInvokeEvent;
 
   beforeEach(() => {
@@ -30,25 +30,25 @@ describe('NextIpcServer', () => {
         window: null as BrowserWindow | null
       }))
     };
-    server = new NextIpcServer(senderValidator);
+    router = new IpcRouter(senderValidator);
     event = createEvent(1);
     jest.clearAllMocks();
   });
 
   it('registers the shared IPC listener once', () => {
-    server.listen();
+    router.listen();
 
     expect(ipcMain.removeHandler).toHaveBeenCalledWith(IPC_SERVER_NAME);
     expect(ipcMain.handle).toHaveBeenCalledWith(IPC_SERVER_NAME, expect.any(Function));
   });
 
   it('returns failure responses for invalid and unknown requests', async () => {
-    await expect(server.listener(event, null)).resolves.toEqual({
+    await expect(router.listener(event, null)).resolves.toEqual({
       status: -1,
       data: null,
       message: 'Invalid IPC request.'
     });
-    await expect(server.listener(event, { type: 'unknown' })).resolves.toEqual({
+    await expect(router.listener(event, { type: 'unknown' })).resolves.toEqual({
       status: -1,
       data: null,
       message: 'Invalid IPC channel.'
@@ -58,17 +58,17 @@ describe('NextIpcServer', () => {
   it('rejects duplicate handler registrations', () => {
     const handler = createHandler(IPC_CHANNEL.READ_FILE, { content: 'content' });
 
-    server.registerHandler(handler);
+    router.registerHandler(handler);
 
-    expect(() => server.registerHandler(handler)).toThrow('Duplicate IPC handler channel: read-file');
+    expect(() => router.registerHandler(handler)).toThrow('Duplicate IPC handler channel: read-file');
   });
 
   it('rejects untrusted senders without calling the handler', async () => {
     const handler = createHandler(IPC_CHANNEL.READ_FILE, { content: 'content' });
     senderValidator.isTrusted.mockReturnValue(false);
-    server.registerHandler(handler);
+    router.registerHandler(handler);
 
-    await expect(server.listener(event, { type: IPC_CHANNEL.READ_FILE, data: { path: './note' } })).resolves.toEqual({
+    await expect(router.listener(event, { type: IPC_CHANNEL.READ_FILE, data: { path: './note' } })).resolves.toEqual({
       status: -1,
       data: null,
       message: 'Untrusted IPC sender.'
@@ -78,9 +78,9 @@ describe('NextIpcServer', () => {
 
   it('dispatches trusted requests and wraps handler results', async () => {
     const handler = createHandler(IPC_CHANNEL.READ_FILE, { content: 'content' });
-    server.registerHandler(handler);
+    router.registerHandler(handler);
 
-    await expect(server.listener(event, { type: IPC_CHANNEL.READ_FILE, data: { path: './note' } })).resolves.toEqual({
+    await expect(router.listener(event, { type: IPC_CHANNEL.READ_FILE, data: { path: './note' } })).resolves.toEqual({
       status: 0,
       data: { content: 'content' }
     });
@@ -92,10 +92,10 @@ describe('NextIpcServer', () => {
 
   it('normalizes undefined handler results to null response data', async () => {
     const handler = createHandler(IPC_CHANNEL.WRITE_FILE, undefined);
-    server.registerHandler(handler);
+    router.registerHandler(handler);
 
     await expect(
-      server.listener(event, { type: IPC_CHANNEL.WRITE_FILE, data: { path: './note', content: 'content' } })
+      router.listener(event, { type: IPC_CHANNEL.WRITE_FILE, data: { path: './note', content: 'content' } })
     ).resolves.toEqual({
       status: 0,
       data: null
@@ -105,9 +105,9 @@ describe('NextIpcServer', () => {
   it('wraps handler errors as failure responses', async () => {
     const handler = createHandler(IPC_CHANNEL.READ_FILE, { content: 'content' });
     (handler.handle as jest.Mock).mockRejectedValueOnce(new Error('read failed'));
-    server.registerHandler(handler);
+    router.registerHandler(handler);
 
-    await expect(server.listener(event, { type: IPC_CHANNEL.READ_FILE, data: { path: './note' } })).resolves.toEqual({
+    await expect(router.listener(event, { type: IPC_CHANNEL.READ_FILE, data: { path: './note' } })).resolves.toEqual({
       status: -1,
       data: null,
       message: 'read failed'
@@ -116,19 +116,19 @@ describe('NextIpcServer', () => {
 
   it('removes handlers and Electron listeners on destroy', () => {
     const handler = createHandler(IPC_CHANNEL.READ_FILE, { content: 'content' });
-    server.registerHandler(handler);
+    router.registerHandler(handler);
 
-    server.destroy();
+    router.destroy();
 
     expect(ipcMain.removeAllListeners).toHaveBeenCalledWith(IPC_SERVER_NAME);
     expect(ipcMain.removeHandler).toHaveBeenCalledWith(IPC_SERVER_NAME);
   });
 
-  function createHandler(channel: string, result: unknown): INextIpcHandler {
+  function createHandler(channel: string, result: unknown): IIpcHandler {
     return {
       channel,
       handle: jest.fn().mockResolvedValue(result)
-    } as INextIpcHandler;
+    } as IIpcHandler;
   }
 
   function createEvent(senderId: number): IpcMainInvokeEvent {

@@ -2,8 +2,8 @@ import { app, BrowserWindow } from 'electron';
 import { inject, injectable, multiInject } from 'inversify';
 import IApplication from '../interface/application';
 import IGlobalErrorReporter from '../interface/global-error-reporter';
-import INextIpcHandler from '../interface/next-ipc-handler';
-import INextIpcServer from '../interface/next-ipc-server';
+import IIpcHandler from '../interface/ipc-handler';
+import IIpcRouter from '../interface/ipc-router';
 import IProtocolService from '../interface/protocol-service';
 import IWindowSessionCoordinator from '../interface/window-session-coordinator';
 import { TYPES } from '../types';
@@ -12,8 +12,8 @@ import { TYPES } from '../types';
 class Application implements IApplication {
   constructor(
     @inject(TYPES.IWindowSessionCoordinator) private windowSessionCoordinator: IWindowSessionCoordinator,
-    @inject(TYPES.INextIpcServer) private ipcServer: INextIpcServer,
-    @multiInject(TYPES.INextIpcHandler) private ipcHandlers: INextIpcHandler[],
+    @inject(TYPES.IIpcRouter) private ipcRouter: IIpcRouter,
+    @multiInject(TYPES.IIpcHandler) private ipcHandlers: IIpcHandler[],
     @inject(TYPES.IProtocolService) private protocolService: IProtocolService,
     @inject(TYPES.IGlobalErrorReporter) private globalErrorReporter: IGlobalErrorReporter
   ) {}
@@ -23,8 +23,8 @@ class Application implements IApplication {
 
     this.globalErrorReporter.listen();
     this.protocolService.handleProtocols();
-    this.ipcServer.listen();
-    this.ipcHandlers.forEach(handler => this.ipcServer.registerHandler(handler));
+    this.ipcRouter.listen();
+    this.ipcHandlers.forEach(handler => this.ipcRouter.registerHandler(handler));
     await this.windowSessionCoordinator.createWindow();
 
     app.on('window-all-closed', () => {

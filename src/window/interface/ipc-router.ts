@@ -1,8 +1,8 @@
 import type { IpcMainInvokeEvent } from 'electron';
 import { AnyIpcRequest, IpcChannel, IpcRequestData, IpcResponse } from '../ipc/ipc-contract';
-import INextIpcHandler from './next-ipc-handler';
+import IIpcHandler from './ipc-handler';
 
-interface INextIpcServer {
+interface IIpcRouter {
   /**
    * Start ipc server
    */
@@ -25,14 +25,14 @@ interface INextIpcServer {
   dispatch(e: IpcMainInvokeEvent, type: AnyIpcRequest['type'], data?: AnyIpcRequest['data']): Promise<IpcResponse>;
 
   /**
-   * Register a handler to hanlder list.
+   * Register a handler to handler list.
    */
-  registerHandler(handler: INextIpcHandler): void;
+  registerHandler(handler: IIpcHandler): void;
 
   /**
-   * Remove target handler, if it's exist in handler list.
+   * Remove target handler, if it exists in handler list.
    */
-  removeHandler(handler: INextIpcHandler): void;
+  removeHandler(handler: IIpcHandler): void;
 }
 
-export default INextIpcServer;
+export default IIpcRouter;

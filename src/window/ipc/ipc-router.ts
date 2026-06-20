@@ -1,15 +1,15 @@
 import { ipcMain } from 'electron';
 import { inject, injectable } from 'inversify';
-import INextIpcHandler from '../interface/next-ipc-handler';
-import INextIpcServer from '../interface/next-ipc-server';
+import IIpcHandler from '../interface/ipc-handler';
+import IIpcRouter from '../interface/ipc-router';
 import ISenderValidator from '../interface/sender-validator';
-import { AnyIpcRequest, IPC_SERVER_NAME, IpcChannel, IpcRequestData, IpcResponse } from '../ipc/ipc-contract';
-import { validateIpcRequest } from '../ipc/request-validator';
+import { AnyIpcRequest, IPC_SERVER_NAME, IpcChannel, IpcRequestData, IpcResponse } from './ipc-contract';
+import { validateIpcRequest } from './request-validator';
 import { TYPES } from '../types';
 
 @injectable()
-class NextIpcServer implements INextIpcServer {
-  private handlers: Map<IpcChannel, INextIpcHandler>;
+class IpcRouter implements IIpcRouter {
+  private handlers: Map<IpcChannel, IIpcHandler>;
 
   constructor(@inject(TYPES.ISenderValidator) private senderValidator: ISenderValidator) {
     this.handlers = new Map();
@@ -66,7 +66,7 @@ class NextIpcServer implements INextIpcServer {
     }
   }
 
-  registerHandler(handler: INextIpcHandler) {
+  registerHandler(handler: IIpcHandler) {
     if (handler && typeof handler.handle === 'function') {
       if (this.handlers.has(handler.channel)) {
         throw new Error(`Duplicate IPC handler channel: ${handler.channel}`);
@@ -75,7 +75,7 @@ class NextIpcServer implements INextIpcServer {
     }
   }
 
-  removeHandler(handler: INextIpcHandler) {
+  removeHandler(handler: IIpcHandler) {
     this.handlers.delete(handler.channel);
   }
 
@@ -86,4 +86,4 @@ class NextIpcServer implements INextIpcServer {
   }
 }
 
-export default NextIpcServer;
+export default IpcRouter;

@@ -53,7 +53,8 @@ Target responsibilities:
 - `domain/` owns application use cases such as config, workspace, document, library, and cache behavior.
 - `infrastructure/` owns low-level adapters such as filesystem access, app paths, and JSON persistence.
 - `menu/` owns menu template creation and menu actions.
-- `entities/`, `services/`, and `ipc-handler/` are transitional folders. They should shrink or disappear as code moves into the target folders above.
+- `entities/` and `services/` are transitional folders. They should shrink or disappear as code moves into the target folders above.
+- The legacy `ipc-handler/` folder has been folded into `ipc/handlers/`.
 
 Architecture goals:
 
@@ -96,6 +97,14 @@ Completed in the latest main process refactor:
   - unknown channel handling
   - trusted sender validation against `WindowRegistry`
   - unified response wrapping
+- Moved the IPC router from `entities/NextIpcServer` to `ipc/IpcRouter`.
+- Renamed the IPC DI boundary from `INextIpcServer` / `TYPES.INextIpcServer` to `IIpcRouter` /
+  `TYPES.IIpcRouter`.
+- Moved IPC handlers from `ipc-handler/` to `ipc/handlers/`.
+- Renamed the IPC handler DI boundary from `INextIpcHandler` / `TYPES.INextIpcHandler` to `IIpcHandler` /
+  `TYPES.IIpcHandler`.
+- Moved DI bindings from `inversify.config/` to `container/`, with `src/window/index.ts` importing the new
+  `container` export.
 - Added explicit preload APIs:
   - `readConfig`
   - `readFile`
@@ -126,7 +135,7 @@ Completed in the latest main process refactor:
   - `ProtocolService` now covers one-time handler registration, `atom://` root-contained files, external image compatibility, external non-image rejection, and `static://` renderer-bundle traversal rejection.
 - Added focused automated tests for IPC contract boundaries:
   - `RequestValidator` now covers valid payloads, invalid envelopes, unknown channels, payload rejection for no-data channels, per-channel payload failures, and deprecated `WIRTE_FILE` compatibility.
-  - `NextIpcServer` now covers listener registration, invalid request handling, duplicate handler detection, sender rejection, trusted dispatch, `null` response normalization, thrown handler errors, and destroy cleanup.
+  - `IpcRouter` now covers listener registration, invalid request handling, duplicate handler detection, sender rejection, trusted dispatch, `null` response normalization, thrown handler errors, and destroy cleanup.
 - Added focused automated tests for close lifecycle behavior:
   - `WindowCloseService` now covers clean close, canceling dirty close, and confirming dirty close.
   - `WindowCloseController` now covers close cancellation, confirmed dirty close cleanup, and clean close cleanup.
@@ -145,7 +154,7 @@ Validation performed:
 ## Current Design Tradeoffs
 
 - `entities/` still exists because the migration is incremental. New code is placed by responsibility, while old implementation classes remain in place to avoid a large file-move-only diff.
-- `NextIpcServer` still keeps its legacy name, but its responsibility is now narrower.
+- `services/` still exists as a transitional domain-service folder until `domain/` and `infrastructure/` are introduced.
 - `atom://` intentionally allows external absolute image files for compatibility with existing Markdown content. This is narrower than the old behavior because non-image files outside the library root remain blocked.
 - `_post` remains available for renderer compatibility, but new renderer code should prefer explicit preload methods.
 - Focused automated coverage now exists for document cache revisions, path resolution, protocol boundaries, IPC routing/validation, close lifecycle behavior, and library-tree utilities. Broader Electron integration behavior still depends on package/lint checks and manual regression until an app-level harness is added.
@@ -155,7 +164,9 @@ Validation performed:
 Recommended next implementation order:
 
 1. Continue shrinking legacy entities.
-   - Move or rename `NextIpcServer` into the final IPC router structure once behavior is stable.
+   - Move `NextFileSystem` toward `infrastructure/file-system`.
+   - Move `NextStoreSystem` toward a runtime config/state boundary.
+   - Move `NextCacheSystem` toward a domain document cache service.
    - Keep file moves separate from behavior changes where possible.
 
 2. Improve state boundaries.
@@ -172,9 +183,9 @@ Recommended next implementation order:
    - Ensure cache state, document edited state, and renderer dirty state stay consistent after save, rename, and window close.
 
 5. Continue IPC cleanup.
-   - Move IPC router and handler folders into the final `ipc/` target structure once behavior is stable.
    - Gradually replace renderer `_post` usage with explicit preload methods.
    - Keep deprecated `_post` available until compatibility consumers are confirmed gone.
+   - Keep IPC router and handler behavior stable while future changes focus on channel additions or renderer migration.
 
 6. Add development documentation.
    - Document main-process folder responsibilities.
