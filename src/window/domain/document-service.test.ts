@@ -4,10 +4,11 @@ import 'reflect-metadata';
 import nodeFs from 'fs';
 import nodeOs from 'os';
 import nodePath from 'path';
-import { CacheContent, LibraryTree, MainProcessConfig } from '_types';
+import { CacheContent, LibraryTree } from '_types';
 import FileSystem from '../infrastructure/file-system';
+import IAppPathStore from '../interface/app-path-store';
 import IDocumentCacheService from '../interface/document-cache-service';
-import IRuntimeConfigStore from '../interface/runtime-config-store';
+import ILibraryTreeStore from '../interface/library-tree-store';
 import IPathResolver from '../interface/path-resolver';
 import DocumentService from './document-service';
 
@@ -76,7 +77,13 @@ describe('DocumentService cache revisions', () => {
       ]
     };
     cache = new MemoryCache();
-    service = new DocumentService(new FileSystem(), createStore(), cache, createPathResolver());
+    service = new DocumentService(
+      new FileSystem(),
+      createAppPathStore(),
+      createLibraryTreeStore(),
+      cache,
+      createPathResolver()
+    );
   });
 
   afterEach(async () => {
@@ -129,32 +136,36 @@ describe('DocumentService cache revisions', () => {
     expect(cache.hasModified()).toBe(false);
   });
 
-  function createStore(): IRuntimeConfigStore {
-    const config: MainProcessConfig = {
-      rootDir,
-      libraryTree
-    };
-
+  function createAppPathStore(): IAppPathStore {
     return {
-      init(nextConfig: MainProcessConfig) {
-        Object.assign(config, nextConfig);
+      setPaths(paths: { rootDir?: string }) {
+        rootDir = paths.rootDir ?? rootDir;
       },
-      setConfig(key, value) {
-        config[key] = value;
+      setRootDir(nextRootDir: string) {
+        rootDir = nextRootDir;
       },
-      getConfig(key) {
-        return config[key];
+      getRootDir() {
+        return rootDir;
       },
-      setConfigs(nextConfig: Partial<MainProcessConfig>) {
-        Object.assign(config, nextConfig);
+      getConfigDir() {
+        return '';
       },
-      getConfigs() {
-        return config;
+      getLogDir() {
+        return '';
+      }
+    };
+  }
+
+  function createLibraryTreeStore(): ILibraryTreeStore {
+    return {
+      setTree(tree: LibraryTree) {
+        libraryTree = tree;
       },
-      destroy() {
-        Object.keys(config).forEach(key => {
-          delete config[key as keyof MainProcessConfig];
-        });
+      getTree() {
+        return libraryTree;
+      },
+      async updateTree<T>(updater: (tree: LibraryTree) => T | Promise<T>): Promise<T> {
+        return updater(libraryTree);
       }
     };
   }

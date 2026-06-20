@@ -3,13 +3,13 @@ import { inject, injectable } from 'inversify';
 import { RendererListenerAction } from '_types';
 import ILibraryService from '../interface/library-service';
 import IMenuActionService from '../interface/menu-action-service';
-import IRuntimeConfigStore from '../interface/runtime-config-store';
+import IMenuStateStore from '../interface/menu-state-store';
 import { TYPES } from '../types';
 
 @injectable()
 class MenuActionService implements IMenuActionService {
   constructor(
-    @inject(TYPES.IRuntimeConfigStore) private store: IRuntimeConfigStore,
+    @inject(TYPES.IMenuStateStore) private menuStateStore: IMenuStateStore,
     @inject(TYPES.ILibraryService) private libraryService: ILibraryService
   ) {}
 
@@ -18,42 +18,23 @@ class MenuActionService implements IMenuActionService {
   }
 
   toggleToc(win: BrowserWindow): void {
-    const menuStatus = this.store.getConfig('menuStatus') ?? {
-      librarySidebar: false,
-      detailSidebar: false,
-      tocSidebar: false,
-      actionSidebar: false
-    };
-
-    menuStatus.tocSidebar = !menuStatus.tocSidebar;
-    this.store.setConfig('menuStatus', menuStatus);
+    const tocSidebar = this.menuStateStore.toggle('toggle-toc');
     win.webContents.send('next-ipc-client', {
       type: 'toggle-toc',
-      payload: menuStatus.tocSidebar
+      payload: tocSidebar
     } as RendererListenerAction<boolean>);
   }
 
   toggleVisible(type: RendererListenerAction['type'], win: BrowserWindow): void {
-    const menuStatus = this.store.getConfig('menuStatus') ?? {
-      librarySidebar: true,
-      detailSidebar: true,
-      tocSidebar: false,
-      actionSidebar: false
-    };
-
     let payload: boolean | null = null;
     switch (type) {
       case 'toggle-lib':
-        menuStatus.librarySidebar = !menuStatus.librarySidebar;
-        payload = menuStatus.librarySidebar;
+        payload = this.menuStateStore.toggle(type);
         break;
       case 'toggle-lib-detail':
-        menuStatus.detailSidebar = !menuStatus.detailSidebar;
-        payload = menuStatus.detailSidebar;
+        payload = this.menuStateStore.toggle(type);
         break;
     }
-
-    this.store.setConfig('menuStatus', menuStatus);
 
     if (payload !== null) {
       win.webContents.send('next-ipc-client', { type, payload } as RendererListenerAction<boolean>);

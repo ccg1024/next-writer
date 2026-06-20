@@ -3,9 +3,10 @@ import { inject, injectable } from 'inversify';
 import { MAX_FILE_DESCRIPTION_LENGTH } from 'src/config/env';
 import { isTrulyEmpty } from 'src/tools/utils';
 import { ReadFileRequest, ReadFileResponse, UpdateCacheRequest, WriteFileRequest } from '_types';
+import IAppPathStore from '../interface/app-path-store';
 import IDocumentCacheService from '../interface/document-cache-service';
 import IFileSystem from '../interface/file-system';
-import IRuntimeConfigStore from '../interface/runtime-config-store';
+import ILibraryTreeStore from '../interface/library-tree-store';
 import IDocumentService from '../interface/document-service';
 import IPathResolver from '../interface/path-resolver';
 import { findParentLibNode, getParentPathTokens, getTargetName, persistLibTree } from '../utils/lib-tree-utils';
@@ -17,7 +18,8 @@ class DocumentService implements IDocumentService {
 
   constructor(
     @inject(TYPES.IFileSystem) private fileSystem: IFileSystem,
-    @inject(TYPES.IRuntimeConfigStore) private store: IRuntimeConfigStore,
+    @inject(TYPES.IAppPathStore) private appPathStore: IAppPathStore,
+    @inject(TYPES.ILibraryTreeStore) private libraryTreeStore: ILibraryTreeStore,
     @inject(TYPES.IDocumentCacheService) private cache: IDocumentCacheService,
     @inject(TYPES.IPathResolver) private pathResolver: IPathResolver
   ) {}
@@ -48,56 +50,58 @@ class DocumentService implements IDocumentService {
       throw new Error('The path is invalid.');
     }
 
-    let fullPath = pathInfo.fullPath;
-    let oldFullPath = fullPath;
     const targetName = getTargetName(pathInfo.pathToken, { stripExtension: true });
-    const libTree = this.store.getConfig('libraryTree');
-    const rootDir = this.store.getConfig('rootDir');
-    const parentLib = findParentLibNode(libTree, getParentPathTokens(pathInfo.pathToken));
+    const rootDir = this.appPathStore.getRootDir();
 
-    if (isTrulyEmpty(parentLib)) {
-      throw new Error('Cannot find target library path');
-    }
+    await this.libraryTreeStore.updateTree(async libTree => {
+      let fullPath = pathInfo.fullPath;
+      let oldFullPath = fullPath;
+      const parentLib = findParentLibNode(libTree, getParentPathTokens(pathInfo.pathToken));
 
-    const target = parentLib.children.find(lib => lib.name === targetName);
-
-    if (isTrulyEmpty(target)) {
-      throw new Error('Some thing wrong when find target lib token');
-    }
-
-    if (!isTrulyEmpty(nameInRuntime)) {
-      const dirname = nodePath.dirname(fullPath);
-      oldFullPath = fullPath;
-      fullPath = this.pathResolver.resolveWithinRoot(rootDir, nodePath.join(dirname, `${nameInRuntime}.md`));
-      await this.fileSystem.rename(oldFullPath, fullPath);
-      target.name = nameInRuntime;
-    }
-
-    try {
-      await this.fileSystem.writeFile(fullPath, content);
-
-      if (this.isRevisionCurrent(saveRevision, oldFullPath, fullPath)) {
-        this.markRevision(saveRevision, oldFullPath, fullPath);
-
-        if (this.cache.hasCache(fullPath)) {
-          this.cache.update(fullPath, { isChange: false, content, revision: saveRevision });
-        } else {
-          this.cache.addCache(fullPath, { isChange: false, content, revision: saveRevision });
-        }
-
-        if (oldFullPath !== fullPath && this.cache.hasCache(oldFullPath)) {
-          this.cache.removeCache(oldFullPath);
-        }
+      if (isTrulyEmpty(parentLib)) {
+        throw new Error('Cannot find target library path');
       }
 
-      const newStat = await this.fileSystem.stat(fullPath);
-      target.modifiedTime = newStat.mtime.toLocaleString();
-      target.description = content.substring(0, MAX_FILE_DESCRIPTION_LENGTH);
-    } catch {
-      throw new Error('保存文件失败');
-    }
+      const target = parentLib.children.find(lib => lib.name === targetName);
 
-    await persistLibTree(libTree, rootDir, this.store, this.fileSystem);
+      if (isTrulyEmpty(target)) {
+        throw new Error('Some thing wrong when find target lib token');
+      }
+
+      if (!isTrulyEmpty(nameInRuntime)) {
+        const dirname = nodePath.dirname(fullPath);
+        oldFullPath = fullPath;
+        fullPath = this.pathResolver.resolveWithinRoot(rootDir, nodePath.join(dirname, `${nameInRuntime}.md`));
+        await this.fileSystem.rename(oldFullPath, fullPath);
+        target.name = nameInRuntime;
+      }
+
+      try {
+        await this.fileSystem.writeFile(fullPath, content);
+
+        if (this.isRevisionCurrent(saveRevision, oldFullPath, fullPath)) {
+          this.markRevision(saveRevision, oldFullPath, fullPath);
+
+          if (this.cache.hasCache(fullPath)) {
+            this.cache.update(fullPath, { isChange: false, content, revision: saveRevision });
+          } else {
+            this.cache.addCache(fullPath, { isChange: false, content, revision: saveRevision });
+          }
+
+          if (oldFullPath !== fullPath && this.cache.hasCache(oldFullPath)) {
+            this.cache.removeCache(oldFullPath);
+          }
+        }
+
+        const newStat = await this.fileSystem.stat(fullPath);
+        target.modifiedTime = newStat.mtime.toLocaleString();
+        target.description = content.substring(0, MAX_FILE_DESCRIPTION_LENGTH);
+      } catch {
+        throw new Error('保存文件失败');
+      }
+
+      await persistLibTree(libTree, rootDir, this.fileSystem);
+    });
   }
 
   async updateCache(data: UpdateCacheRequest): Promise<{ success: boolean }> {

@@ -163,18 +163,30 @@ Completed in the latest main process refactor:
   - `ConfigService`, `WorkspaceService`, `DocumentService`, and `LibraryService` now live under `domain/`.
   - `PathResolver` now lives under `infrastructure/`.
 - Removed the transitional `services/` folder.
+- Split the previous generic runtime state boundary into dedicated stores:
+  - `AppPathStore` owns `rootDir`, `configDir`, and `logDir`.
+  - `RenderConfigStore` owns renderer-facing config loaded from `nwriter.json`.
+  - `LibraryTreeStore` owns the main-process library tree and returns cloned tree data to reduce accidental shared
+    mutation.
+  - `MenuStateStore` owns menu/sidebar runtime state and reset/toggle behavior.
+- Added serialized `LibraryTreeStore.updateTree()` mutations so concurrent IPC read-modify-write operations use the
+  latest library tree snapshot instead of overwriting each other with stale clones.
+- Removed the legacy `RuntimeConfigStore` and `IRuntimeConfigStore` DI boundary.
+- Updated config, workspace, path resolution, protocol, IPC handlers, menu actions, document, and library services to
+  use the narrower state boundaries while preserving existing renderer IPC response shapes.
+- Added focused automated tests for the new state stores.
 
 Validation performed:
 
 - `npm run lint` passes.
-- `npm test -- --runInBand` passes with 12 suites and 55 tests.
+- `npm test -- --runInBand` passes with 16 suites and 62 tests.
 - `npm run package` passes.
 - `npm run format:check` passes.
 
 ## Current Design Tradeoffs
 
-- `state/RuntimeConfigStore` intentionally preserves the existing `MainProcessConfig` shape for compatibility. Runtime
-  menu state, persisted render config, library tree, and app paths are still split in future steps.
+- Main-process state is now split by responsibility. `MainProcessConfig` remains as a shared compatibility type, but it
+  is no longer used as the internal state bus.
 - `atom://` intentionally allows external absolute image files for compatibility with existing Markdown content. This is narrower than the old behavior because non-image files outside the library root remain blocked.
 - `_post` remains available for renderer compatibility, but new renderer code should prefer explicit preload methods.
 - Focused automated coverage now exists for document cache revisions, path resolution, protocol boundaries, IPC routing/validation, close lifecycle behavior, and library-tree utilities. Broader Electron integration behavior still depends on package/lint checks and manual regression until an app-level harness is added.
@@ -183,32 +195,27 @@ Validation performed:
 
 Recommended next implementation order:
 
-1. Improve state boundaries.
-   - Split runtime menu state from persisted render config.
-   - Split path/session state from renderer-facing config reads.
-   - Consider immutable updates for library tree operations to reduce accidental shared mutation.
-
-2. Improve protocol and image compatibility.
+1. Improve protocol and image compatibility.
    - Decide whether external image paths should be persisted as absolute local paths, copied into the library, or mediated by an import workflow.
    - Add clearer error logging for blocked `atom://` requests.
    - Consider separate protocol handlers for library files and external image previews.
 
-3. Improve close/save lifecycle.
+2. Improve close/save lifecycle.
    - Continue narrowing `WindowSessionCoordinator` responsibilities after extracting unsaved-change close confirmation.
    - Ensure cache state, document edited state, and renderer dirty state stay consistent after save, rename, and window close.
 
-4. Continue IPC cleanup.
+3. Continue IPC cleanup.
    - Gradually replace renderer `_post` usage with explicit preload methods.
    - Keep deprecated `_post` available until compatibility consumers are confirmed gone.
    - Keep IPC router and handler behavior stable while future changes focus on channel additions or renderer migration.
 
-5. Add development documentation.
+4. Add development documentation.
    - Document main-process folder responsibilities.
    - Document IPC channel creation steps.
    - Document Electron security assumptions and exceptions.
    - Document manual regression scenarios until automated tests exist.
 
-6. Expand automated regression coverage.
+5. Expand automated regression coverage.
    - Add tests for close/save lifecycle coordination around dirty cache state.
    - Consider an Electron-level smoke harness for startup, preload isolation, and menu shortcuts.
 

@@ -3,7 +3,7 @@ import { inject, injectable } from 'inversify';
 import { IS_DEV } from 'src/config/env';
 import IAppMenu from '../interface/app-menu';
 import IDocumentCacheService from '../interface/document-cache-service';
-import IRuntimeConfigStore from '../interface/runtime-config-store';
+import IMenuStateStore from '../interface/menu-state-store';
 import IMainWindowFactory from '../interface/main-window-factory';
 import IWindowCloseController from '../interface/window-close-controller';
 import IWindowRegistry from '../interface/window-registry';
@@ -19,7 +19,7 @@ class WindowSessionCoordinator implements IWindowSessionCoordinator {
 
   constructor(
     @inject(TYPES.IDocumentCacheService) private cache: IDocumentCacheService,
-    @inject(TYPES.IRuntimeConfigStore) private store: IRuntimeConfigStore,
+    @inject(TYPES.IMenuStateStore) private menuStateStore: IMenuStateStore,
     @inject(TYPES.IAppMenu) private menu: IAppMenu,
     @inject(TYPES.IMainWindowFactory) private windowFactory: IMainWindowFactory,
     @inject(TYPES.IWindowCloseController) private windowCloseController: IWindowCloseController,
@@ -39,12 +39,7 @@ class WindowSessionCoordinator implements IWindowSessionCoordinator {
     this.cache.init();
     await this.workspaceService.initWorkspace();
     this.menu.createMenu();
-    this.store.setConfig('menuStatus', {
-      librarySidebar: true,
-      detailSidebar: true,
-      tocSidebar: false,
-      actionSidebar: false
-    });
+    this.menuStateStore.reset();
 
     if (IS_DEV) {
       this.win.webContents.openDevTools();

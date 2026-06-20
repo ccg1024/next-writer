@@ -1,6 +1,6 @@
 import { inject, injectable } from 'inversify';
 import IIpcHandler from '../../interface/ipc-handler';
-import IRuntimeConfigStore from '../../interface/runtime-config-store';
+import IMenuStateStore from '../../interface/menu-state-store';
 import { TYPES } from '../../types';
 import type { RuntimeConfigResponse } from '../ipc-contract';
 import { IPC_CHANNEL } from '../ipc-contract';
@@ -9,10 +9,10 @@ import { IPC_CHANNEL } from '../ipc-contract';
 class RuntimeHandler implements IIpcHandler<typeof IPC_CHANNEL.RUNTIME> {
   channel = IPC_CHANNEL.RUNTIME;
 
-  constructor(@inject(TYPES.IRuntimeConfigStore) private store: IRuntimeConfigStore) {}
+  constructor(@inject(TYPES.IMenuStateStore) private menuStateStore: IMenuStateStore) {}
 
   async handle(): Promise<RuntimeConfigResponse> {
-    const menuStatus = this.store.getConfig('menuStatus');
+    const menuStatus = this.menuStateStore.getStatus();
     return { menuStatus };
   }
 }

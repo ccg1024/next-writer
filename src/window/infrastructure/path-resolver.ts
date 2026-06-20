@@ -1,13 +1,13 @@
 import nodePath from 'path';
 import { inject, injectable } from 'inversify';
 import { isTrulyEmpty } from 'src/tools/utils';
-import IRuntimeConfigStore from '../interface/runtime-config-store';
+import IAppPathStore from '../interface/app-path-store';
 import IPathResolver, { ResolvedLibraryPath } from '../interface/path-resolver';
 import { TYPES } from '../types';
 
 @injectable()
 class PathResolver implements IPathResolver {
-  constructor(@inject(TYPES.IRuntimeConfigStore) private store: IRuntimeConfigStore) {}
+  constructor(@inject(TYPES.IAppPathStore) private appPathStore: IAppPathStore) {}
 
   resolveWithinRoot(rootDir: string, targetPath: string): string {
     if (isTrulyEmpty(rootDir) || isTrulyEmpty(targetPath)) {
@@ -26,7 +26,7 @@ class PathResolver implements IPathResolver {
   }
 
   resolveLibraryPath(path: string, options?: { suffix?: string }): ResolvedLibraryPath {
-    const rootDir = this.store.getConfig('rootDir');
+    const rootDir = this.appPathStore.getRootDir();
 
     if (isTrulyEmpty(rootDir)) {
       throw new Error('The library root path is empty.');

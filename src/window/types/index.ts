@@ -6,7 +6,10 @@
 const TYPES = {
   // rebuild
   IFileSystem: Symbol.for('IFileSystem'),
-  IRuntimeConfigStore: Symbol.for('IRuntimeConfigStore'),
+  IAppPathStore: Symbol.for('IAppPathStore'),
+  IRenderConfigStore: Symbol.for('IRenderConfigStore'),
+  ILibraryTreeStore: Symbol.for('ILibraryTreeStore'),
+  IMenuStateStore: Symbol.for('IMenuStateStore'),
   IDocumentCacheService: Symbol.for('IDocumentCacheService'),
   IIpcRouter: Symbol.for('IIpcRouter'),
   IIpcHandler: Symbol.for('IIpcHandler'),

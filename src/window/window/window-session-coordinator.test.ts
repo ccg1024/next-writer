@@ -5,7 +5,7 @@ import type { BrowserWindow } from 'electron';
 import IAppMenu from '../interface/app-menu';
 import IDocumentCacheService from '../interface/document-cache-service';
 import IMainWindowFactory from '../interface/main-window-factory';
-import IRuntimeConfigStore from '../interface/runtime-config-store';
+import IMenuStateStore from '../interface/menu-state-store';
 import IWindowCloseController from '../interface/window-close-controller';
 import IWindowRegistry from '../interface/window-registry';
 import IWorkspaceService from '../interface/workspace-service';
@@ -13,7 +13,7 @@ import WindowSessionCoordinator from './window-session-coordinator';
 
 describe('WindowSessionCoordinator', () => {
   let cache: jest.Mocked<Pick<IDocumentCacheService, 'init' | 'destroy'>>;
-  let store: jest.Mocked<Pick<IRuntimeConfigStore, 'setConfig'>>;
+  let menuStateStore: jest.Mocked<Pick<IMenuStateStore, 'reset'>>;
   let menu: jest.Mocked<Pick<IAppMenu, 'createMenu'>>;
   let windowFactory: jest.Mocked<IMainWindowFactory>;
   let windowCloseController: jest.Mocked<IWindowCloseController>;
@@ -34,8 +34,8 @@ describe('WindowSessionCoordinator', () => {
       init: jest.fn(),
       destroy: jest.fn()
     };
-    store = {
-      setConfig: jest.fn()
+    menuStateStore = {
+      reset: jest.fn()
     };
     menu = {
       createMenu: jest.fn()
@@ -65,7 +65,7 @@ describe('WindowSessionCoordinator', () => {
     };
     coordinator = new WindowSessionCoordinator(
       cache as unknown as IDocumentCacheService,
-      store as unknown as IRuntimeConfigStore,
+      menuStateStore as unknown as IMenuStateStore,
       menu as unknown as IAppMenu,
       windowFactory,
       windowCloseController,
@@ -82,12 +82,7 @@ describe('WindowSessionCoordinator', () => {
     expect(cache.init).toHaveBeenCalled();
     expect(workspaceService.initWorkspace).toHaveBeenCalled();
     expect(menu.createMenu).toHaveBeenCalled();
-    expect(store.setConfig).toHaveBeenCalledWith('menuStatus', {
-      librarySidebar: true,
-      detailSidebar: true,
-      tocSidebar: false,
-      actionSidebar: false
-    });
+    expect(menuStateStore.reset).toHaveBeenCalled();
     expect(windowCloseController.mount).toHaveBeenCalledWith(win, expect.any(Function));
     expect(win.loadURL).toHaveBeenCalled();
   });

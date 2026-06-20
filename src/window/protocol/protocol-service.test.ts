@@ -5,9 +5,8 @@ import nodeFs from 'fs';
 import nodeOs from 'os';
 import nodePath from 'path';
 import { pathToFileURL } from 'url';
-import { MainProcessConfig } from '_types';
 import { app, net, protocol } from 'electron';
-import IRuntimeConfigStore from '../interface/runtime-config-store';
+import IAppPathStore from '../interface/app-path-store';
 import PathResolver from '../infrastructure/path-resolver';
 import ProtocolService from './protocol-service';
 
@@ -29,21 +28,19 @@ type CapturedProtocolHandler = (request: { url: string }) => unknown;
 describe('ProtocolService', () => {
   let rootDir: string;
   let appPath: string;
-  let config: MainProcessConfig;
   let service: ProtocolService;
 
   beforeEach(async () => {
     rootDir = await nodeFs.promises.mkdtemp(nodePath.join(nodeOs.tmpdir(), 'next-writer-protocol-root-'));
     appPath = await nodeFs.promises.mkdtemp(nodePath.join(nodeOs.tmpdir(), 'next-writer-protocol-app-'));
-    config = { rootDir };
-    const store = createStore();
+    const appPathStore = createAppPathStore();
 
     (app.getAppPath as jest.Mock).mockReturnValue(appPath);
     (net.fetch as jest.Mock).mockImplementation(async (url: string) => ({ url }));
     (protocol.handle as jest.Mock).mockClear();
     (protocol.registerSchemesAsPrivileged as jest.Mock).mockClear();
 
-    service = new ProtocolService(new PathResolver(store), store);
+    service = new ProtocolService(new PathResolver(appPathStore), appPathStore);
   });
 
   afterEach(async () => {
@@ -114,25 +111,22 @@ describe('ProtocolService', () => {
     expect(net.fetch).not.toHaveBeenCalled();
   });
 
-  function createStore(): IRuntimeConfigStore {
+  function createAppPathStore(): IAppPathStore {
     return {
-      init(nextConfig: MainProcessConfig) {
-        config = nextConfig;
+      setPaths(paths: { rootDir?: string }) {
+        rootDir = paths.rootDir ?? rootDir;
       },
-      setConfig(key, value) {
-        config[key] = value;
+      setRootDir(nextRootDir: string) {
+        rootDir = nextRootDir;
       },
-      getConfig(key) {
-        return config[key];
+      getRootDir() {
+        return rootDir;
       },
-      setConfigs(nextConfig: Partial<MainProcessConfig>) {
-        Object.assign(config, nextConfig);
+      getConfigDir() {
+        return '';
       },
-      getConfigs() {
-        return config;
-      },
-      destroy() {
-        config = {};
+      getLogDir() {
+        return '';
       }
     };
   }

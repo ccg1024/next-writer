@@ -2,8 +2,14 @@ import 'reflect-metadata'; // need this for inversify js
 import { Container } from 'inversify';
 import IFileSystem from '../interface/file-system';
 import FileSystem from '../infrastructure/file-system';
-import IRuntimeConfigStore from '../interface/runtime-config-store';
-import RuntimeConfigStore from '../state/runtime-config-store';
+import IAppPathStore from '../interface/app-path-store';
+import AppPathStore from '../state/app-path-store';
+import IRenderConfigStore from '../interface/render-config-store';
+import RenderConfigStore from '../state/render-config-store';
+import ILibraryTreeStore from '../interface/library-tree-store';
+import LibraryTreeStore from '../state/library-tree-store';
+import IMenuStateStore from '../interface/menu-state-store';
+import MenuStateStore from '../state/menu-state-store';
 import IDocumentCacheService from '../interface/document-cache-service';
 import DocumentCacheService from '../domain/document-cache-service';
 import IIpcRouter from '../interface/ipc-router';
@@ -57,7 +63,10 @@ import {
 const container = new Container();
 
 container.bind<IFileSystem>(TYPES.IFileSystem).to(FileSystem).inSingletonScope();
-container.bind<IRuntimeConfigStore>(TYPES.IRuntimeConfigStore).to(RuntimeConfigStore).inSingletonScope();
+container.bind<IAppPathStore>(TYPES.IAppPathStore).to(AppPathStore).inSingletonScope();
+container.bind<IRenderConfigStore>(TYPES.IRenderConfigStore).to(RenderConfigStore).inSingletonScope();
+container.bind<ILibraryTreeStore>(TYPES.ILibraryTreeStore).to(LibraryTreeStore).inSingletonScope();
+container.bind<IMenuStateStore>(TYPES.IMenuStateStore).to(MenuStateStore).inSingletonScope();
 container.bind<IDocumentCacheService>(TYPES.IDocumentCacheService).to(DocumentCacheService).inSingletonScope();
 container.bind<IIpcRouter>(TYPES.IIpcRouter).to(IpcRouter).inSingletonScope();
 container.bind<IAppMenu>(TYPES.IAppMenu).to(AppMenu).inSingletonScope();

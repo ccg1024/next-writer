@@ -1,7 +1,8 @@
 import { inject, injectable } from 'inversify';
 import { ReadConfigResponse } from '_types';
 import IIpcHandler from '../../interface/ipc-handler';
-import IRuntimeConfigStore from '../../interface/runtime-config-store';
+import ILibraryTreeStore from '../../interface/library-tree-store';
+import IRenderConfigStore from '../../interface/render-config-store';
 import { TYPES } from '../../types';
 import { IPC_CHANNEL } from '../ipc-contract';
 
@@ -12,12 +13,15 @@ import { IPC_CHANNEL } from '../ipc-contract';
 class ReadConfigHandler implements IIpcHandler<typeof IPC_CHANNEL.READ_CONFIG> {
   channel = IPC_CHANNEL.READ_CONFIG;
 
-  constructor(@inject(TYPES.IRuntimeConfigStore) private store: IRuntimeConfigStore) {}
+  constructor(
+    @inject(TYPES.IRenderConfigStore) private renderConfigStore: IRenderConfigStore,
+    @inject(TYPES.ILibraryTreeStore) private libraryTreeStore: ILibraryTreeStore
+  ) {}
 
   async handle(): Promise<ReadConfigResponse> {
     return {
-      config: this.store.getConfig('renderConfig'),
-      libTree: this.store.getConfig('libraryTree')
+      config: this.renderConfigStore.getConfig(),
+      libTree: this.libraryTreeStore.getTree()
     };
   }
 }

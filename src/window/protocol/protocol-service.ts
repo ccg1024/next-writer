@@ -2,9 +2,9 @@ import { app, net, protocol } from 'electron';
 import nodePath from 'path';
 import { pathToFileURL } from 'url';
 import { inject, injectable } from 'inversify';
+import IAppPathStore from '../interface/app-path-store';
 import IPathResolver from '../interface/path-resolver';
 import IProtocolService from '../interface/protocol-service';
-import IRuntimeConfigStore from '../interface/runtime-config-store';
 import { TYPES } from '../types';
 
 const IMAGE_EXTENSIONS = new Set(['.apng', '.avif', '.bmp', '.gif', '.ico', '.jpeg', '.jpg', '.png', '.svg', '.webp']);
@@ -15,7 +15,7 @@ class ProtocolService implements IProtocolService {
 
   constructor(
     @inject(TYPES.IPathResolver) private pathResolver: IPathResolver,
-    @inject(TYPES.IRuntimeConfigStore) private store: IRuntimeConfigStore
+    @inject(TYPES.IAppPathStore) private appPathStore: IAppPathStore
   ) {}
 
   registerSchemes(): void {
@@ -47,7 +47,7 @@ class ProtocolService implements IProtocolService {
 
     protocol.handle('atom', request => {
       const filePath = decodeURI(request.url.slice('atom://'.length));
-      const rootDir = this.store.getConfig('rootDir');
+      const rootDir = this.appPathStore.getRootDir();
       const targetPath = nodePath.isAbsolute(filePath) ? filePath : nodePath.resolve(rootDir, filePath);
       const safePath = this.resolveAtomPath(rootDir, targetPath);
       return net.fetch(pathToFileURL(safePath).toString());

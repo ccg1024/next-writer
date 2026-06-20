@@ -4,19 +4,16 @@ import 'reflect-metadata';
 import nodeFs from 'fs';
 import nodeOs from 'os';
 import nodePath from 'path';
-import { MainProcessConfig } from '_types';
-import IRuntimeConfigStore from '../interface/runtime-config-store';
+import IAppPathStore from '../interface/app-path-store';
 import PathResolver from './path-resolver';
 
 describe('PathResolver', () => {
   let rootDir: string;
-  let config: MainProcessConfig;
   let resolver: PathResolver;
 
   beforeEach(async () => {
     rootDir = await nodeFs.promises.mkdtemp(nodePath.join(nodeOs.tmpdir(), 'next-writer-path-'));
-    config = { rootDir };
-    resolver = new PathResolver(createStore());
+    resolver = new PathResolver(createAppPathStore());
   });
 
   afterEach(async () => {
@@ -66,13 +63,14 @@ describe('PathResolver', () => {
   });
 
   it('rejects empty root and path values', () => {
-    config.rootDir = '';
+    const validRootDir = rootDir;
+    rootDir = '';
 
     expect(() => resolver.resolveLibraryPath('./docs/note', { suffix: '.md' })).toThrow(
       'The library root path is empty.'
     );
 
-    config.rootDir = rootDir;
+    rootDir = validRootDir;
 
     expect(() => resolver.resolveLibraryPath('', { suffix: '.md' })).toThrow('The library path is empty.');
     expect(() => resolver.resolveWithinRoot('', nodePath.join(rootDir, 'docs', 'note.md'))).toThrow(
@@ -80,25 +78,22 @@ describe('PathResolver', () => {
     );
   });
 
-  function createStore(): IRuntimeConfigStore {
+  function createAppPathStore(): IAppPathStore {
     return {
-      init(nextConfig: MainProcessConfig) {
-        config = nextConfig;
+      setPaths(paths: { rootDir?: string }) {
+        rootDir = paths.rootDir ?? rootDir;
       },
-      setConfig(key, value) {
-        config[key] = value;
+      setRootDir(nextRootDir: string) {
+        rootDir = nextRootDir;
       },
-      getConfig(key) {
-        return config[key];
+      getRootDir() {
+        return rootDir;
       },
-      setConfigs(nextConfig: Partial<MainProcessConfig>) {
-        Object.assign(config, nextConfig);
+      getConfigDir() {
+        return '';
       },
-      getConfigs() {
-        return config;
-      },
-      destroy() {
-        config = {};
+      getLogDir() {
+        return '';
       }
     };
   }

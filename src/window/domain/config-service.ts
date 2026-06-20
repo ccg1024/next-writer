@@ -2,20 +2,22 @@ import nodePath from 'path';
 import { inject, injectable } from 'inversify';
 import { CONFIG_JSON_NAME, NW_CONFIG } from 'src/config/env';
 import { isEffectObject, isTrulyEmpty, removeEmpty } from 'src/tools/utils';
+import IAppPathStore from '../interface/app-path-store';
 import IConfigService from '../interface/config-service';
 import IFileSystem from '../interface/file-system';
-import IRuntimeConfigStore from '../interface/runtime-config-store';
+import IRenderConfigStore from '../interface/render-config-store';
 import { TYPES } from '../types';
 
 @injectable()
 class ConfigService implements IConfigService {
   constructor(
     @inject(TYPES.IFileSystem) private fileSystem: IFileSystem,
-    @inject(TYPES.IRuntimeConfigStore) private store: IRuntimeConfigStore
+    @inject(TYPES.IAppPathStore) private appPathStore: IAppPathStore,
+    @inject(TYPES.IRenderConfigStore) private renderConfigStore: IRenderConfigStore
   ) {}
 
   async initConfig(configFilePath?: string): Promise<void> {
-    const defaultConfigDir = this.store.getConfig('configDir') ?? '';
+    const defaultConfigDir = this.appPathStore.getConfigDir() ?? '';
 
     if (isTrulyEmpty(configFilePath) && isTrulyEmpty(defaultConfigDir)) {
       throw new Error('[nwriter] Get empty path of config json file.');
@@ -25,7 +27,7 @@ class ConfigService implements IConfigService {
 
     if (!(await this.fileSystem.exists(path))) {
       await this.fileSystem.writeFile(path, JSON.stringify(NW_CONFIG, null, 2));
-      this.store.setConfig('renderConfig', NW_CONFIG);
+      this.renderConfigStore.setConfig(NW_CONFIG);
       return;
     }
 
@@ -34,11 +36,11 @@ class ConfigService implements IConfigService {
     const { root, ...restConfig } = jsonObj;
 
     if (!isTrulyEmpty(root)) {
-      this.store.setConfig('rootDir', root as string);
+      this.appPathStore.setRootDir(root as string);
     }
 
     if (isEffectObject(restConfig)) {
-      this.store.setConfig('renderConfig', restConfig);
+      this.renderConfigStore.setConfig(restConfig);
     }
   }
 }

@@ -5,8 +5,9 @@ import { inject, injectable } from 'inversify';
 import { MAX_FILE_DESCRIPTION_LENGTH, ROOT_CONFIG_NAME } from 'src/config/env';
 import { isTrulyEmpty } from 'src/tools/utils';
 import { LibraryTree, RootLibraryTree, UpdateLibRequest } from '_types';
+import IAppPathStore from '../interface/app-path-store';
 import IFileSystem from '../interface/file-system';
-import IRuntimeConfigStore from '../interface/runtime-config-store';
+import ILibraryTreeStore from '../interface/library-tree-store';
 import ILibraryService from '../interface/library-service';
 import IPathResolver from '../interface/path-resolver';
 import { findParentLibNode, getParentPathTokens, getTargetName, persistLibTree } from '../utils/lib-tree-utils';
@@ -16,12 +17,13 @@ import { TYPES } from '../types';
 class LibraryService implements ILibraryService {
   constructor(
     @inject(TYPES.IFileSystem) private fileSystem: IFileSystem,
-    @inject(TYPES.IRuntimeConfigStore) private store: IRuntimeConfigStore,
+    @inject(TYPES.IAppPathStore) private appPathStore: IAppPathStore,
+    @inject(TYPES.ILibraryTreeStore) private libraryTreeStore: ILibraryTreeStore,
     @inject(TYPES.IPathResolver) private pathResolver: IPathResolver
   ) {}
 
   async synchronizeLibrary(win?: BrowserWindow): Promise<void> {
-    const root = this.store.getConfig('rootDir');
+    const root = this.appPathStore.getRootDir();
     const rootLib: RootLibraryTree = { isRoot: true, children: [] };
 
     if (isTrulyEmpty(root)) {
@@ -32,7 +34,7 @@ class LibraryService implements ILibraryService {
     delete rootLib.isRoot;
 
     await this.fileSystem.writeFile(nodePath.resolve(root, ROOT_CONFIG_NAME), JSON.stringify(rootLib, null, 2));
-    this.store.setConfig('libraryTree', rootLib as unknown as LibraryTree);
+    this.libraryTreeStore.setTree(rootLib as unknown as LibraryTree);
     win?.webContents.reload();
   }
 
@@ -56,64 +58,66 @@ class LibraryService implements ILibraryService {
 
     const targetName = getTargetName(pathInfo.pathToken);
     const targetNameInRuntime = pathInfoRuntime ? getTargetName(pathInfoRuntime.pathToken) : '';
-    const libTree = this.store.getConfig('libraryTree');
-    const rootDir = this.store.getConfig('rootDir');
-    const parentLib = findParentLibNode(libTree, getParentPathTokens(pathInfo.pathToken));
+    const rootDir = this.appPathStore.getRootDir();
 
-    if (isTrulyEmpty(parentLib)) {
-      throw new Error('Cannot find target library path');
-    }
+    return this.libraryTreeStore.updateTree(async libTree => {
+      const parentLib = findParentLibNode(libTree, getParentPathTokens(pathInfo.pathToken));
 
-    let resolveData: LibraryTree | null = null;
+      if (isTrulyEmpty(parentLib)) {
+        throw new Error('Cannot find target library path');
+      }
 
-    switch (`${operate}-${type}`) {
-      case 'add-file': {
-        const notePath = `${pathInfo.fullPath}.md`;
-        await this.fileSystem.writeFile(notePath, '');
-        const fileState = await this.fileSystem.stat(notePath);
-        const libToken = this.createLibraryToken(targetName, 'file', fileState);
-        parentLib.children.push(libToken);
-        resolveData = libToken;
-        break;
-      }
-      case 'add-folder': {
-        await this.fileSystem.ensureDir(pathInfo.fullPath);
-        const folderState = await this.fileSystem.stat(pathInfo.fullPath);
-        const libToken = this.createLibraryToken(targetName, 'folder', folderState);
-        parentLib.children.push(libToken);
-        resolveData = libToken;
-        break;
-      }
-      case 'del-file': {
-        await this.fileSystem.removeFile(`${pathInfo.fullPath}.md`);
-        parentLib.children = parentLib.children.filter(lib => !(lib.name === targetName && lib.type === 'file'));
-        break;
-      }
-      case 'del-folder': {
-        const targetToken = parentLib.children.find(lib => lib.name === targetName && lib.type === 'folder');
-        if (!targetToken) {
-          throw new Error('The library is not found.');
+      let resolveData: LibraryTree | null = null;
+
+      switch (`${operate}-${type}`) {
+        case 'add-file': {
+          const notePath = `${pathInfo.fullPath}.md`;
+          await this.fileSystem.writeFile(notePath, '');
+          const fileState = await this.fileSystem.stat(notePath);
+          const libToken = this.createLibraryToken(targetName, 'file', fileState);
+          parentLib.children.push(libToken);
+          resolveData = libToken;
+          break;
         }
-        if (targetToken.children.length > 0) {
-          throw new Error('The folder content is not empty.');
+        case 'add-folder': {
+          await this.fileSystem.ensureDir(pathInfo.fullPath);
+          const folderState = await this.fileSystem.stat(pathInfo.fullPath);
+          const libToken = this.createLibraryToken(targetName, 'folder', folderState);
+          parentLib.children.push(libToken);
+          resolveData = libToken;
+          break;
         }
-        await this.fileSystem.removeEmptyDir(pathInfo.fullPath);
-        parentLib.children = parentLib.children.filter(lib => !(lib.name === targetName && lib.type === 'folder'));
-        break;
-      }
-      case 'update-folder': {
-        const targetToken = parentLib.children.find(child => child.name === targetName && child.type === 'folder');
-        if (!targetToken || !pathInfoRuntime) {
-          throw new Error('The library is not found.');
+        case 'del-file': {
+          await this.fileSystem.removeFile(`${pathInfo.fullPath}.md`);
+          parentLib.children = parentLib.children.filter(lib => !(lib.name === targetName && lib.type === 'file'));
+          break;
         }
-        targetToken.name = targetNameInRuntime;
-        await this.fileSystem.rename(pathInfo.fullPath, pathInfoRuntime.fullPath);
-        break;
+        case 'del-folder': {
+          const targetToken = parentLib.children.find(lib => lib.name === targetName && lib.type === 'folder');
+          if (!targetToken) {
+            throw new Error('The library is not found.');
+          }
+          if (targetToken.children.length > 0) {
+            throw new Error('The folder content is not empty.');
+          }
+          await this.fileSystem.removeEmptyDir(pathInfo.fullPath);
+          parentLib.children = parentLib.children.filter(lib => !(lib.name === targetName && lib.type === 'folder'));
+          break;
+        }
+        case 'update-folder': {
+          const targetToken = parentLib.children.find(child => child.name === targetName && child.type === 'folder');
+          if (!targetToken || !pathInfoRuntime) {
+            throw new Error('The library is not found.');
+          }
+          targetToken.name = targetNameInRuntime;
+          await this.fileSystem.rename(pathInfo.fullPath, pathInfoRuntime.fullPath);
+          break;
+        }
       }
-    }
 
-    await persistLibTree(libTree, rootDir, this.store, this.fileSystem);
-    return resolveData ?? {};
+      await persistLibTree(libTree, rootDir, this.fileSystem);
+      return resolveData ?? {};
+    });
   }
 
   private async traverseDirectory(dir: string, workInProcess: LibraryTree | RootLibraryTree): Promise<void> {

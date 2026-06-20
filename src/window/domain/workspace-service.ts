@@ -2,9 +2,10 @@ import nodePath from 'path';
 import { inject, injectable } from 'inversify';
 import { CONFIG_DIR_NAME, LOG_DIR_NAME, LOG_NAME, ROOT_CONFIG_NAME, ROOT_DIR_NAME } from 'src/config/env';
 import { isTrulyEmpty } from 'src/tools/utils';
+import IAppPathStore from '../interface/app-path-store';
 import IConfigService from '../interface/config-service';
 import IFileSystem from '../interface/file-system';
-import IRuntimeConfigStore from '../interface/runtime-config-store';
+import ILibraryTreeStore from '../interface/library-tree-store';
 import IWorkspaceService from '../interface/workspace-service';
 import { TYPES } from '../types';
 
@@ -12,7 +13,8 @@ import { TYPES } from '../types';
 class WorkspaceService implements IWorkspaceService {
   constructor(
     @inject(TYPES.IFileSystem) private fileSystem: IFileSystem,
-    @inject(TYPES.IRuntimeConfigStore) private store: IRuntimeConfigStore,
+    @inject(TYPES.IAppPathStore) private appPathStore: IAppPathStore,
+    @inject(TYPES.ILibraryTreeStore) private libraryTreeStore: ILibraryTreeStore,
     @inject(TYPES.IConfigService) private configService: IConfigService
   ) {}
 
@@ -34,7 +36,7 @@ class WorkspaceService implements IWorkspaceService {
 
     await this.fileSystem.ensureDir(configDir);
     await this.fileSystem.ensureDir(logDir);
-    this.store.setConfigs({ logDir, rootDir, configDir });
+    this.appPathStore.setPaths({ logDir, rootDir, configDir });
 
     const logPath = nodePath.join(logDir, LOG_NAME);
     if (!(await this.fileSystem.exists(logPath))) {
@@ -43,7 +45,7 @@ class WorkspaceService implements IWorkspaceService {
 
     await this.configService.initConfig();
 
-    const realRoot = this.store.getConfig('rootDir');
+    const realRoot = this.appPathStore.getRootDir();
     if (isTrulyEmpty(realRoot)) {
       throw new Error('[nwriter] The workstation path is empty when initWorkspace');
     }
@@ -57,7 +59,7 @@ class WorkspaceService implements IWorkspaceService {
       buffer = await this.fileSystem.readFile(recordPath, { encoding: 'utf8' });
     }
 
-    this.store.setConfig('libraryTree', JSON.parse(buffer));
+    this.libraryTreeStore.setTree(JSON.parse(buffer));
   }
 }
 

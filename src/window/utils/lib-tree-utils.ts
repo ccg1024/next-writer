@@ -3,7 +3,6 @@ import { isTrulyEmpty } from 'src/tools/utils';
 import { ROOT_CONFIG_NAME } from 'src/config/env';
 import { LibraryTree } from '_types';
 import IFileSystem from '../interface/file-system';
-import IRuntimeConfigStore from '../interface/runtime-config-store';
 
 /**
  * 库树工具函数
@@ -90,20 +89,13 @@ export function findParentLibNode(libTree: LibraryTree, pathTokens: string[]): L
 }
 
 /**
- * 持久化库树到配置文件和 store
+ * 持久化库树到配置文件
  * @param libTree - 库树根节点
  * @param rootDir - 根目录
- * @param store - Store 实例
  * @param fileSys - 文件系统实例
  */
-export async function persistLibTree(
-  libTree: LibraryTree,
-  rootDir: string,
-  store: IRuntimeConfigStore,
-  fileSys: IFileSystem
-): Promise<void> {
+export async function persistLibTree(libTree: LibraryTree, rootDir: string, fileSys: IFileSystem): Promise<void> {
   await fileSys.writeFile(nodePath.join(rootDir, ROOT_CONFIG_NAME), JSON.stringify(libTree, null, 2));
-  store.setConfig('libraryTree', libTree);
 }
 
 /**
