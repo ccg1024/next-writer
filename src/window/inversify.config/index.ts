@@ -10,8 +10,6 @@ import INextIpcServer from '../interface/next-ipc-server';
 import NextIpcServer from '../entities/next-ipc-server';
 import INextMenu from '../interface/next-menu';
 import NextMenu from '../entities/next-menu';
-import INextApp from '../interface/next-app';
-import NextApp from '../entities/next-app';
 import { TYPES } from '../types';
 import IApplication from '../interface/application';
 import Application from '../app/application';
@@ -19,10 +17,14 @@ import IGlobalErrorReporter from '../interface/global-error-reporter';
 import GlobalErrorReporter from '../app/global-error-reporter';
 import IMainWindowFactory from '../interface/main-window-factory';
 import MainWindowFactory from '../window/main-window-factory';
+import IWindowCloseController from '../interface/window-close-controller';
+import WindowCloseController from '../window/window-close-controller';
 import IWindowCloseService from '../interface/window-close-service';
 import WindowCloseService from '../window/window-close-service';
 import IWindowRegistry from '../interface/window-registry';
 import WindowRegistry from '../window/window-registry';
+import IWindowSessionCoordinator from '../interface/window-session-coordinator';
+import WindowSessionCoordinator from '../window/window-session-coordinator';
 import IProtocolService from '../interface/protocol-service';
 import ProtocolService from '../protocol/protocol-service';
 import IPathResolver from '../interface/path-resolver';
@@ -59,12 +61,16 @@ nextWriterC.bind<INextStoreSystem>(TYPES.INextStoreSystem).to(NextStoreSystem).i
 nextWriterC.bind<INextCacheSystem>(TYPES.INextCacheSystem).to(NextCacheSystem).inSingletonScope();
 nextWriterC.bind<INextIpcServer>(TYPES.INextIpcServer).to(NextIpcServer).inSingletonScope();
 nextWriterC.bind<INextMenu>(TYPES.INextMenu).to(NextMenu).inSingletonScope();
-nextWriterC.bind<INextApp>(TYPES.INextApp).to(NextApp).inSingletonScope();
 nextWriterC.bind<IApplication>(TYPES.IApplication).to(Application).inSingletonScope();
 nextWriterC.bind<IGlobalErrorReporter>(TYPES.IGlobalErrorReporter).to(GlobalErrorReporter).inSingletonScope();
 nextWriterC.bind<IMainWindowFactory>(TYPES.IMainWindowFactory).to(MainWindowFactory).inSingletonScope();
+nextWriterC.bind<IWindowCloseController>(TYPES.IWindowCloseController).to(WindowCloseController).inSingletonScope();
 nextWriterC.bind<IWindowCloseService>(TYPES.IWindowCloseService).to(WindowCloseService).inSingletonScope();
 nextWriterC.bind<IWindowRegistry>(TYPES.IWindowRegistry).to(WindowRegistry).inSingletonScope();
+nextWriterC
+  .bind<IWindowSessionCoordinator>(TYPES.IWindowSessionCoordinator)
+  .to(WindowSessionCoordinator)
+  .inSingletonScope();
 nextWriterC.bind<IProtocolService>(TYPES.IProtocolService).to(ProtocolService).inSingletonScope();
 nextWriterC.bind<IPathResolver>(TYPES.IPathResolver).to(PathResolver).inSingletonScope();
 nextWriterC.bind<IConfigService>(TYPES.IConfigService).to(ConfigService).inSingletonScope();

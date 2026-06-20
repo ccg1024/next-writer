@@ -1,4 +1,3 @@
-import type { BrowserWindow } from 'electron';
 import type { IpcChannel, IpcResponse } from 'src/window/ipc/ipc-contract';
 
 export type NormalObject = Record<
@@ -100,8 +99,6 @@ export type RendererLibraryTree = RendererLibraryBase & {
 };
 
 export type MainProcessConfig = Partial<{
-  /** @deprecated Use WindowRegistry instead. */
-  win: BrowserWindow; // Current BrowserWindow instance
   rootDir: string; // Absolute path of library
   configDir: string; // next-writer configuration path
   logDir: string; // next-writer log file storage path

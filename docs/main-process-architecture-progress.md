@@ -79,7 +79,8 @@ Completed in the latest main process refactor:
   - navigation blocking
   - new-window denial with external HTTP(S) handoff
   - webview attach blocking
-- Added `WindowRegistry` and moved current-window access away from `MainProcessConfig.win`.
+- Added `WindowRegistry`, moved current-window access away from `MainProcessConfig.win`, and later removed the
+  deprecated `win` field from `MainProcessConfig`.
 - Updated `NextCacheSystem` to use `WindowRegistry` for `setDocumentEdited`.
 - Added `ProtocolService` for `atom` and `static` protocols.
 - Reduced protocol privileges by removing broad options such as `bypassCSP` and `allowServiceWorkers`.
@@ -110,8 +111,12 @@ Completed in the latest main process refactor:
 - Extracted IPC sender trust checks into injectable `SenderValidator`.
 - Normalized `write-file` success responses to `data: null`.
 - Extracted `ConfigService`, `WorkspaceService`, `DocumentService`, `LibraryService`, and `MenuActionService`.
-- Extracted `WindowCloseService` so unsaved-change close confirmation is no longer embedded in `NextApp`.
+- Extracted `WindowCloseService` so unsaved-change close confirmation is no longer embedded in the window session
+  coordinator.
 - Kept existing close behavior intact: cancel blocks closing, confirm closes the window and discards unsaved changes.
+- Replaced legacy `NextApp` with `WindowSessionCoordinator` for main-window session composition.
+- Extracted `WindowCloseController` so close event wiring and dirty-close guard behavior live under `window/`.
+- Removed deprecated `win` from `MainProcessConfig`; `WindowRegistry` is now the shared window access boundary.
 - Kept legacy data shape and menu behavior intact.
 - Added correct `IPC_CHANNEL.WRITE_FILE` while keeping deprecated `WIRTE_FILE` compatibility.
 - Added focused automated tests for main-process path and protocol boundaries:
@@ -122,19 +127,20 @@ Completed in the latest main process refactor:
   - `NextIpcServer` now covers listener registration, invalid request handling, duplicate handler detection, sender rejection, trusted dispatch, `null` response normalization, thrown handler errors, and destroy cleanup.
 - Added focused automated tests for close lifecycle behavior:
   - `WindowCloseService` now covers clean close, canceling dirty close, and confirming dirty close.
-  - `NextApp` now covers close cancellation, confirmed dirty close cleanup, and clean close cleanup.
+  - `WindowCloseController` now covers close cancellation, confirmed dirty close cleanup, and clean close cleanup.
+  - `WindowSessionCoordinator` now covers window creation, session cleanup, and replacing an existing live window.
 
 Validation performed:
 
 - `npm run lint` passes.
-- `npm test -- --runInBand` passes with 9 suites and 43 tests.
+- `npm test -- --runInBand` passes with 10 suites and 46 tests.
 - `npm run package` passes.
 - `npm run format:check` still fails only because existing `src/window/protocol/protocol-service.test.ts` is not Prettier-formatted.
 
 ## Current Design Tradeoffs
 
 - `entities/` still exists because the migration is incremental. New code is placed by responsibility, while old implementation classes remain in place to avoid a large file-move-only diff.
-- `NextApp`, `NextMenu`, and `NextIpcServer` still keep their legacy names, but their responsibilities are now narrower.
+- `NextMenu` and `NextIpcServer` still keep their legacy names, but their responsibilities are now narrower.
 - `atom://` intentionally allows external absolute image files for compatibility with existing Markdown content. This is narrower than the old behavior because non-image files outside the library root remain blocked.
 - `_post` remains available for renderer compatibility, but new renderer code should prefer explicit preload methods.
 - Focused automated coverage now exists for document cache revisions, path resolution, protocol boundaries, IPC routing/validation, close lifecycle behavior, and library-tree utilities. Broader Electron integration behavior still depends on package/lint checks and manual regression until an app-level harness is added.
@@ -144,13 +150,10 @@ Validation performed:
 Recommended next implementation order:
 
 1. Continue shrinking legacy entities.
-   - Move remaining window lifecycle guard logic out of `NextApp`.
-   - Rename `NextApp` to a clearer window/session coordinator once call sites are stable.
    - Rename `NextMenu` or split it into menu template and menu action bindings.
    - Keep file moves separate from behavior changes where possible.
 
 2. Improve state boundaries.
-   - Remove `win` from `MainProcessConfig` after confirming there are no external consumers.
    - Split runtime menu state from persisted render config.
    - Consider immutable updates for library tree operations to reduce accidental shared mutation.
 
@@ -160,7 +163,7 @@ Recommended next implementation order:
    - Consider separate protocol handlers for library files and external image previews.
 
 4. Improve close/save lifecycle.
-   - Continue narrowing `NextApp` window/session responsibilities after extracting unsaved-change close confirmation.
+   - Continue narrowing `WindowSessionCoordinator` responsibilities after extracting unsaved-change close confirmation.
    - Ensure cache state, document edited state, and renderer dirty state stay consistent after save, rename, and window close.
 
 5. Continue IPC cleanup.

@@ -1,20 +1,20 @@
-import { BrowserWindow } from 'electron';
+import type { BrowserWindow } from 'electron';
 import { inject, injectable } from 'inversify';
 import { IS_DEV } from 'src/config/env';
-import INextApp from '../interface/next-app';
 import INextCacheSystem from '../interface/next-cache-system';
 import INextMenu from '../interface/next-menu';
 import INextStoreSystem from '../interface/next-store-system';
 import IMainWindowFactory from '../interface/main-window-factory';
-import IWindowCloseService from '../interface/window-close-service';
+import IWindowCloseController from '../interface/window-close-controller';
 import IWindowRegistry from '../interface/window-registry';
+import IWindowSessionCoordinator from '../interface/window-session-coordinator';
 import IWorkspaceService from '../interface/workspace-service';
 import { TYPES } from '../types';
 
 declare const MAIN_WINDOW_WEBPACK_ENTRY: string;
 
 @injectable()
-class NextApp implements INextApp {
+class WindowSessionCoordinator implements IWindowSessionCoordinator {
   private win: BrowserWindow | null = null;
 
   constructor(
@@ -22,7 +22,7 @@ class NextApp implements INextApp {
     @inject(TYPES.INextStoreSystem) private store: INextStoreSystem,
     @inject(TYPES.INextMenu) private menu: INextMenu,
     @inject(TYPES.IMainWindowFactory) private windowFactory: IMainWindowFactory,
-    @inject(TYPES.IWindowCloseService) private windowCloseService: IWindowCloseService,
+    @inject(TYPES.IWindowCloseController) private windowCloseController: IWindowCloseController,
     @inject(TYPES.IWindowRegistry) private windowRegistry: IWindowRegistry,
     @inject(TYPES.IWorkspaceService) private workspaceService: IWorkspaceService
   ) {
@@ -50,7 +50,7 @@ class NextApp implements INextApp {
       this.win.webContents.openDevTools();
     }
 
-    this.mountInstanceEvent(this.win);
+    this.windowCloseController.mount(this.win, () => this.destroy());
     await this.win.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
   }
 
@@ -59,27 +59,6 @@ class NextApp implements INextApp {
     this.windowRegistry.clearCurrentWindow(this.win);
     this.win = null;
   }
-
-  private mountInstanceEvent(win: BrowserWindow): void {
-    win.on('close', async e => {
-      if (!this.windowCloseService.hasUnsavedChanges()) {
-        win.removeAllListeners();
-        this.destroy();
-        return;
-      }
-
-      e.preventDefault();
-      const shouldClose = await this.windowCloseService.shouldCloseWindow(win);
-
-      if (!shouldClose) {
-        return;
-      }
-
-      win.removeAllListeners();
-      win.close();
-      this.destroy();
-    });
-  }
 }
 
-export default NextApp;
+export default WindowSessionCoordinator;
