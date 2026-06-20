@@ -1,5 +1,5 @@
 import React, { FC, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ViewUpdate } from '@codemirror/view';
+import { EditorView, ViewUpdate } from '@codemirror/view';
 import { App, Typography } from 'antd';
 import { isTrulyEmpty } from 'src/tools/utils';
 import { VerticalEmpty } from 'src/ui/components/antd/preset/empty';
@@ -39,6 +39,7 @@ const Main: FC<MainProps> = props => {
   const [initialEditorState, setInitialEditorState] = useState<InitialEditorState>(null);
   const { updateRenderLibrary } = useHomeContext();
   const cacheUpdateTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const cacheRevisionRef = useRef(0);
   // Track whether current file is already marked as modified
   const isModifiedRef = useRef<boolean>(false);
   // Track previous file info for cleanup on switch
@@ -58,6 +59,40 @@ const Main: FC<MainProps> = props => {
   }, [updateRenderLibrary]);
 
   const headInProcess = useRef<string>('');
+
+  const nextCacheRevision = useCallback(() => {
+    cacheRevisionRef.current += 1;
+    return cacheRevisionRef.current;
+  }, []);
+
+  const updateFileCache = useCallback(
+    (path: string, content: string, isChange: boolean) =>
+      mainProcess.updateCache({
+        path,
+        content,
+        isChange,
+        revision: nextCacheRevision()
+      }),
+    [nextCacheRevision]
+  );
+
+  const scheduleCacheUpdate = useCallback(
+    (view: EditorView) => {
+      if (cacheUpdateTimerRef.current) {
+        return;
+      }
+
+      cacheUpdateTimerRef.current = setTimeout(() => {
+        const content = view.state.doc.toString();
+        const path = currentNote?.relativePath;
+        if (path) {
+          updateFileCache(path, content, isModifiedRef.current);
+        }
+        cacheUpdateTimerRef.current = null;
+      }, 1000);
+    },
+    [currentNote?.relativePath, updateFileCache]
+  );
 
   const onEditorDocChange = useCallback(
     (update: ViewUpdate) => {
@@ -87,46 +122,15 @@ const Main: FC<MainProps> = props => {
         }));
 
         // Update cache state immediately (no delay)
-        mainProcess.updateCache({
-          path: currentNote.relativePath,
-          content: update.view.state.doc.toString(),
-          isChange: true
-        });
-
-        // Start content caching timer after first immediate update
-        cacheUpdateTimerRef.current = setTimeout(() => {
-          const content = update.view.state.doc.toString();
-          if (currentNote?.relativePath) {
-            mainProcess.updateCache({
-              path: currentNote.relativePath,
-              content,
-              isChange: isModifiedRef.current
-            });
-          }
-          cacheUpdateTimerRef.current = null;
-        }, 1000);
-        return; // Skip the debounced update below
+        updateFileCache(currentNote.relativePath, update.view.state.doc.toString(), true);
       }
 
-      // Content caching: debounced (only for subsequent edits)
-      if (!cacheUpdateTimerRef.current) {
-        cacheUpdateTimerRef.current = setTimeout(() => {
-          const content = update.view.state.doc.toString();
-          if (currentNote?.relativePath) {
-            mainProcess.updateCache({
-              path: currentNote.relativePath,
-              content,
-              isChange: isModifiedRef.current
-            });
-          }
-          cacheUpdateTimerRef.current = null;
-        }, 1000); // Debounce: update after 1 second of inactivity
-      }
+      scheduleCacheUpdate(update.view);
 
       // 通知其他模块，文档变更
       messagePublish.pub('docChanged', update.view);
     },
-    [currentNote, updateRenderLibrary, debounceEditorTransaction]
+    [currentNote?.relativePath, updateRenderLibrary, debounceEditorTransaction, updateFileCache, scheduleCacheUpdate]
   );
 
   const onEditorChange = useCallback((_update: ViewUpdate) => {
@@ -141,19 +145,28 @@ const Main: FC<MainProps> = props => {
     }
 
     const content = editor.state.doc.toString();
+    if (cacheUpdateTimerRef.current) {
+      clearTimeout(cacheUpdateTimerRef.current);
+      cacheUpdateTimerRef.current = null;
+    }
+    const saveRevision = nextCacheRevision();
+    const wasModifiedBeforeSave = isModifiedRef.current;
+
     nwSpin.loading(true);
     mainProcess
-      .writeFile({ path: currentNote.relativePath, content, nameInRuntime: currentNote.name })
+      .writeFile({ path: currentNote.relativePath, content, nameInRuntime: currentNote.name, revision: saveRevision })
       .then(res => {
         if (res.status !== 0) {
           message.error(res.message || '保存文件失败');
+          isModifiedRef.current = wasModifiedBeforeSave;
+          updateRenderLibrary((_, preNote) => ({
+            ...preNote,
+            isChange: wasModifiedBeforeSave
+          }));
+          if (wasModifiedBeforeSave) {
+            updateFileCache(currentNote.relativePath, content, true);
+          }
           return;
-        }
-
-        // Clear any pending cache updates since file is now saved
-        if (cacheUpdateTimerRef.current) {
-          clearTimeout(cacheUpdateTimerRef.current);
-          cacheUpdateTimerRef.current = null;
         }
 
         // Reset modified state immediately
@@ -181,7 +194,7 @@ const Main: FC<MainProps> = props => {
       .finally(() => {
         nwSpin.loading(false);
       });
-  }, [currentNote, editor, message, updateRenderLibrary]);
+  }, [currentNote, editor, message, nextCacheRevision, updateFileCache, updateRenderLibrary]);
 
   useRendererIpcAction('write-file', handleWriteFile);
 
@@ -232,14 +245,10 @@ const Main: FC<MainProps> = props => {
 
       // Always update cache with latest content when switching files
       if (prevNoteInfoRef.current.relativePath) {
-        mainProcess.updateCache({
-          path: prevNoteInfoRef.current.relativePath,
-          content: editor.state.doc.toString(),
-          isChange: isModifiedRef.current
-        });
+        updateFileCache(prevNoteInfoRef.current.relativePath, editor.state.doc.toString(), isModifiedRef.current);
       }
     };
-  }, [editor]);
+  }, [editor, updateFileCache]);
 
   useEffect(() => {
     if (editor) {

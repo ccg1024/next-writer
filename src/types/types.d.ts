@@ -32,6 +32,7 @@ export interface IPC {
 export type CacheContent = {
   isChange: boolean;
   content: string;
+  revision?: number;
 };
 export type Cache = {
   [key: string]: CacheContent;
@@ -149,6 +150,7 @@ export type WriteFileRequest = {
   path: string;
   content: string;
   nameInRuntime?: string; // using to rename
+  revision?: number;
 };
 
 export type UpdateLibRequest = {
@@ -164,6 +166,7 @@ export type UpdateCacheRequest = {
   path: string;
   content: string;
   isChange: boolean;
+  revision?: number;
 };
 // ============================================================
 // end -- just for ipc communication

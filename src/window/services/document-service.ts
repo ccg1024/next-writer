@@ -14,6 +14,8 @@ import { TYPES } from '../types';
 
 @injectable()
 class DocumentService implements IDocumentService {
+  private readonly cacheRevisions = new Map<string, number>();
+
   constructor(
     @inject(TYPES.INextFileSystem) private fileSystem: INextFileSystem,
     @inject(TYPES.INextStoreSystem) private store: INextStoreSystem,
@@ -39,14 +41,16 @@ class DocumentService implements IDocumentService {
   }
 
   async writeFile(data: WriteFileRequest): Promise<void> {
-    const { path, content, nameInRuntime } = data ?? {};
+    const { path, content, nameInRuntime, revision } = data ?? {};
     const pathInfo = this.pathResolver.resolveLibraryPath(path, { suffix: '.md' });
+    const saveRevision = this.normalizeRevision(revision);
 
     if (pathInfo.pathToken.length === 0) {
       throw new Error('The path is invalid.');
     }
 
     let fullPath = pathInfo.fullPath;
+    let oldFullPath = fullPath;
     const targetName = getTargetName(pathInfo.pathToken, { stripExtension: true });
     const libTree = this.store.getConfig('libraryTree');
     const rootDir = this.store.getConfig('rootDir');
@@ -64,23 +68,27 @@ class DocumentService implements IDocumentService {
 
     if (!isTrulyEmpty(nameInRuntime)) {
       const dirname = nodePath.dirname(fullPath);
-      const oldFullPath = fullPath;
+      oldFullPath = fullPath;
       fullPath = this.pathResolver.resolveWithinRoot(rootDir, nodePath.join(dirname, `${nameInRuntime}.md`));
       await nodeFs.promises.rename(oldFullPath, fullPath);
       target.name = nameInRuntime;
-
-      if (this.cache.exitCache(oldFullPath)) {
-        this.cache.removeCache(oldFullPath);
-      }
     }
 
     try {
       await this.fileSystem.writeFile(fullPath, content);
 
-      if (this.cache.exitCache(fullPath)) {
-        this.cache.update(fullPath, { isChange: false, content });
-      } else {
-        this.cache.addCache(fullPath, { isChange: false, content });
+      if (this.isRevisionCurrent(saveRevision, oldFullPath, fullPath)) {
+        this.markRevision(saveRevision, oldFullPath, fullPath);
+
+        if (this.cache.exitCache(fullPath)) {
+          this.cache.update(fullPath, { isChange: false, content, revision: saveRevision });
+        } else {
+          this.cache.addCache(fullPath, { isChange: false, content, revision: saveRevision });
+        }
+
+        if (oldFullPath !== fullPath && this.cache.exitCache(oldFullPath)) {
+          this.cache.removeCache(oldFullPath);
+        }
       }
 
       const newStat = await nodeFs.promises.stat(fullPath);
@@ -94,16 +102,44 @@ class DocumentService implements IDocumentService {
   }
 
   async updateCache(data: UpdateCacheRequest): Promise<{ success: boolean }> {
-    const { path, content, isChange } = data ?? {};
+    const { path, content, isChange, revision } = data ?? {};
     const pathInfo = this.pathResolver.resolveLibraryPath(path, { suffix: '.md' });
+    const cacheRevision = this.normalizeRevision(revision);
+
+    if (!this.isRevisionCurrent(cacheRevision, pathInfo.fullPath)) {
+      return { success: true };
+    }
+
+    this.markRevision(cacheRevision, pathInfo.fullPath);
 
     if (this.cache.exitCache(pathInfo.fullPath)) {
-      this.cache.update(pathInfo.fullPath, { isChange, content });
+      this.cache.update(pathInfo.fullPath, { isChange, content, revision: cacheRevision });
     } else {
-      this.cache.addCache(pathInfo.fullPath, { isChange, content });
+      this.cache.addCache(pathInfo.fullPath, { isChange, content, revision: cacheRevision });
     }
 
     return { success: true };
+  }
+
+  private normalizeRevision(revision?: number): number {
+    return typeof revision === 'number' && Number.isFinite(revision) ? revision : 0;
+  }
+
+  private isRevisionCurrent(revision: number, ...paths: string[]): boolean {
+    return revision >= this.getLatestRevision(...paths);
+  }
+
+  private getLatestRevision(...paths: string[]): number {
+    return paths.reduce((latest, path) => Math.max(latest, this.cacheRevisions.get(path) ?? 0), 0);
+  }
+
+  private markRevision(revision: number, ...paths: string[]): void {
+    paths.forEach(path => {
+      const currentRevision = this.cacheRevisions.get(path) ?? 0;
+      if (revision >= currentRevision) {
+        this.cacheRevisions.set(path, revision);
+      }
+    });
   }
 }
 
