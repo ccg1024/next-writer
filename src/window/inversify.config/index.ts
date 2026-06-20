@@ -35,6 +35,8 @@ import IDocumentService from '../interface/document-service';
 import DocumentService from '../services/document-service';
 import IMenuActionService from '../interface/menu-action-service';
 import MenuActionService from '../menu/menu-action-service';
+import ISenderValidator from '../interface/sender-validator';
+import SenderValidator from '../ipc/sender-validator';
 import INextIpcHandler from '../interface/next-ipc-handler';
 import {
   ReadConfigHandler,
@@ -67,6 +69,7 @@ nextWriterC.bind<IWorkspaceService>(TYPES.IWorkspaceService).to(WorkspaceService
 nextWriterC.bind<ILibraryService>(TYPES.ILibraryService).to(LibraryService).inSingletonScope();
 nextWriterC.bind<IDocumentService>(TYPES.IDocumentService).to(DocumentService).inSingletonScope();
 nextWriterC.bind<IMenuActionService>(TYPES.IMenuActionService).to(MenuActionService).inSingletonScope();
+nextWriterC.bind<ISenderValidator>(TYPES.ISenderValidator).to(SenderValidator).inSingletonScope();
 
 nextWriterC.bind<INextIpcHandler>(TYPES.INextIpcHandler).to(ReadConfigHandler).inSingletonScope();
 nextWriterC.bind<INextIpcHandler>(TYPES.INextIpcHandler).to(ReadFileHandler).inSingletonScope();

@@ -2,19 +2,20 @@
 // https://www.electronjs.org/docs/latest/tutorial/process-model#preload-scripts
 import { contextBridge, ipcRenderer } from 'electron';
 import type { IpcRendererEvent } from 'electron';
-import type { Request } from '_types';
-import { IPC_CHANNEL } from 'src/tools/config';
+import type { AnyIpcRequest } from 'src/window/ipc/ipc-contract';
+import { IPC_CHANNEL, IPC_SERVER_NAME } from 'src/window/ipc/ipc-contract';
+import { validateIpcRequest } from 'src/window/ipc/request-validator';
 
 type CallbackFunction = (...args: unknown[]) => void;
-const IPC_SERVER_NAME = 'next-ipc-server';
-const ALLOWED_CHANNELS = new Set(Object.values(IPC_CHANNEL));
 
-function post<T>(param: Request<T>) {
-  if (!param || !ALLOWED_CHANNELS.has(param.type)) {
-    return Promise.resolve({ status: -1, data: null, message: 'Invalid IPC channel.' });
+function post(param: unknown) {
+  const validation = validateIpcRequest(param);
+
+  if (validation.valid === false) {
+    return Promise.resolve({ status: -1, data: null, message: validation.message });
   }
 
-  return ipcRenderer.invoke(IPC_SERVER_NAME, param);
+  return ipcRenderer.invoke(IPC_SERVER_NAME, validation.request);
 }
 
 // Expose protected methods that allow the renderer process to use
@@ -24,7 +25,7 @@ contextBridge.exposeInMainWorld('ipc', {
    * Renderer to main bidirectional channel (mock http)
    * @deprecated Use explicit methods instead.
    */
-  _post<T>(param: Request<T>) {
+  _post(param: AnyIpcRequest) {
     return post(param);
   },
 

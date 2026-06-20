@@ -1,4 +1,5 @@
 import type { BrowserWindow } from 'electron';
+import type { IpcChannel, IpcResponse } from 'src/window/ipc/ipc-contract';
 
 export type NormalObject = Record<
   string | symbol,
@@ -121,15 +122,11 @@ export type MainProcessMenuStatus = {
 // ============================================================
 
 export type Request<T = unknown> = {
-  type: string;
+  type: IpcChannel;
   data?: T;
 };
 
-export type Response<T = unknown> = {
-  status: number;
-  data: T;
-  message?: string;
-};
+export type Response<T = unknown> = IpcResponse<T>;
 
 // NOTE: the type here is fill to data feild of Request or Response
 
@@ -160,7 +157,7 @@ export type UpdateLibRequest = {
   pathInRuntime?: string;
 };
 
-export type UpdateLibResponse = LibraryTree;
+export type UpdateLibResponse = LibraryTree | Record<string, never>;
 
 export type UpdateCacheRequest = {
   path: string;

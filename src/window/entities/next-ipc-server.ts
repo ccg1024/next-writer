@@ -1,19 +1,17 @@
 import { ipcMain } from 'electron';
 import { inject, injectable } from 'inversify';
-import { isTrulyEmpty } from 'src/tools/utils';
-import { Request, Response } from '_types';
 import INextIpcHandler from '../interface/next-ipc-handler';
 import INextIpcServer from '../interface/next-ipc-server';
-import IWindowRegistry from '../interface/window-registry';
+import ISenderValidator from '../interface/sender-validator';
+import { AnyIpcRequest, IPC_SERVER_NAME, IpcChannel, IpcRequestData, IpcResponse } from '../ipc/ipc-contract';
+import { validateIpcRequest } from '../ipc/request-validator';
 import { TYPES } from '../types';
-
-export const IPC_SERVER_NAME = 'next-ipc-server';
 
 @injectable()
 class NextIpcServer implements INextIpcServer {
-  private handlers: Map<string, INextIpcHandler>;
+  private handlers: Map<IpcChannel, INextIpcHandler>;
 
-  constructor(@inject(TYPES.IWindowRegistry) private windowRegistry: IWindowRegistry) {
+  constructor(@inject(TYPES.ISenderValidator) private senderValidator: ISenderValidator) {
     this.handlers = new Map();
     this.listener = this.listener.bind(this);
   }
@@ -23,32 +21,42 @@ class NextIpcServer implements INextIpcServer {
     ipcMain.handle(IPC_SERVER_NAME, this.listener);
   }
 
-  listener(_e: Electron.IpcMainInvokeEvent, req: Request<unknown>): Promise<Response<unknown>> {
-    if (isTrulyEmpty(req) || isTrulyEmpty(req.type)) {
-      return Promise.resolve({ status: -1, data: null, message: 'Invalid IPC request.' });
+  listener(event: Electron.IpcMainInvokeEvent, req: unknown): Promise<IpcResponse> {
+    const validation = validateIpcRequest(req);
+
+    if (validation.valid === false) {
+      return Promise.resolve({ status: -1, data: null, message: validation.message });
     }
-    const { type, data } = req;
-    return this.dispatch(_e, type, data);
+
+    const { type, data } = validation.request;
+    return this.dispatch(event, type, data);
   }
 
-  async dispatch(event: Electron.IpcMainInvokeEvent, type: string, data?: unknown): Promise<Response<unknown>> {
+  async dispatch<C extends IpcChannel>(
+    event: Electron.IpcMainInvokeEvent,
+    type: C,
+    data: IpcRequestData<C>
+  ): Promise<IpcResponse>;
+  async dispatch(
+    event: Electron.IpcMainInvokeEvent,
+    type: AnyIpcRequest['type'],
+    data?: AnyIpcRequest['data']
+  ): Promise<IpcResponse> {
     const handler = this.handlers.get(type);
 
     if (!handler) {
       return { status: -1, data: null, message: 'Do not attach handler to handle such request.' };
     }
 
-    if (!this.isTrustedSender(event)) {
+    if (!this.senderValidator.isTrusted(event)) {
       return { status: -1, data: null, message: 'Untrusted IPC sender.' };
     }
 
     try {
       const result = await handler.handle(data, {
-        event,
-        senderFrame: event.senderFrame ?? null,
-        window: this.windowRegistry.getCurrentWindow()
+        ...this.senderValidator.createContext(event)
       });
-      return { status: 0, data: result };
+      return { status: 0, data: result ?? null };
     } catch (error) {
       return {
         status: -1,
@@ -75,11 +83,6 @@ class NextIpcServer implements INextIpcServer {
     this.handlers.clear();
     ipcMain.removeAllListeners(IPC_SERVER_NAME);
     ipcMain.removeHandler(IPC_SERVER_NAME);
-  }
-
-  private isTrustedSender(event: Electron.IpcMainInvokeEvent): boolean {
-    const win = this.windowRegistry.getCurrentWindow();
-    return !!win && !win.isDestroyed() && event.sender.id === win.webContents.id;
   }
 }
 

@@ -1,5 +1,5 @@
 import type { IpcMainInvokeEvent } from 'electron';
-import { Request, Response } from '_types';
+import { AnyIpcRequest, IpcChannel, IpcRequestData, IpcResponse } from '../ipc/ipc-contract';
 import INextIpcHandler from './next-ipc-handler';
 
 interface INextIpcServer {
@@ -16,12 +16,13 @@ interface INextIpcServer {
   /**
    * Handle renderer process request
    */
-  listener(e: IpcMainInvokeEvent, req: Request): Promise<Response>;
+  listener(e: IpcMainInvokeEvent, req: unknown): Promise<IpcResponse>;
 
   /**
    * Dispatch task to deal with renderer process request
    */
-  dispatch(e: IpcMainInvokeEvent, type: string, data?: unknown): Promise<Response>;
+  dispatch<C extends IpcChannel>(e: IpcMainInvokeEvent, type: C, data: IpcRequestData<C>): Promise<IpcResponse>;
+  dispatch(e: IpcMainInvokeEvent, type: AnyIpcRequest['type'], data?: AnyIpcRequest['data']): Promise<IpcResponse>;
 
   /**
    * Register a handler to hanlder list.

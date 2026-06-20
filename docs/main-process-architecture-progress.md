@@ -104,19 +104,27 @@ Completed in the latest main process refactor:
   - `updateCache`
 - Kept `_post` as a deprecated compatibility wrapper with channel allowlisting.
 - Changed renderer IPC listener flow so raw `IpcRendererEvent` is not exposed to renderer callbacks.
+- Added shared IPC contract definitions for channels, request data, response data, and the shared invoke channel name.
+- Added per-channel IPC request validation and reuse it in both preload and the main-process IPC router.
+- Bound IPC handler request/response types to each handler channel through the typed channel map.
+- Extracted IPC sender trust checks into injectable `SenderValidator`.
+- Normalized `write-file` success responses to `data: null`.
 - Extracted `ConfigService`, `WorkspaceService`, `DocumentService`, `LibraryService`, and `MenuActionService`.
 - Kept legacy data shape and menu behavior intact.
 - Added correct `IPC_CHANNEL.WRITE_FILE` while keeping deprecated `WIRTE_FILE` compatibility.
 - Added focused automated tests for main-process path and protocol boundaries:
   - `PathResolver` now covers root allowlist validation, traversal rejection, root-contained absolute Markdown paths, single `.md` suffix handling, and empty path failures.
   - `ProtocolService` now covers one-time handler registration, `atom://` root-contained files, external image compatibility, external non-image rejection, and `static://` renderer-bundle traversal rejection.
+- Added focused automated tests for IPC contract boundaries:
+  - `RequestValidator` now covers valid payloads, invalid envelopes, unknown channels, payload rejection for no-data channels, per-channel payload failures, and deprecated `WIRTE_FILE` compatibility.
+  - `NextIpcServer` now covers listener registration, invalid request handling, duplicate handler detection, sender rejection, trusted dispatch, `null` response normalization, thrown handler errors, and destroy cleanup.
 
 Validation performed:
 
 - `npm run lint` passes.
-- `npm test -- --runInBand` passes with 5 suites and 21 tests.
+- `npm test -- --runInBand` passes with 7 suites and 37 tests.
 - `npm run package` passes.
-- `npm run format:check` still fails only because existing `AGENTS.md` is not Prettier-formatted.
+- `npm run format:check` still fails only because existing `src/window/protocol/protocol-service.test.ts` is not Prettier-formatted.
 
 ## Current Design Tradeoffs
 
@@ -124,37 +132,36 @@ Validation performed:
 - `NextApp`, `NextMenu`, and `NextIpcServer` still keep their legacy names, but their responsibilities are now narrower.
 - `atom://` intentionally allows external absolute image files for compatibility with existing Markdown content. This is narrower than the old behavior because non-image files outside the library root remain blocked.
 - `_post` remains available for renderer compatibility, but new renderer code should prefer explicit preload methods.
-- Focused automated coverage now exists for document cache revisions, path resolution, protocol boundaries, and library-tree utilities. Broader Electron integration behavior still depends on package/lint checks and manual regression until an app-level harness is added.
+- Focused automated coverage now exists for document cache revisions, path resolution, protocol boundaries, IPC routing/validation, and library-tree utilities. Broader Electron integration behavior still depends on package/lint checks and manual regression until an app-level harness is added.
 
 ## Next Steps
 
 Recommended next implementation order:
 
-1. Finish IPC contract hardening.
-   - Add per-channel request validation.
-   - Replace stringly typed `Request.type` with a typed channel map.
-   - Make handler response types explicit end to end.
-   - Remove direct use of deprecated `WIRTE_FILE` from new code.
-
-2. Continue shrinking legacy entities.
+1. Continue shrinking legacy entities.
    - Move remaining window lifecycle guard logic out of `NextApp`.
    - Rename `NextApp` to a clearer window/session coordinator once call sites are stable.
    - Rename `NextMenu` or split it into menu template and menu action bindings.
    - Keep file moves separate from behavior changes where possible.
 
-3. Improve state boundaries.
+2. Improve state boundaries.
    - Remove `win` from `MainProcessConfig` after confirming there are no external consumers.
    - Split runtime menu state from persisted render config.
    - Consider immutable updates for library tree operations to reduce accidental shared mutation.
 
-4. Improve protocol and image compatibility.
+3. Improve protocol and image compatibility.
    - Decide whether external image paths should be persisted as absolute local paths, copied into the library, or mediated by an import workflow.
    - Add clearer error logging for blocked `atom://` requests.
    - Consider separate protocol handlers for library files and external image previews.
 
-5. Improve close/save lifecycle.
+4. Improve close/save lifecycle.
    - Move unsaved-change close confirmation out of `NextApp`.
    - Ensure cache state, document edited state, and renderer dirty state stay consistent after save, rename, and window close.
+
+5. Continue IPC cleanup.
+   - Move IPC router and handler folders into the final `ipc/` target structure once behavior is stable.
+   - Gradually replace renderer `_post` usage with explicit preload methods.
+   - Keep deprecated `_post` available until compatibility consumers are confirmed gone.
 
 6. Add development documentation.
    - Document main-process folder responsibilities.
@@ -163,7 +170,6 @@ Recommended next implementation order:
    - Document manual regression scenarios until automated tests exist.
 
 7. Expand automated regression coverage.
-   - Add tests for IPC sender validation, unknown channel handling, and duplicate handler detection.
    - Add tests for close/save lifecycle coordination around dirty cache state.
    - Consider an Electron-level smoke harness for startup, preload isolation, and menu shortcuts.
 
