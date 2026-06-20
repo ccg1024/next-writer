@@ -2,8 +2,8 @@ import nodePath from 'path';
 import { isTrulyEmpty } from 'src/tools/utils';
 import { ROOT_CONFIG_NAME } from 'src/config/env';
 import { LibraryTree } from '_types';
-import INextFileSystem from '../interface/next-file-system';
-import INextStoreSystem from '../interface/next-store-system';
+import IFileSystem from '../interface/file-system';
+import IRuntimeConfigStore from '../interface/runtime-config-store';
 
 /**
  * 库树工具函数
@@ -55,7 +55,7 @@ export interface PathInfo {
 export function parsePathInfo(
   path: string,
   rootDir: string,
-  fileSys: INextFileSystem,
+  fileSys: IFileSystem,
   options?: { suffix?: string }
 ): PathInfo | null {
   const formatPath = fileSys.formatPath(path);
@@ -99,8 +99,8 @@ export function findParentLibNode(libTree: LibraryTree, pathTokens: string[]): L
 export async function persistLibTree(
   libTree: LibraryTree,
   rootDir: string,
-  store: INextStoreSystem,
-  fileSys: INextFileSystem
+  store: IRuntimeConfigStore,
+  fileSys: IFileSystem
 ): Promise<void> {
   await fileSys.writeFile(nodePath.join(rootDir, ROOT_CONFIG_NAME), JSON.stringify(libTree, null, 2));
   store.setConfig('libraryTree', libTree);

@@ -7,7 +7,7 @@ import nodePath from 'path';
 import { pathToFileURL } from 'url';
 import { MainProcessConfig } from '_types';
 import { app, net, protocol } from 'electron';
-import INextStoreSystem from '../interface/next-store-system';
+import IRuntimeConfigStore from '../interface/runtime-config-store';
 import PathResolver from '../services/path-resolver';
 import ProtocolService from './protocol-service';
 
@@ -114,7 +114,7 @@ describe('ProtocolService', () => {
     expect(net.fetch).not.toHaveBeenCalled();
   });
 
-  function createStore(): INextStoreSystem {
+  function createStore(): IRuntimeConfigStore {
     return {
       init(nextConfig: MainProcessConfig) {
         config = nextConfig;

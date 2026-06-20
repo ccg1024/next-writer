@@ -1,7 +1,7 @@
 import { inject, injectable } from 'inversify';
 import { ReadConfigResponse } from '_types';
 import IIpcHandler from '../../interface/ipc-handler';
-import INextStoreSystem from '../../interface/next-store-system';
+import IRuntimeConfigStore from '../../interface/runtime-config-store';
 import { TYPES } from '../../types';
 import { IPC_CHANNEL } from '../ipc-contract';
 
@@ -12,7 +12,7 @@ import { IPC_CHANNEL } from '../ipc-contract';
 class ReadConfigHandler implements IIpcHandler<typeof IPC_CHANNEL.READ_CONFIG> {
   channel = IPC_CHANNEL.READ_CONFIG;
 
-  constructor(@inject(TYPES.INextStoreSystem) private store: INextStoreSystem) {}
+  constructor(@inject(TYPES.IRuntimeConfigStore) private store: IRuntimeConfigStore) {}
 
   async handle(): Promise<ReadConfigResponse> {
     return {

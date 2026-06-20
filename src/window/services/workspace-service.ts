@@ -1,19 +1,18 @@
-import nodeFs from 'fs';
 import nodePath from 'path';
 import { inject, injectable } from 'inversify';
 import { CONFIG_DIR_NAME, LOG_DIR_NAME, LOG_NAME, ROOT_CONFIG_NAME, ROOT_DIR_NAME } from 'src/config/env';
 import { isTrulyEmpty } from 'src/tools/utils';
 import IConfigService from '../interface/config-service';
-import INextFileSystem from '../interface/next-file-system';
-import INextStoreSystem from '../interface/next-store-system';
+import IFileSystem from '../interface/file-system';
+import IRuntimeConfigStore from '../interface/runtime-config-store';
 import IWorkspaceService from '../interface/workspace-service';
 import { TYPES } from '../types';
 
 @injectable()
 class WorkspaceService implements IWorkspaceService {
   constructor(
-    @inject(TYPES.INextFileSystem) private fileSystem: INextFileSystem,
-    @inject(TYPES.INextStoreSystem) private store: INextStoreSystem,
+    @inject(TYPES.IFileSystem) private fileSystem: IFileSystem,
+    @inject(TYPES.IRuntimeConfigStore) private store: IRuntimeConfigStore,
     @inject(TYPES.IConfigService) private configService: IConfigService
   ) {}
 
@@ -33,12 +32,12 @@ class WorkspaceService implements IWorkspaceService {
     const logDir = process.platform === 'win32' ? winLogDir : macLogDir;
     const rootDir = process.platform === 'win32' ? winLibraryDir : macLibraryDir;
 
-    await nodeFs.promises.mkdir(configDir, { recursive: true });
-    await nodeFs.promises.mkdir(logDir, { recursive: true });
+    await this.fileSystem.ensureDir(configDir);
+    await this.fileSystem.ensureDir(logDir);
     this.store.setConfigs({ logDir, rootDir, configDir });
 
     const logPath = nodePath.join(logDir, LOG_NAME);
-    if (!(await this.fileSystem.isExist(logPath))) {
+    if (!(await this.fileSystem.exists(logPath))) {
       await this.fileSystem.writeFile(logPath, '');
     }
 
@@ -49,12 +48,12 @@ class WorkspaceService implements IWorkspaceService {
       throw new Error('[nwriter] The workstation path is empty when initWorkspace');
     }
 
-    await nodeFs.promises.mkdir(realRoot, { recursive: true });
+    await this.fileSystem.ensureDir(realRoot);
 
     const recordPath = nodePath.resolve(realRoot, ROOT_CONFIG_NAME);
     let buffer = JSON.stringify({ children: [] });
 
-    if (await this.fileSystem.isExist(recordPath)) {
+    if (await this.fileSystem.exists(recordPath)) {
       buffer = await this.fileSystem.readFile(recordPath, { encoding: 'utf8' });
     }
 

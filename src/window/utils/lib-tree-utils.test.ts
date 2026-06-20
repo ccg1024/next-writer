@@ -1,12 +1,12 @@
 /// <reference types="jest" />
 
 import { extractTargetAndParent, getParentPathTokens, getTargetName, parsePathInfo } from './lib-tree-utils';
-import type INextFileSystem from '../interface/next-file-system';
+import type IFileSystem from '../interface/file-system';
 
 describe('lib-tree-utils', () => {
   const fileSys = {
     formatPath: jest.fn((path: string) => path)
-  } as unknown as INextFileSystem & { formatPath: jest.Mock<string, [string]> };
+  } as unknown as IFileSystem & { formatPath: jest.Mock<string, [string]> };
 
   beforeEach(() => {
     fileSys.formatPath.mockClear();

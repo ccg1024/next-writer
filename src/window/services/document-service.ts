@@ -1,12 +1,11 @@
-import nodeFs from 'fs';
 import nodePath from 'path';
 import { inject, injectable } from 'inversify';
 import { MAX_FILE_DESCRIPTION_LENGTH } from 'src/config/env';
 import { isTrulyEmpty } from 'src/tools/utils';
 import { ReadFileRequest, ReadFileResponse, UpdateCacheRequest, WriteFileRequest } from '_types';
-import INextCacheSystem from '../interface/next-cache-system';
-import INextFileSystem from '../interface/next-file-system';
-import INextStoreSystem from '../interface/next-store-system';
+import IDocumentCacheService from '../interface/document-cache-service';
+import IFileSystem from '../interface/file-system';
+import IRuntimeConfigStore from '../interface/runtime-config-store';
 import IDocumentService from '../interface/document-service';
 import IPathResolver from '../interface/path-resolver';
 import { findParentLibNode, getParentPathTokens, getTargetName, persistLibTree } from '../utils/lib-tree-utils';
@@ -17,9 +16,9 @@ class DocumentService implements IDocumentService {
   private readonly cacheRevisions = new Map<string, number>();
 
   constructor(
-    @inject(TYPES.INextFileSystem) private fileSystem: INextFileSystem,
-    @inject(TYPES.INextStoreSystem) private store: INextStoreSystem,
-    @inject(TYPES.INextCacheSystem) private cache: INextCacheSystem,
+    @inject(TYPES.IFileSystem) private fileSystem: IFileSystem,
+    @inject(TYPES.IRuntimeConfigStore) private store: IRuntimeConfigStore,
+    @inject(TYPES.IDocumentCacheService) private cache: IDocumentCacheService,
     @inject(TYPES.IPathResolver) private pathResolver: IPathResolver
   ) {}
 
@@ -70,7 +69,7 @@ class DocumentService implements IDocumentService {
       const dirname = nodePath.dirname(fullPath);
       oldFullPath = fullPath;
       fullPath = this.pathResolver.resolveWithinRoot(rootDir, nodePath.join(dirname, `${nameInRuntime}.md`));
-      await nodeFs.promises.rename(oldFullPath, fullPath);
+      await this.fileSystem.rename(oldFullPath, fullPath);
       target.name = nameInRuntime;
     }
 
@@ -80,18 +79,18 @@ class DocumentService implements IDocumentService {
       if (this.isRevisionCurrent(saveRevision, oldFullPath, fullPath)) {
         this.markRevision(saveRevision, oldFullPath, fullPath);
 
-        if (this.cache.exitCache(fullPath)) {
+        if (this.cache.hasCache(fullPath)) {
           this.cache.update(fullPath, { isChange: false, content, revision: saveRevision });
         } else {
           this.cache.addCache(fullPath, { isChange: false, content, revision: saveRevision });
         }
 
-        if (oldFullPath !== fullPath && this.cache.exitCache(oldFullPath)) {
+        if (oldFullPath !== fullPath && this.cache.hasCache(oldFullPath)) {
           this.cache.removeCache(oldFullPath);
         }
       }
 
-      const newStat = await nodeFs.promises.stat(fullPath);
+      const newStat = await this.fileSystem.stat(fullPath);
       target.modifiedTime = newStat.mtime.toLocaleString();
       target.description = content.substring(0, MAX_FILE_DESCRIPTION_LENGTH);
     } catch {
@@ -112,7 +111,7 @@ class DocumentService implements IDocumentService {
 
     this.markRevision(cacheRevision, pathInfo.fullPath);
 
-    if (this.cache.exitCache(pathInfo.fullPath)) {
+    if (this.cache.hasCache(pathInfo.fullPath)) {
       this.cache.update(pathInfo.fullPath, { isChange, content, revision: cacheRevision });
     } else {
       this.cache.addCache(pathInfo.fullPath, { isChange, content, revision: cacheRevision });

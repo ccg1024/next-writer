@@ -1,12 +1,12 @@
-import nodeFs from 'fs';
+import type { Stats } from 'fs';
 import nodePath from 'path';
 import { BrowserWindow } from 'electron';
 import { inject, injectable } from 'inversify';
 import { MAX_FILE_DESCRIPTION_LENGTH, ROOT_CONFIG_NAME } from 'src/config/env';
 import { isTrulyEmpty } from 'src/tools/utils';
 import { LibraryTree, RootLibraryTree, UpdateLibRequest } from '_types';
-import INextFileSystem from '../interface/next-file-system';
-import INextStoreSystem from '../interface/next-store-system';
+import IFileSystem from '../interface/file-system';
+import IRuntimeConfigStore from '../interface/runtime-config-store';
 import ILibraryService from '../interface/library-service';
 import IPathResolver from '../interface/path-resolver';
 import { findParentLibNode, getParentPathTokens, getTargetName, persistLibTree } from '../utils/lib-tree-utils';
@@ -15,8 +15,8 @@ import { TYPES } from '../types';
 @injectable()
 class LibraryService implements ILibraryService {
   constructor(
-    @inject(TYPES.INextFileSystem) private fileSystem: INextFileSystem,
-    @inject(TYPES.INextStoreSystem) private store: INextStoreSystem,
+    @inject(TYPES.IFileSystem) private fileSystem: IFileSystem,
+    @inject(TYPES.IRuntimeConfigStore) private store: IRuntimeConfigStore,
     @inject(TYPES.IPathResolver) private pathResolver: IPathResolver
   ) {}
 
@@ -70,22 +70,22 @@ class LibraryService implements ILibraryService {
       case 'add-file': {
         const notePath = `${pathInfo.fullPath}.md`;
         await this.fileSystem.writeFile(notePath, '');
-        const fileState = await nodeFs.promises.stat(notePath);
+        const fileState = await this.fileSystem.stat(notePath);
         const libToken = this.createLibraryToken(targetName, 'file', fileState);
         parentLib.children.push(libToken);
         resolveData = libToken;
         break;
       }
       case 'add-folder': {
-        await nodeFs.promises.mkdir(pathInfo.fullPath, { recursive: true });
-        const folderState = await nodeFs.promises.stat(pathInfo.fullPath);
+        await this.fileSystem.ensureDir(pathInfo.fullPath);
+        const folderState = await this.fileSystem.stat(pathInfo.fullPath);
         const libToken = this.createLibraryToken(targetName, 'folder', folderState);
         parentLib.children.push(libToken);
         resolveData = libToken;
         break;
       }
       case 'del-file': {
-        await nodeFs.promises.rm(`${pathInfo.fullPath}.md`);
+        await this.fileSystem.removeFile(`${pathInfo.fullPath}.md`);
         parentLib.children = parentLib.children.filter(lib => !(lib.name === targetName && lib.type === 'file'));
         break;
       }
@@ -97,7 +97,7 @@ class LibraryService implements ILibraryService {
         if (targetToken.children.length > 0) {
           throw new Error('The folder content is not empty.');
         }
-        await nodeFs.promises.rmdir(pathInfo.fullPath);
+        await this.fileSystem.removeEmptyDir(pathInfo.fullPath);
         parentLib.children = parentLib.children.filter(lib => !(lib.name === targetName && lib.type === 'folder'));
         break;
       }
@@ -107,7 +107,7 @@ class LibraryService implements ILibraryService {
           throw new Error('The library is not found.');
         }
         targetToken.name = targetNameInRuntime;
-        await nodeFs.promises.rename(pathInfo.fullPath, pathInfoRuntime.fullPath);
+        await this.fileSystem.rename(pathInfo.fullPath, pathInfoRuntime.fullPath);
         break;
       }
     }
@@ -117,7 +117,7 @@ class LibraryService implements ILibraryService {
   }
 
   private async traverseDirectory(dir: string, workInProcess: LibraryTree | RootLibraryTree): Promise<void> {
-    const files = await nodeFs.promises.readdir(dir, { withFileTypes: true });
+    const files = await this.fileSystem.readDir(dir);
     const sortedFiles = files.sort((a, b) => {
       if (a.isDirectory() && b.isFile()) return -1;
       if (a.isFile() && b.isDirectory()) return 1;
@@ -126,7 +126,7 @@ class LibraryService implements ILibraryService {
 
     for (const file of sortedFiles) {
       const fullPath = nodePath.join(dir, file.name);
-      const fileState = await nodeFs.promises.stat(fullPath);
+      const fileState = await this.fileSystem.stat(fullPath);
       const fileInProcess = this.createLibraryToken(
         file.isDirectory() ? file.name : nodePath.basename(file.name, nodePath.extname(file.name)),
         file.isDirectory() ? 'folder' : 'file',
@@ -148,7 +148,7 @@ class LibraryService implements ILibraryService {
     }
   }
 
-  private createLibraryToken(name: string, type: LibraryTree['type'], stat: nodeFs.Stats): LibraryTree {
+  private createLibraryToken(name: string, type: LibraryTree['type'], stat: Stats): LibraryTree {
     return {
       name,
       type,

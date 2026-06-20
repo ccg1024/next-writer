@@ -5,7 +5,7 @@ import nodeFs from 'fs';
 import nodeOs from 'os';
 import nodePath from 'path';
 import { MainProcessConfig } from '_types';
-import INextStoreSystem from '../interface/next-store-system';
+import IRuntimeConfigStore from '../interface/runtime-config-store';
 import PathResolver from './path-resolver';
 
 describe('PathResolver', () => {
@@ -80,7 +80,7 @@ describe('PathResolver', () => {
     );
   });
 
-  function createStore(): INextStoreSystem {
+  function createStore(): IRuntimeConfigStore {
     return {
       init(nextConfig: MainProcessConfig) {
         config = nextConfig;

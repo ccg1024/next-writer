@@ -1,11 +1,11 @@
 import 'reflect-metadata'; // need this for inversify js
 import { Container } from 'inversify';
-import INextFileSystem from '../interface/next-file-system';
-import NextFileSystem from '../entities/next-file-system';
-import INextStoreSystem from '../interface/next-store-system';
-import NextStoreSystem from '../entities/next-store-system';
-import INextCacheSystem from '../interface/next-cache-system';
-import NextCacheSystem from '../entities/next-cache-system';
+import IFileSystem from '../interface/file-system';
+import FileSystem from '../infrastructure/file-system';
+import IRuntimeConfigStore from '../interface/runtime-config-store';
+import RuntimeConfigStore from '../state/runtime-config-store';
+import IDocumentCacheService from '../interface/document-cache-service';
+import DocumentCacheService from '../domain/document-cache-service';
 import IIpcRouter from '../interface/ipc-router';
 import IpcRouter from '../ipc/ipc-router';
 import IAppMenu from '../interface/app-menu';
@@ -56,9 +56,9 @@ import {
  */
 const container = new Container();
 
-container.bind<INextFileSystem>(TYPES.INextFileSystem).to(NextFileSystem).inSingletonScope();
-container.bind<INextStoreSystem>(TYPES.INextStoreSystem).to(NextStoreSystem).inSingletonScope();
-container.bind<INextCacheSystem>(TYPES.INextCacheSystem).to(NextCacheSystem).inSingletonScope();
+container.bind<IFileSystem>(TYPES.IFileSystem).to(FileSystem).inSingletonScope();
+container.bind<IRuntimeConfigStore>(TYPES.IRuntimeConfigStore).to(RuntimeConfigStore).inSingletonScope();
+container.bind<IDocumentCacheService>(TYPES.IDocumentCacheService).to(DocumentCacheService).inSingletonScope();
 container.bind<IIpcRouter>(TYPES.IIpcRouter).to(IpcRouter).inSingletonScope();
 container.bind<IAppMenu>(TYPES.IAppMenu).to(AppMenu).inSingletonScope();
 container.bind<IApplication>(TYPES.IApplication).to(Application).inSingletonScope();

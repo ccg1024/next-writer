@@ -3,17 +3,17 @@
 import 'reflect-metadata';
 import type { BrowserWindow } from 'electron';
 import IAppMenu from '../interface/app-menu';
-import INextCacheSystem from '../interface/next-cache-system';
+import IDocumentCacheService from '../interface/document-cache-service';
 import IMainWindowFactory from '../interface/main-window-factory';
-import INextStoreSystem from '../interface/next-store-system';
+import IRuntimeConfigStore from '../interface/runtime-config-store';
 import IWindowCloseController from '../interface/window-close-controller';
 import IWindowRegistry from '../interface/window-registry';
 import IWorkspaceService from '../interface/workspace-service';
 import WindowSessionCoordinator from './window-session-coordinator';
 
 describe('WindowSessionCoordinator', () => {
-  let cache: jest.Mocked<Pick<INextCacheSystem, 'init' | 'destroy'>>;
-  let store: jest.Mocked<Pick<INextStoreSystem, 'setConfig'>>;
+  let cache: jest.Mocked<Pick<IDocumentCacheService, 'init' | 'destroy'>>;
+  let store: jest.Mocked<Pick<IRuntimeConfigStore, 'setConfig'>>;
   let menu: jest.Mocked<Pick<IAppMenu, 'createMenu'>>;
   let windowFactory: jest.Mocked<IMainWindowFactory>;
   let windowCloseController: jest.Mocked<IWindowCloseController>;
@@ -64,8 +64,8 @@ describe('WindowSessionCoordinator', () => {
       initWorkspace: jest.fn().mockResolvedValue(undefined)
     };
     coordinator = new WindowSessionCoordinator(
-      cache as unknown as INextCacheSystem,
-      store as unknown as INextStoreSystem,
+      cache as unknown as IDocumentCacheService,
+      store as unknown as IRuntimeConfigStore,
       menu as unknown as IAppMenu,
       windowFactory,
       windowCloseController,

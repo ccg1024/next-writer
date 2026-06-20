@@ -5,9 +5,9 @@
  */
 const TYPES = {
   // rebuild
-  INextFileSystem: Symbol.for('INextFileSystem'),
-  INextStoreSystem: Symbol.for('INextStoreSystem'),
-  INextCacheSystem: Symbol.for('INextCacheSystem'),
+  IFileSystem: Symbol.for('IFileSystem'),
+  IRuntimeConfigStore: Symbol.for('IRuntimeConfigStore'),
+  IDocumentCacheService: Symbol.for('IDocumentCacheService'),
   IIpcRouter: Symbol.for('IIpcRouter'),
   IIpcHandler: Symbol.for('IIpcHandler'),
   IAppMenu: Symbol.for('IAppMenu'),

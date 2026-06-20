@@ -1,10 +1,10 @@
 import { injectable } from 'inversify';
 import { isTrulyEmpty } from 'src/tools/utils';
 import { MainProcessConfig } from '_types';
-import INextStoreSystem from '../interface/next-store-system';
+import IRuntimeConfigStore from '../interface/runtime-config-store';
 
 @injectable()
-class NextStoreSystem implements INextStoreSystem {
+class RuntimeConfigStore implements IRuntimeConfigStore {
   private __config: MainProcessConfig;
 
   constructor() {
@@ -17,7 +17,7 @@ class NextStoreSystem implements INextStoreSystem {
 
   setConfig<K extends keyof MainProcessConfig>(key: K, value: MainProcessConfig[K]): void {
     if (isTrulyEmpty(key)) {
-      throw new Error('The `key` is empty when invoke `setConfig` of `next-store-system`');
+      throw new Error('The `key` is empty when invoke `setConfig` of `runtime-config-store`');
     }
     this.__config = { ...this.__config, [key]: value };
   }
@@ -39,4 +39,4 @@ class NextStoreSystem implements INextStoreSystem {
   }
 }
 
-export default NextStoreSystem;
+export default RuntimeConfigStore;

@@ -5,13 +5,13 @@ import nodeFs from 'fs';
 import nodeOs from 'os';
 import nodePath from 'path';
 import { CacheContent, LibraryTree, MainProcessConfig } from '_types';
-import NextFileSystem from '../entities/next-file-system';
-import INextCacheSystem from '../interface/next-cache-system';
-import INextStoreSystem from '../interface/next-store-system';
+import FileSystem from '../infrastructure/file-system';
+import IDocumentCacheService from '../interface/document-cache-service';
+import IRuntimeConfigStore from '../interface/runtime-config-store';
 import IPathResolver from '../interface/path-resolver';
 import DocumentService from './document-service';
 
-class MemoryCache implements INextCacheSystem {
+class MemoryCache implements IDocumentCacheService {
   private cache: Record<string, CacheContent> = {};
 
   init(): void {
@@ -33,7 +33,7 @@ class MemoryCache implements INextCacheSystem {
     };
   }
 
-  exitCache(key: string): boolean {
+  hasCache(key: string): boolean {
     return !!this.cache[key];
   }
 
@@ -41,7 +41,7 @@ class MemoryCache implements INextCacheSystem {
     delete this.cache[key];
   }
 
-  hasModifed(): boolean {
+  hasModified(): boolean {
     return Object.values(this.cache).some(item => item.isChange);
   }
 
@@ -76,7 +76,7 @@ describe('DocumentService cache revisions', () => {
       ]
     };
     cache = new MemoryCache();
-    service = new DocumentService(new NextFileSystem(), createStore(), cache, createPathResolver());
+    service = new DocumentService(new FileSystem(), createStore(), cache, createPathResolver());
   });
 
   afterEach(async () => {
@@ -95,7 +95,7 @@ describe('DocumentService cache revisions', () => {
       content: 'saved cleanly',
       revision: 2
     });
-    expect(cache.hasModifed()).toBe(false);
+    expect(cache.hasModified()).toBe(false);
   });
 
   it('does not clear a newer dirty cache entry when an older save finishes', async () => {
@@ -109,7 +109,7 @@ describe('DocumentService cache revisions', () => {
       content: 'newer dirty content',
       revision: 3
     });
-    expect(cache.hasModifed()).toBe(true);
+    expect(cache.hasModified()).toBe(true);
   });
 
   it('blocks stale updates on the old path after a renamed save', async () => {
@@ -126,10 +126,10 @@ describe('DocumentService cache revisions', () => {
       content: 'renamed cleanly',
       revision: 2
     });
-    expect(cache.hasModifed()).toBe(false);
+    expect(cache.hasModified()).toBe(false);
   });
 
-  function createStore(): INextStoreSystem {
+  function createStore(): IRuntimeConfigStore {
     const config: MainProcessConfig = {
       rootDir,
       libraryTree

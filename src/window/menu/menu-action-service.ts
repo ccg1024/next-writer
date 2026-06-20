@@ -3,13 +3,13 @@ import { inject, injectable } from 'inversify';
 import { RendererListenerAction } from '_types';
 import ILibraryService from '../interface/library-service';
 import IMenuActionService from '../interface/menu-action-service';
-import INextStoreSystem from '../interface/next-store-system';
+import IRuntimeConfigStore from '../interface/runtime-config-store';
 import { TYPES } from '../types';
 
 @injectable()
 class MenuActionService implements IMenuActionService {
   constructor(
-    @inject(TYPES.INextStoreSystem) private store: INextStoreSystem,
+    @inject(TYPES.IRuntimeConfigStore) private store: IRuntimeConfigStore,
     @inject(TYPES.ILibraryService) private libraryService: ILibraryService
   ) {}
 

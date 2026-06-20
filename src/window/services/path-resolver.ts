@@ -1,13 +1,13 @@
 import nodePath from 'path';
 import { inject, injectable } from 'inversify';
 import { isTrulyEmpty } from 'src/tools/utils';
-import INextStoreSystem from '../interface/next-store-system';
+import IRuntimeConfigStore from '../interface/runtime-config-store';
 import IPathResolver, { ResolvedLibraryPath } from '../interface/path-resolver';
 import { TYPES } from '../types';
 
 @injectable()
 class PathResolver implements IPathResolver {
-  constructor(@inject(TYPES.INextStoreSystem) private store: INextStoreSystem) {}
+  constructor(@inject(TYPES.IRuntimeConfigStore) private store: IRuntimeConfigStore) {}
 
   resolveWithinRoot(rootDir: string, targetPath: string): string {
     if (isTrulyEmpty(rootDir) || isTrulyEmpty(targetPath)) {

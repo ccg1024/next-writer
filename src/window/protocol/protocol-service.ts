@@ -4,7 +4,7 @@ import { pathToFileURL } from 'url';
 import { inject, injectable } from 'inversify';
 import IPathResolver from '../interface/path-resolver';
 import IProtocolService from '../interface/protocol-service';
-import INextStoreSystem from '../interface/next-store-system';
+import IRuntimeConfigStore from '../interface/runtime-config-store';
 import { TYPES } from '../types';
 
 const IMAGE_EXTENSIONS = new Set(['.apng', '.avif', '.bmp', '.gif', '.ico', '.jpeg', '.jpg', '.png', '.svg', '.webp']);
@@ -15,7 +15,7 @@ class ProtocolService implements IProtocolService {
 
   constructor(
     @inject(TYPES.IPathResolver) private pathResolver: IPathResolver,
-    @inject(TYPES.INextStoreSystem) private store: INextStoreSystem
+    @inject(TYPES.IRuntimeConfigStore) private store: IRuntimeConfigStore
   ) {}
 
   registerSchemes(): void {

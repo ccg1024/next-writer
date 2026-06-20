@@ -3,7 +3,7 @@
 import 'reflect-metadata';
 import type { BrowserWindow } from 'electron';
 import { dialog } from 'electron';
-import INextCacheSystem from '../interface/next-cache-system';
+import IDocumentCacheService from '../interface/document-cache-service';
 import WindowCloseService from './window-close-service';
 
 jest.mock('electron', () => ({
@@ -13,21 +13,21 @@ jest.mock('electron', () => ({
 }));
 
 describe('WindowCloseService', () => {
-  let cache: jest.Mocked<Pick<INextCacheSystem, 'hasModifed'>>;
+  let cache: jest.Mocked<Pick<IDocumentCacheService, 'hasModified'>>;
   let service: WindowCloseService;
   let win: BrowserWindow;
 
   beforeEach(() => {
     cache = {
-      hasModifed: jest.fn()
+      hasModified: jest.fn()
     };
-    service = new WindowCloseService(cache as unknown as INextCacheSystem);
+    service = new WindowCloseService(cache as unknown as IDocumentCacheService);
     win = {} as BrowserWindow;
     jest.clearAllMocks();
   });
 
   it('allows closing without prompting when there are no unsaved changes', async () => {
-    cache.hasModifed.mockReturnValue(false);
+    cache.hasModified.mockReturnValue(false);
 
     await expect(service.shouldCloseWindow(win)).resolves.toBe(true);
 
@@ -35,7 +35,7 @@ describe('WindowCloseService', () => {
   });
 
   it('blocks closing when the user cancels the unsaved-change prompt', async () => {
-    cache.hasModifed.mockReturnValue(true);
+    cache.hasModified.mockReturnValue(true);
     (dialog.showMessageBox as jest.Mock).mockResolvedValueOnce({ response: 0 });
 
     await expect(service.shouldCloseWindow(win)).resolves.toBe(false);
@@ -50,7 +50,7 @@ describe('WindowCloseService', () => {
   });
 
   it('allows closing when the user confirms the unsaved-change prompt', async () => {
-    cache.hasModifed.mockReturnValue(true);
+    cache.hasModified.mockReturnValue(true);
     (dialog.showMessageBox as jest.Mock).mockResolvedValueOnce({ response: 1 });
 
     await expect(service.shouldCloseWindow(win)).resolves.toBe(true);

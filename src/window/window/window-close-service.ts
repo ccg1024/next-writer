@@ -1,15 +1,15 @@
 import { BrowserWindow, dialog } from 'electron';
 import { inject, injectable } from 'inversify';
-import INextCacheSystem from '../interface/next-cache-system';
+import IDocumentCacheService from '../interface/document-cache-service';
 import IWindowCloseService from '../interface/window-close-service';
 import { TYPES } from '../types';
 
 @injectable()
 class WindowCloseService implements IWindowCloseService {
-  constructor(@inject(TYPES.INextCacheSystem) private cache: INextCacheSystem) {}
+  constructor(@inject(TYPES.IDocumentCacheService) private cache: IDocumentCacheService) {}
 
   hasUnsavedChanges(): boolean {
-    return this.cache.hasModifed();
+    return this.cache.hasModified();
   }
 
   async shouldCloseWindow(win: BrowserWindow): Promise<boolean> {

@@ -53,7 +53,8 @@ Target responsibilities:
 - `domain/` owns application use cases such as config, workspace, document, library, and cache behavior.
 - `infrastructure/` owns low-level adapters such as filesystem access, app paths, and JSON persistence.
 - `menu/` owns menu template creation and menu actions.
-- `entities/` and `services/` are transitional folders. They should shrink or disappear as code moves into the target folders above.
+- `services/` is a transitional domain-service folder until remaining service responsibilities are fully sorted into
+  `domain/` and `infrastructure/`.
 - The legacy `ipc-handler/` folder has been folded into `ipc/handlers/`.
 
 Architecture goals:
@@ -105,6 +106,20 @@ Completed in the latest main process refactor:
   `TYPES.IIpcHandler`.
 - Moved DI bindings from `inversify.config/` to `container/`, with `src/window/index.ts` importing the new
   `container` export.
+- Moved the low-level file adapter from `entities/NextFileSystem` to `infrastructure/FileSystem`.
+- Renamed the file-system DI boundary from `INextFileSystem` / `TYPES.INextFileSystem` to `IFileSystem` /
+  `TYPES.IFileSystem`.
+- Added file adapter methods for directory creation, stat, rename, file removal, empty directory removal, and directory
+  listing, then routed workspace, document, and library file operations through that adapter.
+- Moved the runtime main-process store from `entities/NextStoreSystem` to `state/RuntimeConfigStore`.
+- Renamed the runtime store DI boundary from `INextStoreSystem` / `TYPES.INextStoreSystem` to
+  `IRuntimeConfigStore` / `TYPES.IRuntimeConfigStore`.
+- Moved the document cache from `entities/NextCacheSystem` to `domain/DocumentCacheService`.
+- Renamed the document cache DI boundary from `INextCacheSystem` / `TYPES.INextCacheSystem` to
+  `IDocumentCacheService` / `TYPES.IDocumentCacheService`.
+- Renamed cache methods from `exitCache` to `hasCache` and from `hasModifed` to `hasModified`.
+- Removed the legacy `entities/` implementation files after moving their remaining responsibilities into target
+  folders.
 - Added explicit preload APIs:
   - `readConfig`
   - `readFile`
@@ -142,19 +157,24 @@ Completed in the latest main process refactor:
   - `WindowSessionCoordinator` now covers window creation, session cleanup, and replacing an existing live window.
 - Added focused automated tests for the application menu boundary:
   - `AppMenu` now covers menu installation and delegation for save, library synchronization, sidebar toggles, and TOC toggles.
+- Added focused automated tests for the infrastructure file adapter:
+  - `FileSystem` now covers path formatting, empty path failures, parent directory creation, existence checks, reading,
+    writing, directory creation, stat, rename, removal, and directory listing.
 - Formatted the previously failing `src/window/protocol/protocol-service.test.ts` file.
 
 Validation performed:
 
 - `npm run lint` passes.
-- `npm test -- --runInBand` passes with 11 suites and 50 tests.
+- `npm test -- --runInBand` passes with 12 suites and 55 tests.
 - `npm run package` passes.
 - `npm run format:check` passes.
 
 ## Current Design Tradeoffs
 
-- `entities/` still exists because the migration is incremental. New code is placed by responsibility, while old implementation classes remain in place to avoid a large file-move-only diff.
-- `services/` still exists as a transitional domain-service folder until `domain/` and `infrastructure/` are introduced.
+- `services/` still exists as a transitional domain-service folder while extracted services are gradually sorted into
+  `domain/` and `infrastructure/`.
+- `state/RuntimeConfigStore` intentionally preserves the existing `MainProcessConfig` shape for compatibility. Runtime
+  menu state, persisted render config, library tree, and app paths are still split in future steps.
 - `atom://` intentionally allows external absolute image files for compatibility with existing Markdown content. This is narrower than the old behavior because non-image files outside the library root remain blocked.
 - `_post` remains available for renderer compatibility, but new renderer code should prefer explicit preload methods.
 - Focused automated coverage now exists for document cache revisions, path resolution, protocol boundaries, IPC routing/validation, close lifecycle behavior, and library-tree utilities. Broader Electron integration behavior still depends on package/lint checks and manual regression until an app-level harness is added.
@@ -163,14 +183,13 @@ Validation performed:
 
 Recommended next implementation order:
 
-1. Continue shrinking legacy entities.
-   - Move `NextFileSystem` toward `infrastructure/file-system`.
-   - Move `NextStoreSystem` toward a runtime config/state boundary.
-   - Move `NextCacheSystem` toward a domain document cache service.
-   - Keep file moves separate from behavior changes where possible.
+1. Continue shrinking transitional service boundaries.
+   - Move remaining use-case services from `services/` into `domain/` once their infrastructure dependencies are stable.
+   - Keep future moves separate from behavior changes where possible.
 
 2. Improve state boundaries.
    - Split runtime menu state from persisted render config.
+   - Split path/session state from renderer-facing config reads.
    - Consider immutable updates for library tree operations to reduce accidental shared mutation.
 
 3. Improve protocol and image compatibility.

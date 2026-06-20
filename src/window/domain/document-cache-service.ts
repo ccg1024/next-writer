@@ -1,13 +1,14 @@
 import { inject, injectable } from 'inversify';
 import { isEffectObject, isTrulyEmpty } from 'src/tools/utils';
 import { Cache, CacheContent } from '_types';
-import INextCacheSystem from '../interface/next-cache-system';
+import IDocumentCacheService from '../interface/document-cache-service';
 import IWindowRegistry from '../interface/window-registry';
 import { TYPES } from '../types';
 
 @injectable()
-class NextCacheSystem implements INextCacheSystem {
+class DocumentCacheService implements IDocumentCacheService {
   private __cache: Cache;
+
   constructor(@inject(TYPES.IWindowRegistry) private windowRegistry: IWindowRegistry) {
     this.init();
   }
@@ -26,7 +27,6 @@ class NextCacheSystem implements INextCacheSystem {
       [key]: cacheContent
     };
 
-    // Update window document edited state
     this.updateDocumentEditedState();
   }
 
@@ -46,20 +46,19 @@ class NextCacheSystem implements INextCacheSystem {
     this.updateDocumentEditedState();
   }
 
-  exitCache(key: string): boolean {
+  hasCache(key: string): boolean {
     return this.__cache?.[key] ? true : false;
   }
 
   removeCache(key: string): void {
-    if (this.exitCache(key)) {
+    if (this.hasCache(key)) {
       delete this.__cache[key];
 
-      // Update window document edited state
       this.updateDocumentEditedState();
     }
   }
 
-  hasModifed(): boolean {
+  hasModified(): boolean {
     if (isEffectObject(this.__cache)) {
       const keys = Object.getOwnPropertyNames(this.__cache);
       for (const key of keys) {
@@ -78,8 +77,8 @@ class NextCacheSystem implements INextCacheSystem {
 
   private updateDocumentEditedState(): void {
     const win = this.windowRegistry.getCurrentWindow();
-    win?.setDocumentEdited(this.hasModifed());
+    win?.setDocumentEdited(this.hasModified());
   }
 }
 
-export default NextCacheSystem;
+export default DocumentCacheService;

@@ -3,15 +3,15 @@ import { inject, injectable } from 'inversify';
 import { CONFIG_JSON_NAME, NW_CONFIG } from 'src/config/env';
 import { isEffectObject, isTrulyEmpty, removeEmpty } from 'src/tools/utils';
 import IConfigService from '../interface/config-service';
-import INextFileSystem from '../interface/next-file-system';
-import INextStoreSystem from '../interface/next-store-system';
+import IFileSystem from '../interface/file-system';
+import IRuntimeConfigStore from '../interface/runtime-config-store';
 import { TYPES } from '../types';
 
 @injectable()
 class ConfigService implements IConfigService {
   constructor(
-    @inject(TYPES.INextFileSystem) private fileSystem: INextFileSystem,
-    @inject(TYPES.INextStoreSystem) private store: INextStoreSystem
+    @inject(TYPES.IFileSystem) private fileSystem: IFileSystem,
+    @inject(TYPES.IRuntimeConfigStore) private store: IRuntimeConfigStore
   ) {}
 
   async initConfig(configFilePath?: string): Promise<void> {
@@ -23,7 +23,7 @@ class ConfigService implements IConfigService {
 
     const path = isTrulyEmpty(configFilePath) ? nodePath.join(defaultConfigDir, CONFIG_JSON_NAME) : configFilePath;
 
-    if (!(await this.fileSystem.isExist(path))) {
+    if (!(await this.fileSystem.exists(path))) {
       await this.fileSystem.writeFile(path, JSON.stringify(NW_CONFIG, null, 2));
       this.store.setConfig('renderConfig', NW_CONFIG);
       return;
