@@ -1,6 +1,7 @@
 # Repository Guidelines
 
 ## Project Structure & Module Organization
+
 - `src/` contains app code for the Electron main/renderer split.
   - `src/window/` is the main process (IPC, window management, file system).
   - `src/ui/` is the React renderer (modules, components, plugins, hooks).
@@ -10,6 +11,7 @@
 - Build/config files live at the root: `forge.config.ts`, `webpack.*.ts`, `tsconfig.json`.
 
 ## Build, Test, and Development Commands
+
 - `npm start`: run Electron Forge dev mode with hot reload.
 - `npm run make`: build distributables.
 - `npm run package`: package without making installers.
@@ -18,6 +20,7 @@
 - `npm run format:check`: verify formatting without writing.
 
 ## Coding Style & Naming Conventions
+
 - Indentation: 2 spaces; line width: 120; semicolons required; single quotes.
 - Formatting is enforced by Prettier (`prettier.config.js`); ESLint is quality-only.
 - Naming:
@@ -28,6 +31,7 @@
 - Import order: React, third-party libs, local modules, then types.
 
 ## Testing Guidelines
+
 - Jest is configured for automated tests; keep main/window tests in Node and renderer tests in jsdom.
 - Use `test/` fixtures (e.g., `test/test1.md`) for manual regression checks.
 - Verify hot-reload behaviors around editor cache and IPC changes.
@@ -35,9 +39,11 @@
   LSP; prefer local type references when the main TS project does not include those types.
 
 ## Commit & Pull Request Guidelines
+
 - Commit messages follow a conventional style like `feat: ...` (see `git log`).
 - PRs should include: summary, testing performed, and UI screenshots when relevant.
 
 ## Platform & Architecture Notes
+
 - App targets macOS currently (Windows/Linux not adapted).
 - Electron Forge + Webpack handles builds; keep main vs renderer boundaries clear.
