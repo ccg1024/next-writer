@@ -15,6 +15,7 @@ const TYPES = {
   IApplication: Symbol.for('IApplication'),
   IGlobalErrorReporter: Symbol.for('IGlobalErrorReporter'),
   IMainWindowFactory: Symbol.for('IMainWindowFactory'),
+  IWindowCloseService: Symbol.for('IWindowCloseService'),
   IWindowRegistry: Symbol.for('IWindowRegistry'),
   IProtocolService: Symbol.for('IProtocolService'),
   IPathResolver: Symbol.for('IPathResolver'),

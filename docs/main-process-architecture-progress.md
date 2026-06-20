@@ -110,6 +110,8 @@ Completed in the latest main process refactor:
 - Extracted IPC sender trust checks into injectable `SenderValidator`.
 - Normalized `write-file` success responses to `data: null`.
 - Extracted `ConfigService`, `WorkspaceService`, `DocumentService`, `LibraryService`, and `MenuActionService`.
+- Extracted `WindowCloseService` so unsaved-change close confirmation is no longer embedded in `NextApp`.
+- Kept existing close behavior intact: cancel blocks closing, confirm closes the window and discards unsaved changes.
 - Kept legacy data shape and menu behavior intact.
 - Added correct `IPC_CHANNEL.WRITE_FILE` while keeping deprecated `WIRTE_FILE` compatibility.
 - Added focused automated tests for main-process path and protocol boundaries:
@@ -118,11 +120,14 @@ Completed in the latest main process refactor:
 - Added focused automated tests for IPC contract boundaries:
   - `RequestValidator` now covers valid payloads, invalid envelopes, unknown channels, payload rejection for no-data channels, per-channel payload failures, and deprecated `WIRTE_FILE` compatibility.
   - `NextIpcServer` now covers listener registration, invalid request handling, duplicate handler detection, sender rejection, trusted dispatch, `null` response normalization, thrown handler errors, and destroy cleanup.
+- Added focused automated tests for close lifecycle behavior:
+  - `WindowCloseService` now covers clean close, canceling dirty close, and confirming dirty close.
+  - `NextApp` now covers close cancellation, confirmed dirty close cleanup, and clean close cleanup.
 
 Validation performed:
 
 - `npm run lint` passes.
-- `npm test -- --runInBand` passes with 7 suites and 37 tests.
+- `npm test -- --runInBand` passes with 9 suites and 43 tests.
 - `npm run package` passes.
 - `npm run format:check` still fails only because existing `src/window/protocol/protocol-service.test.ts` is not Prettier-formatted.
 
@@ -132,7 +137,7 @@ Validation performed:
 - `NextApp`, `NextMenu`, and `NextIpcServer` still keep their legacy names, but their responsibilities are now narrower.
 - `atom://` intentionally allows external absolute image files for compatibility with existing Markdown content. This is narrower than the old behavior because non-image files outside the library root remain blocked.
 - `_post` remains available for renderer compatibility, but new renderer code should prefer explicit preload methods.
-- Focused automated coverage now exists for document cache revisions, path resolution, protocol boundaries, IPC routing/validation, and library-tree utilities. Broader Electron integration behavior still depends on package/lint checks and manual regression until an app-level harness is added.
+- Focused automated coverage now exists for document cache revisions, path resolution, protocol boundaries, IPC routing/validation, close lifecycle behavior, and library-tree utilities. Broader Electron integration behavior still depends on package/lint checks and manual regression until an app-level harness is added.
 
 ## Next Steps
 
@@ -155,7 +160,7 @@ Recommended next implementation order:
    - Consider separate protocol handlers for library files and external image previews.
 
 4. Improve close/save lifecycle.
-   - Move unsaved-change close confirmation out of `NextApp`.
+   - Continue narrowing `NextApp` window/session responsibilities after extracting unsaved-change close confirmation.
    - Ensure cache state, document edited state, and renderer dirty state stay consistent after save, rename, and window close.
 
 5. Continue IPC cleanup.
