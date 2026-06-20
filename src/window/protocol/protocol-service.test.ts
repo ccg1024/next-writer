@@ -8,7 +8,7 @@ import { pathToFileURL } from 'url';
 import { MainProcessConfig } from '_types';
 import { app, net, protocol } from 'electron';
 import IRuntimeConfigStore from '../interface/runtime-config-store';
-import PathResolver from '../services/path-resolver';
+import PathResolver from '../infrastructure/path-resolver';
 import ProtocolService from './protocol-service';
 
 jest.mock('electron', () => ({

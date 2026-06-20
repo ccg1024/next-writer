@@ -53,8 +53,6 @@ Target responsibilities:
 - `domain/` owns application use cases such as config, workspace, document, library, and cache behavior.
 - `infrastructure/` owns low-level adapters such as filesystem access, app paths, and JSON persistence.
 - `menu/` owns menu template creation and menu actions.
-- `services/` is a transitional domain-service folder until remaining service responsibilities are fully sorted into
-  `domain/` and `infrastructure/`.
 - The legacy `ipc-handler/` folder has been folded into `ipc/handlers/`.
 
 Architecture goals:
@@ -161,6 +159,10 @@ Completed in the latest main process refactor:
   - `FileSystem` now covers path formatting, empty path failures, parent directory creation, existence checks, reading,
     writing, directory creation, stat, rename, removal, and directory listing.
 - Formatted the previously failing `src/window/protocol/protocol-service.test.ts` file.
+- Moved the remaining transitional `services/` classes into target layers:
+  - `ConfigService`, `WorkspaceService`, `DocumentService`, and `LibraryService` now live under `domain/`.
+  - `PathResolver` now lives under `infrastructure/`.
+- Removed the transitional `services/` folder.
 
 Validation performed:
 
@@ -171,8 +173,6 @@ Validation performed:
 
 ## Current Design Tradeoffs
 
-- `services/` still exists as a transitional domain-service folder while extracted services are gradually sorted into
-  `domain/` and `infrastructure/`.
 - `state/RuntimeConfigStore` intentionally preserves the existing `MainProcessConfig` shape for compatibility. Runtime
   menu state, persisted render config, library tree, and app paths are still split in future steps.
 - `atom://` intentionally allows external absolute image files for compatibility with existing Markdown content. This is narrower than the old behavior because non-image files outside the library root remain blocked.
@@ -183,36 +183,32 @@ Validation performed:
 
 Recommended next implementation order:
 
-1. Continue shrinking transitional service boundaries.
-   - Move remaining use-case services from `services/` into `domain/` once their infrastructure dependencies are stable.
-   - Keep future moves separate from behavior changes where possible.
-
-2. Improve state boundaries.
+1. Improve state boundaries.
    - Split runtime menu state from persisted render config.
    - Split path/session state from renderer-facing config reads.
    - Consider immutable updates for library tree operations to reduce accidental shared mutation.
 
-3. Improve protocol and image compatibility.
+2. Improve protocol and image compatibility.
    - Decide whether external image paths should be persisted as absolute local paths, copied into the library, or mediated by an import workflow.
    - Add clearer error logging for blocked `atom://` requests.
    - Consider separate protocol handlers for library files and external image previews.
 
-4. Improve close/save lifecycle.
+3. Improve close/save lifecycle.
    - Continue narrowing `WindowSessionCoordinator` responsibilities after extracting unsaved-change close confirmation.
    - Ensure cache state, document edited state, and renderer dirty state stay consistent after save, rename, and window close.
 
-5. Continue IPC cleanup.
+4. Continue IPC cleanup.
    - Gradually replace renderer `_post` usage with explicit preload methods.
    - Keep deprecated `_post` available until compatibility consumers are confirmed gone.
    - Keep IPC router and handler behavior stable while future changes focus on channel additions or renderer migration.
 
-6. Add development documentation.
+5. Add development documentation.
    - Document main-process folder responsibilities.
    - Document IPC channel creation steps.
    - Document Electron security assumptions and exceptions.
    - Document manual regression scenarios until automated tests exist.
 
-7. Expand automated regression coverage.
+6. Expand automated regression coverage.
    - Add tests for close/save lifecycle coordination around dirty cache state.
    - Consider an Electron-level smoke harness for startup, preload isolation, and menu shortcuts.
 
