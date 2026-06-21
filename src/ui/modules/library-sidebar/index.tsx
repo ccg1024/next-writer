@@ -1,31 +1,23 @@
 import { App, Menu, MenuProps, Typography, Row, Col, Popover } from 'antd';
 import { DeleteOutlined, EditOutlined, FolderOutlined } from '@ant-design/icons';
 import { motion } from 'framer-motion';
-import { FC, useCallback, useEffect, useRef, useState } from 'react';
+import { FC, useCallback, useRef } from 'react';
 import { isEffectArray, isEffectObject } from 'src/tools/utils';
 import { WindowDragBox } from 'src/ui/components/drag';
 import { RendererLibraryTree } from '_types';
 import { VerticalEmpty } from 'src/ui/components/antd/preset/empty';
 import { useRunmode } from 'src/ui/hooks/useRunmode';
 import { nwSyntaxHighlight } from 'src/ui/hooks/useCodemirror';
-import mainProcess from 'src/ui/libs/main-process';
 import { nwSpin } from 'src/ui/mix-components/spin';
-import { useHomeContext } from 'src/ui/home/module.context';
 import { FrowardRenameModal, ExposedHandler as ForwardRenameHandler } from './modal';
-import { useRendererIpcAction } from 'src/ui/hooks/use-renderer-ipc-action';
+import { useRendererCommand } from 'src/ui/shared/renderer-command';
+import { useLibraryActions, useLibraryState } from 'src/ui/domain/library';
+import { useRuntimeLayout } from 'src/ui/domain/runtime';
 
 import './index.less';
 
 const { Text, Title, Paragraph } = Typography;
 type MenuItem = Required<MenuProps>['items'][number];
-
-// The lib in here means folder, and the lib detail means the files of that folder
-interface LibrarySidebarProps {
-  currentLib: RendererLibraryTree;
-  setCurrentLib: (lib: RendererLibraryTree) => void;
-  currentNote: RendererLibraryTree;
-  setCurrentNote: (note: RendererLibraryTree) => void;
-}
 
 export interface LibrarySidebarExpoused {
   updateLibItem(libItem: RendererLibraryTree): void;
@@ -49,38 +41,33 @@ function findNodeById(ids: string[], tree: RendererLibraryTree) {
 /**
  * LibrarySidebar is the left sidebar of the app, which is used to show the library tree and the detail of the selected library.
  */
-const LibrarySidebar: FC<LibrarySidebarProps> = props => {
+const LibrarySidebar: FC = () => {
   // For lib side bar of the leftmost
-  const { currentLib, setCurrentLib, currentNote, setCurrentNote } = props;
-  const [visibleLib, setVisibleLib] = useState(true);
-  const [visibleDetail, setVisbleDetail] = useState(true);
-  const { libraryTree, updateRenderLibrary } = useHomeContext();
+  const { libraryTree, currentLib, currentNote } = useLibraryState();
+  const {
+    setCurrentLib,
+    setCurrentNote,
+    updateRenderLibrary,
+    createLibrary,
+    renameLibrary,
+    deleteLibrary,
+    createNote
+  } = useLibraryActions();
+  const { librarySidebarVisible, detailSidebarVisible, setLibrarySidebarVisible, setDetailSidebarVisible } =
+    useRuntimeLayout();
   const renameRef = useRef<ForwardRenameHandler>(null);
   const { message, modal } = App.useApp();
-  const { runtimeConfig } = useHomeContext();
 
   // ============================================================
   // Effect
   // ============================================================
-  useRendererIpcAction('toggle-lib', (_e, action) => {
-    setVisibleLib(!!action.payload);
+  useRendererCommand('toggle-lib', (_e, action) => {
+    setLibrarySidebarVisible(!!action.payload);
   });
 
-  useRendererIpcAction('toggle-lib-detail', (_e, action) => {
-    setVisbleDetail(!!action.payload);
+  useRendererCommand('toggle-lib-detail', (_e, action) => {
+    setDetailSidebarVisible(!!action.payload);
   });
-
-  useEffect(() => {
-    if (runtimeConfig) {
-      if (!runtimeConfig.menuStatus.librarySidebar) {
-        setVisibleLib(false);
-      }
-
-      if (!runtimeConfig.menuStatus.detailSidebar) {
-        setVisbleDetail(false);
-      }
-    }
-  }, [runtimeConfig]);
 
   // ============================================================
   // Wrap callback
@@ -118,17 +105,11 @@ const LibrarySidebar: FC<LibrarySidebarProps> = props => {
                               return;
                             }
                             if (newName !== lib.name) {
-                              const runtimeRelativePath = `${lib.parent.relativePath}/${newName}`;
                               nwSpin.loading(true);
-                              mainProcess
-                                .updateLib({
-                                  operate: 'update',
-                                  type: 'folder',
-                                  path: lib.relativePath,
-                                  pathInRuntime: runtimeRelativePath
-                                })
+                              renameLibrary(lib, newName)
                                 .then(res => {
                                   if (res && res.status === 0) {
+                                    const runtimeRelativePath = `${lib.parent.relativePath}/${newName}`;
                                     const newLib = { ...lib, name: newName, relativePath: runtimeRelativePath };
                                     updateRenderLibrary(newLib);
                                   }
@@ -158,8 +139,7 @@ const LibrarySidebar: FC<LibrarySidebarProps> = props => {
                           title: `确定删除${lib.name}`,
                           onOk: () => {
                             nwSpin.loading(true);
-                            mainProcess
-                              .updateLib({ operate: 'del', type: 'folder', path: lib.relativePath })
+                            deleteLibrary(lib)
                               .then(res => {
                                 if (res && res.status === 0) {
                                   updateRenderLibrary(lib, 'remove');
@@ -195,7 +175,7 @@ const LibrarySidebar: FC<LibrarySidebarProps> = props => {
 
   return (
     <>
-      <div className="library-sidebar-wrapper" style={{ display: visibleLib ? 'flex' : 'none' }}>
+      <div className="library-sidebar-wrapper" style={{ display: librarySidebarVisible ? 'flex' : 'none' }}>
         <WindowDragBox style={{ height: '40px', flexShrink: 0 }} />
         <div className="library-next-writer">NEXT-WRITER</div>
         <div className="library-sidebar-main">
@@ -215,8 +195,7 @@ const LibrarySidebar: FC<LibrarySidebarProps> = props => {
                     }
 
                     nwSpin.loading(true);
-                    mainProcess
-                      .updateLib({ operate: 'add', type: 'folder', path: `./${name}` })
+                    createLibrary(name)
                       .then(res => {
                         const { data, status } = res;
                         if (status === 0 && isEffectObject(data)) {
@@ -241,9 +220,12 @@ const LibrarySidebar: FC<LibrarySidebarProps> = props => {
       {/* middle bar */}
       <div
         className="library-detail-wrapper"
-        style={{ paddingTop: !visibleLib ? '32px' : '16px', display: visibleDetail ? 'flex' : 'none' }}
+        style={{
+          paddingTop: !librarySidebarVisible ? '32px' : '16px',
+          display: detailSidebarVisible ? 'flex' : 'none'
+        }}
       >
-        {!visibleLib && (
+        {!librarySidebarVisible && (
           <WindowDragBox style={{ height: '32px', top: 0, left: 0, width: '100%', position: 'absolute' }} />
         )}
         <LibDetailHeader
@@ -260,8 +242,7 @@ const LibrarySidebar: FC<LibrarySidebarProps> = props => {
                     return;
                   }
                   nwSpin.loading(true);
-                  mainProcess
-                    .updateLib({ operate: 'add', type: 'file', path: `${currentLib.relativePath}/${name}` })
+                  createNote(currentLib, name)
                     .then(res => {
                       if (res && res.status === 0) {
                         updateRenderLibrary({ ...res.data, parent: currentLib } as RendererLibraryTree, 'append');
@@ -289,7 +270,7 @@ const LibrarySidebar: FC<LibrarySidebarProps> = props => {
         </div>
       </div>
 
-      {!visibleLib && !visibleDetail && (
+      {!librarySidebarVisible && !detailSidebarVisible && (
         <WindowDragBox style={{ height: '32px', top: 0, left: 0, width: '100%', position: 'fixed' }} />
       )}
       <FrowardRenameModal ref={renameRef} />
@@ -307,7 +288,7 @@ interface LibDetailHeaderProps {
  */
 const LibDetailHeader: FC<LibDetailHeaderProps> = props => {
   const { lib, note, onAddNote } = props;
-  const { updateRenderLibrary } = useHomeContext();
+  const { updateRenderLibrary, deleteNote } = useLibraryActions();
   const { modal } = App.useApp();
 
   const showEditIcon = isEffectObject(lib) && lib.type === 'folder';
@@ -335,8 +316,7 @@ const LibDetailHeader: FC<LibDetailHeaderProps> = props => {
                   title: `确定删除笔记：${note.name}？`,
                   onOk() {
                     nwSpin.loading(true);
-                    mainProcess
-                      .updateLib({ operate: 'del', type: 'file', path: note.relativePath })
+                    deleteNote(note)
                       .then(res => {
                         if (res && res.status === 0) {
                           updateRenderLibrary(note, 'remove');

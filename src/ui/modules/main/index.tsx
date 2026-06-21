@@ -4,13 +4,13 @@ import { App, Typography } from 'antd';
 import { isTrulyEmpty } from 'src/tools/utils';
 import { VerticalEmpty } from 'src/ui/components/antd/preset/empty';
 import useCodemirror, { InitialEditorState } from 'src/ui/hooks/useCodemirror';
-import { useRendererIpcAction } from 'src/ui/hooks/use-renderer-ipc-action';
-import mainProcess from 'src/ui/libs/main-process';
-import { RendererLibraryTree } from '_types';
+import { useRendererCommand } from 'src/ui/shared/renderer-command';
 import { debounceFn } from 'src/ui/libs/utils';
 import messagePublish from 'src/ui/libs/pub-sub';
 import { nwSpin } from 'src/ui/mix-components/spin';
-import { useHomeContext } from 'src/ui/home/module.context';
+import rendererGateway from 'src/ui/shared/ipc/renderer-gateway';
+import { useLibraryActions, useLibraryState } from 'src/ui/domain/library';
+import { useEditorActions } from 'src/ui/domain/editor';
 
 import './index.less';
 
@@ -18,26 +18,18 @@ const { Title } = Typography;
 
 const MAX_DESCRIPTION_LENGTH = 100 as const;
 
-export interface ExposedHandler {
-  queryFile(noteId: string, note: RendererLibraryTree, parent: RendererLibraryTree): void;
-}
-
-interface MainProps {
-  onLibContentChange?(libItem: RendererLibraryTree): void;
-  currentNote: RendererLibraryTree;
-}
-
 const editorTransactionActions = ['docChange', 'updateDescription'] as const;
 type EditorTransactionAction = {
   type: (typeof editorTransactionActions)[number];
   doc?: string;
 };
 
-const Main: FC<MainProps> = props => {
-  const { currentNote } = props;
+const Main: FC = () => {
   const { message } = App.useApp();
+  const { currentNote } = useLibraryState();
   const [initialEditorState, setInitialEditorState] = useState<InitialEditorState>(null);
-  const { updateRenderLibrary } = useHomeContext();
+  const { updateRenderLibrary } = useLibraryActions();
+  const { setEditorView, syncOutlineFromView } = useEditorActions();
   const cacheUpdateTimerRef = useRef<NodeJS.Timeout | null>(null);
   const cacheRevisionRef = useRef(0);
   // Track whether current file is already marked as modified
@@ -67,7 +59,7 @@ const Main: FC<MainProps> = props => {
 
   const updateFileCache = useCallback(
     (path: string, content: string, isChange: boolean) =>
-      mainProcess.updateCache({
+      rendererGateway.updateCache({
         path,
         content,
         isChange,
@@ -128,9 +120,17 @@ const Main: FC<MainProps> = props => {
       scheduleCacheUpdate(update.view);
 
       // 通知其他模块，文档变更
+      syncOutlineFromView(update.view);
       messagePublish.pub('docChanged', update.view);
     },
-    [currentNote?.relativePath, updateRenderLibrary, debounceEditorTransaction, updateFileCache, scheduleCacheUpdate]
+    [
+      currentNote?.relativePath,
+      updateRenderLibrary,
+      debounceEditorTransaction,
+      updateFileCache,
+      scheduleCacheUpdate,
+      syncOutlineFromView
+    ]
   );
 
   const onEditorChange = useCallback((_update: ViewUpdate) => {
@@ -153,7 +153,7 @@ const Main: FC<MainProps> = props => {
     const wasModifiedBeforeSave = isModifiedRef.current;
 
     nwSpin.loading(true);
-    mainProcess
+    rendererGateway
       .writeFile({ path: currentNote.relativePath, content, nameInRuntime: currentNote.name, revision: saveRevision })
       .then(res => {
         if (res.status !== 0) {
@@ -196,7 +196,7 @@ const Main: FC<MainProps> = props => {
       });
   }, [currentNote, editor, message, nextCacheRevision, updateFileCache, updateRenderLibrary]);
 
-  useRendererIpcAction('write-file', handleWriteFile);
+  useRendererCommand('write-file', handleWriteFile);
 
   // ============================================================
   // Effect
@@ -212,7 +212,7 @@ const Main: FC<MainProps> = props => {
 
     let shouldUpdate = true;
     const readNote = async () => {
-      const { status, data } = await mainProcess.readFile({ path: currentNote.relativePath });
+      const { status, data } = await rendererGateway.readFile({ path: currentNote.relativePath });
       if (shouldUpdate && status === 0) {
         setInitialEditorState({ initDoc: data.content });
       }
@@ -251,11 +251,22 @@ const Main: FC<MainProps> = props => {
   }, [editor, updateFileCache]);
 
   useEffect(() => {
-    if (editor) {
-      // 通知其他模块编辑器变更
-      messagePublish.pub('editorChanged', editor);
+    if (!editor) {
+      setEditorView(null);
+      syncOutlineFromView(null);
+      return;
     }
-  }, [editor]);
+
+    setEditorView(editor);
+    syncOutlineFromView(editor);
+    // 通知其他模块编辑器变更
+    messagePublish.pub('editorChanged', editor);
+
+    return () => {
+      setEditorView(null);
+      syncOutlineFromView(null);
+    };
+  }, [editor, setEditorView, syncOutlineFromView]);
 
   // ============================================================
   // Render

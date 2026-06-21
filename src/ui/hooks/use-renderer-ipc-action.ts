@@ -1,26 +1,9 @@
-import { useEffect, useRef } from 'react';
 import { RendererListenerAction } from '_types';
-import rendererIpcListener, { RendererIpcActionCallback } from '../modules/ipc';
+import { useRendererCommand } from 'src/ui/shared/renderer-command';
 
 export function useRendererIpcAction(
   type: RendererListenerAction['type'],
   handler: (event: null, action: RendererListenerAction) => void
 ) {
-  const handlerRef = useRef(handler);
-
-  useEffect(() => {
-    handlerRef.current = handler;
-  }, [handler]);
-
-  useEffect(() => {
-    const actionCallback: RendererIpcActionCallback = (event, action) => {
-      handlerRef.current(event, action);
-    };
-    actionCallback.type = type;
-
-    rendererIpcListener.register(actionCallback);
-    return () => {
-      rendererIpcListener.deregister(actionCallback);
-    };
-  }, [type]);
+  useRendererCommand(type, handler);
 }

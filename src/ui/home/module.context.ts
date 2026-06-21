@@ -1,6 +1,8 @@
-import { createContext, useContext } from 'react';
+import { createContext, useContext, useMemo } from 'react';
 import { ReadConfigResponse, RendererLibraryTree } from '_types';
 import type { RuntimeRecord } from '../modules/store';
+import { useLibraryActions, useLibraryState } from 'src/ui/domain/library';
+import { useRuntimeLayout } from 'src/ui/domain/runtime';
 
 type RenderConfig = ReadConfigResponse;
 
@@ -22,7 +24,21 @@ export interface IHomeContext {
 const HomeContext = createContext<IHomeContext>(null);
 
 export const useHomeContext = () => {
-  return useContext(HomeContext);
+  const legacyContext = useContext(HomeContext);
+  const { libraryTree } = useLibraryState();
+  const { updateRenderLibrary, freshTree } = useLibraryActions();
+  const { runtimeConfig } = useRuntimeLayout();
+
+  return useMemo(
+    () =>
+      legacyContext || {
+        libraryTree,
+        updateRenderLibrary,
+        freshTree,
+        runtimeConfig
+      },
+    [freshTree, legacyContext, libraryTree, runtimeConfig, updateRenderLibrary]
+  );
 };
 
 export default HomeContext;
