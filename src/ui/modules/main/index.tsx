@@ -207,9 +207,6 @@ const Main: FC = () => {
       return;
     }
 
-    // Reset modified state when loading a new file
-    isModifiedRef.current = currentNote.isChange ?? false;
-
     let shouldUpdate = true;
     const readNote = async () => {
       const { status, data } = await rendererGateway.readFile({ path: currentNote.relativePath });
@@ -231,6 +228,7 @@ const Main: FC = () => {
     }
 
     // Initialize cache info when editor mounts or note switches
+    isModifiedRef.current = currentNote.isChange ?? false;
     prevNoteInfoRef.current = {
       relativePath: currentNote.relativePath,
       id: currentNote.id
