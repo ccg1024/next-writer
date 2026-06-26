@@ -89,60 +89,30 @@ const LibrarySidebar: FC = () => {
           .map(lib => ({
             key: lib.id,
             label: (
-              <div style={{ backgroundColor: 'transparent' }}>
-                <Row>
-                  <Col span={16}>{lib.name}</Col>
-                  <Col span={4} style={{ textAlign: 'center' }}>
-                    <motion.div
-                      className="library-sidebar-icon"
-                      whileTap={{ scale: 0.8 }}
-                      onClick={e => {
-                        e.stopPropagation();
-                        if (renameRef.current) {
-                          renameRef.current.show(lib.name, (newName: string) => {
-                            if (lib.parent.children.find(child => child.name === newName && child.id !== lib.id)) {
-                              message.error('名称重复');
-                              return;
-                            }
-                            if (newName !== lib.name) {
-                              nwSpin.loading(true);
-                              renameLibrary(lib, newName)
-                                .then(res => {
-                                  if (res && res.status === 0) {
-                                    const runtimeRelativePath = `${lib.parent.relativePath}/${newName}`;
-                                    const newLib = { ...lib, name: newName, relativePath: runtimeRelativePath };
-                                    updateRenderLibrary(newLib);
-                                  }
-                                })
-                                .finally(() => {
-                                  nwSpin.loading(false);
-                                });
-                            }
-                          });
-                        }
-                      }}
-                    >
-                      <EditOutlined />
-                    </motion.div>
-                  </Col>
-                  <Col span={4} style={{ textAlign: 'center' }}>
-                    <motion.div
-                      className="library-sidebar-icon"
-                      whileTap={{ scale: 0.8 }}
-                      onClick={e => {
-                        e.stopPropagation();
-                        if (isEffectArray(lib.children)) {
-                          message.error('存在笔记，无法删除当前库');
-                          return;
-                        }
-                        modal.confirm({
-                          title: `确定删除${lib.name}`,
-                          onOk: () => {
+              <div className="library-sidebar-menu-item">
+                <Text className="library-sidebar-menu-item-name" title={lib.name}>
+                  {lib.name}
+                </Text>
+                <div className="library-sidebar-menu-item-actions">
+                  <motion.div
+                    className="library-sidebar-icon"
+                    whileTap={{ scale: 0.8 }}
+                    onClick={e => {
+                      e.stopPropagation();
+                      if (renameRef.current) {
+                        renameRef.current.show(lib.name, (newName: string) => {
+                          if (lib.parent.children.find(child => child.name === newName && child.id !== lib.id)) {
+                            message.error('名称重复');
+                            return;
+                          }
+                          if (newName !== lib.name) {
                             nwSpin.loading(true);
-                            deleteLibrary(lib)
+                            renameLibrary(lib, newName)
                               .then(res => {
                                 if (res && res.status === 0) {
-                                  updateRenderLibrary(lib, 'remove');
+                                  const runtimeRelativePath = `${lib.parent.relativePath}/${newName}`;
+                                  const newLib = { ...lib, name: newName, relativePath: runtimeRelativePath };
+                                  updateRenderLibrary(newLib);
                                 }
                               })
                               .finally(() => {
@@ -150,12 +120,40 @@ const LibrarySidebar: FC = () => {
                               });
                           }
                         });
-                      }}
-                    >
-                      <DeleteOutlined />
-                    </motion.div>
-                  </Col>
-                </Row>
+                      }
+                    }}
+                  >
+                    <EditOutlined />
+                  </motion.div>
+                  <motion.div
+                    className="library-sidebar-icon"
+                    whileTap={{ scale: 0.8 }}
+                    onClick={e => {
+                      e.stopPropagation();
+                      if (isEffectArray(lib.children)) {
+                        message.error('存在笔记，无法删除当前库');
+                        return;
+                      }
+                      modal.confirm({
+                        title: `确定删除${lib.name}`,
+                        onOk: () => {
+                          nwSpin.loading(true);
+                          deleteLibrary(lib)
+                            .then(res => {
+                              if (res && res.status === 0) {
+                                updateRenderLibrary(lib, 'remove');
+                              }
+                            })
+                            .finally(() => {
+                              nwSpin.loading(false);
+                            });
+                        }
+                      });
+                    }}
+                  >
+                    <DeleteOutlined />
+                  </motion.div>
+                </div>
               </div>
             )
           }));
