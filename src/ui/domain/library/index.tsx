@@ -1,12 +1,8 @@
 import React, { createContext, useCallback, useContext, useMemo, useReducer } from 'react';
 import { RendererLibraryTree } from '_types';
 import rendererGateway from 'src/ui/shared/ipc/renderer-gateway';
-import {
-  findRendererNodeById,
-  refreshRendererTree,
-  RendererTreeOperation,
-  updateRendererTree
-} from 'src/ui/libs/renderer-tree';
+import { RendererTreeOperation } from 'src/ui/libs/renderer-tree';
+import { LibraryNodePatch, LibraryNodeProducer, LibraryStateContainer } from './library-state-container';
 
 export type LibraryState = {
   libraryTree: RendererLibraryTree;
@@ -19,11 +15,12 @@ type LibraryAction =
   | { type: 'set-current-lib'; node: RendererLibraryTree }
   | { type: 'set-current-note'; node: RendererLibraryTree }
   | { type: 'set-library-tree'; tree: RendererLibraryTree }
+  | { type: 'patch-current-note'; patch: LibraryNodePatch }
+  | { type: 'patch-library-node'; node: RendererLibraryTree; patch: LibraryNodePatch }
+  | { type: 'append-library-child'; parent: RendererLibraryTree; child: RendererLibraryTree }
   | {
       type: 'update-node';
-      newNode:
-        | RendererLibraryTree
-        | ((preLib: RendererLibraryTree, preNote: RendererLibraryTree) => RendererLibraryTree);
+      newNode: LibraryNodeProducer;
       operation: RendererTreeOperation;
     };
 
@@ -32,10 +29,10 @@ export type LibraryActions = {
   setCurrentLib: (node: RendererLibraryTree) => void;
   setCurrentNote: (node: RendererLibraryTree) => void;
   freshTree: () => void;
-  updateRenderLibrary: (
-    newNode: RendererLibraryTree | ((preLib: RendererLibraryTree, preNote: RendererLibraryTree) => RendererLibraryTree),
-    type?: RendererTreeOperation
-  ) => void;
+  updateRenderLibrary: (newNode: LibraryNodeProducer, type?: RendererTreeOperation) => void;
+  patchCurrentNote: (patch: LibraryNodePatch) => void;
+  patchLibraryNode: (node: RendererLibraryTree, patch: LibraryNodePatch) => void;
+  appendLibraryChild: (parent: RendererLibraryTree, child: RendererLibraryTree) => void;
   createLibrary: (name: string) => ReturnType<typeof rendererGateway.updateLib>;
   renameLibrary: (lib: RendererLibraryTree, newName: string) => ReturnType<typeof rendererGateway.updateLib>;
   deleteLibrary: (lib: RendererLibraryTree) => ReturnType<typeof rendererGateway.updateLib>;
@@ -53,33 +50,25 @@ const LibraryStateContext = createContext<LibraryState | null>(null);
 const LibraryActionsContext = createContext<LibraryActions | null>(null);
 
 export function libraryReducer(state: LibraryState, action: LibraryAction): LibraryState {
+  const container = LibraryStateContainer.of(state);
+
   switch (action.type) {
     case 'set-library-tree':
-      return {
-        libraryTree: refreshRendererTree(action.tree),
-        currentLib: null,
-        currentNote: null
-      };
+      return container.setLibraryTree(action.tree).value();
     case 'set-current-lib':
-      return { ...state, currentLib: action.node };
+      return container.setCurrentLib(action.node).value();
     case 'set-current-note':
-      return { ...state, currentNote: action.node };
-    case 'fresh-tree': {
-      if (!state.libraryTree) {
-        return state;
-      }
-      const libraryTree = refreshRendererTree(state.libraryTree);
-      return syncSelectedNodes(state, libraryTree);
-    }
-    case 'update-node': {
-      const innerNode =
-        typeof action.newNode === 'function' ? action.newNode(state.currentLib, state.currentNote) : action.newNode;
-      if (!state.libraryTree || !innerNode) {
-        return state;
-      }
-      const libraryTree = updateRendererTree(state.libraryTree, innerNode, action.operation);
-      return syncSelectedNodes(state, libraryTree);
-    }
+      return container.setCurrentNote(action.node).value();
+    case 'fresh-tree':
+      return container.refreshTree().value();
+    case 'update-node':
+      return container.updateNode(action.newNode, action.operation).value();
+    case 'patch-current-note':
+      return container.patchCurrentNote(action.patch).value();
+    case 'patch-library-node':
+      return container.patchNode(action.node, action.patch).value();
+    case 'append-library-child':
+      return container.appendChild(action.parent, action.child).value();
     default:
       return state;
   }
@@ -108,6 +97,18 @@ export function LibraryProvider({ children }: React.PropsWithChildren) {
     dispatch({ type: 'update-node', newNode, operation: type });
   }, []);
 
+  const patchCurrentNote = useCallback((patch: LibraryNodePatch) => {
+    dispatch({ type: 'patch-current-note', patch });
+  }, []);
+
+  const patchLibraryNode = useCallback((node: RendererLibraryTree, patch: LibraryNodePatch) => {
+    dispatch({ type: 'patch-library-node', node, patch });
+  }, []);
+
+  const appendLibraryChild = useCallback((parent: RendererLibraryTree, child: RendererLibraryTree) => {
+    dispatch({ type: 'append-library-child', parent, child });
+  }, []);
+
   const actions = useMemo<LibraryActions>(
     () => ({
       setLibraryTree,
@@ -115,6 +116,9 @@ export function LibraryProvider({ children }: React.PropsWithChildren) {
       setCurrentNote,
       freshTree,
       updateRenderLibrary,
+      patchCurrentNote,
+      patchLibraryNode,
+      appendLibraryChild,
       createLibrary(name) {
         return rendererGateway.updateLib({ operate: 'add', type: 'folder', path: `./${name}` });
       },
@@ -136,7 +140,16 @@ export function LibraryProvider({ children }: React.PropsWithChildren) {
         return rendererGateway.updateLib({ operate: 'del', type: 'file', path: note.relativePath });
       }
     }),
-    [freshTree, setCurrentLib, setCurrentNote, setLibraryTree, updateRenderLibrary]
+    [
+      appendLibraryChild,
+      freshTree,
+      patchCurrentNote,
+      patchLibraryNode,
+      setCurrentLib,
+      setCurrentNote,
+      setLibraryTree,
+      updateRenderLibrary
+    ]
   );
 
   return (
@@ -160,12 +173,4 @@ export function useLibraryActions() {
     throw new Error('useLibraryActions must be used within LibraryProvider');
   }
   return actions;
-}
-
-function syncSelectedNodes(state: LibraryState, libraryTree: RendererLibraryTree): LibraryState {
-  return {
-    libraryTree,
-    currentLib: findRendererNodeById(libraryTree, state.currentLib?.id),
-    currentNote: findRendererNodeById(libraryTree, state.currentNote?.id)
-  };
 }

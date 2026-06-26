@@ -28,7 +28,7 @@ const Main: FC = () => {
   const { message } = App.useApp();
   const { currentNote } = useLibraryState();
   const [initialEditorState, setInitialEditorState] = useState<InitialEditorState>(null);
-  const { updateRenderLibrary } = useLibraryActions();
+  const { patchCurrentNote } = useLibraryActions();
   const { setEditorView, syncOutlineFromView } = useEditorActions();
   const cacheUpdateTimerRef = useRef<NodeJS.Timeout | null>(null);
   const cacheRevisionRef = useRef(0);
@@ -42,13 +42,13 @@ const Main: FC = () => {
     function transaction(action: EditorTransactionAction) {
       switch (action.type) {
         case 'updateDescription': {
-          updateRenderLibrary((_, preNote) => ({ ...preNote, description: action.doc }));
+          patchCurrentNote({ description: action.doc });
           break;
         }
       }
     }
     return debounceFn(transaction);
-  }, [updateRenderLibrary]);
+  }, [patchCurrentNote]);
 
   const headInProcess = useRef<string>('');
 
@@ -108,10 +108,7 @@ const Main: FC = () => {
         isModifiedRef.current = true;
 
         // Update UI state immediately (no delay)
-        updateRenderLibrary((_, preNote) => ({
-          ...preNote,
-          isChange: true
-        }));
+        patchCurrentNote({ isChange: true });
 
         // Update cache state immediately (no delay)
         updateFileCache(currentNote.relativePath, update.view.state.doc.toString(), true);
@@ -125,7 +122,7 @@ const Main: FC = () => {
     },
     [
       currentNote?.relativePath,
-      updateRenderLibrary,
+      patchCurrentNote,
       debounceEditorTransaction,
       updateFileCache,
       scheduleCacheUpdate,
@@ -145,6 +142,7 @@ const Main: FC = () => {
     }
 
     const content = editor.state.doc.toString();
+    const pathBeforeSave = prevNoteInfoRef.current.relativePath ?? currentNote.relativePath;
     if (cacheUpdateTimerRef.current) {
       clearTimeout(cacheUpdateTimerRef.current);
       cacheUpdateTimerRef.current = null;
@@ -154,17 +152,14 @@ const Main: FC = () => {
 
     nwSpin.loading(true);
     rendererGateway
-      .writeFile({ path: currentNote.relativePath, content, nameInRuntime: currentNote.name, revision: saveRevision })
+      .writeFile({ path: pathBeforeSave, content, nameInRuntime: currentNote.name, revision: saveRevision })
       .then(res => {
         if (res.status !== 0) {
           message.error(res.message || '保存文件失败');
           isModifiedRef.current = wasModifiedBeforeSave;
-          updateRenderLibrary((_, preNote) => ({
-            ...preNote,
-            isChange: wasModifiedBeforeSave
-          }));
+          patchCurrentNote({ isChange: wasModifiedBeforeSave });
           if (wasModifiedBeforeSave) {
-            updateFileCache(currentNote.relativePath, content, true);
+            updateFileCache(pathBeforeSave, content, true);
           }
           return;
         }
@@ -173,7 +168,7 @@ const Main: FC = () => {
         isModifiedRef.current = false;
 
         // Update relative path
-        const oldRelativePathToken = (currentNote.relativePath ?? '').split('/');
+        const oldRelativePathToken = pathBeforeSave.split('/');
         oldRelativePathToken.pop();
         oldRelativePathToken.push(currentNote.name);
         const newRelativePath = oldRelativePathToken.join('/');
@@ -182,19 +177,12 @@ const Main: FC = () => {
           ...prevNoteInfoRef.current,
           relativePath: newRelativePath
         };
-        // Update with isChange: false
-        const newAggregateNote = {
-          ...currentNote,
-          relativePath: newRelativePath,
-          isChange: false
-        };
-        updateRenderLibrary(newAggregateNote);
-        // pubNoteUpdate(newAggregateNote.note);
+        patchCurrentNote({ relativePath: newRelativePath, isChange: false });
       })
       .finally(() => {
         nwSpin.loading(false);
       });
-  }, [currentNote, editor, message, nextCacheRevision, updateFileCache, updateRenderLibrary]);
+  }, [currentNote, editor, message, nextCacheRevision, patchCurrentNote, updateFileCache]);
 
   useRendererCommand('write-file', handleWriteFile);
 
@@ -294,12 +282,14 @@ const Main: FC = () => {
               headInProcess.current = text;
             },
             onEnd: () => {
-              const newAggregateNote = {
-                ...currentNote,
-                name: headInProcess.current
-              };
-              // Update aggregateNote
-              updateRenderLibrary(newAggregateNote);
+              const nextName = headInProcess.current;
+              if (nextName !== currentNote.name) {
+                isModifiedRef.current = true;
+                patchCurrentNote({ name: nextName, isChange: true });
+                if (prevNoteInfoRef.current.relativePath && editor) {
+                  updateFileCache(prevNoteInfoRef.current.relativePath, editor.state.doc.toString(), true);
+                }
+              }
               // Cleaning the data in process
               headInProcess.current = '';
             }

@@ -3,6 +3,7 @@ import { ReadConfigResponse, RendererLibraryTree } from '_types';
 import type { RuntimeRecord } from '../modules/store';
 import { useLibraryActions, useLibraryState } from 'src/ui/domain/library';
 import { useRuntimeLayout } from 'src/ui/domain/runtime';
+import type { LibraryActions } from 'src/ui/domain/library';
 
 type RenderConfig = ReadConfigResponse;
 
@@ -17,6 +18,9 @@ export interface IHomeContext {
     newNode: RendererLibraryTree | ((preLib: RendererLibraryTree, preNote: RendererLibraryTree) => RendererLibraryTree),
     type?: 'append' | 'remove' | 'update'
   ) => void;
+  patchCurrentNote: LibraryActions['patchCurrentNote'];
+  patchLibraryNode: LibraryActions['patchLibraryNode'];
+  appendLibraryChild: LibraryActions['appendLibraryChild'];
   freshTree: () => void;
   runtimeConfig: RuntimeRecord;
 }
@@ -26,7 +30,8 @@ const HomeContext = createContext<IHomeContext>(null);
 export const useHomeContext = () => {
   const legacyContext = useContext(HomeContext);
   const { libraryTree } = useLibraryState();
-  const { updateRenderLibrary, freshTree } = useLibraryActions();
+  const { updateRenderLibrary, patchCurrentNote, patchLibraryNode, appendLibraryChild, freshTree } =
+    useLibraryActions();
   const { runtimeConfig } = useRuntimeLayout();
 
   return useMemo(
@@ -34,10 +39,22 @@ export const useHomeContext = () => {
       legacyContext || {
         libraryTree,
         updateRenderLibrary,
+        patchCurrentNote,
+        patchLibraryNode,
+        appendLibraryChild,
         freshTree,
         runtimeConfig
       },
-    [freshTree, legacyContext, libraryTree, runtimeConfig, updateRenderLibrary]
+    [
+      appendLibraryChild,
+      freshTree,
+      legacyContext,
+      libraryTree,
+      patchCurrentNote,
+      patchLibraryNode,
+      runtimeConfig,
+      updateRenderLibrary
+    ]
   );
 };
 

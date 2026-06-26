@@ -48,6 +48,8 @@ const LibrarySidebar: FC = () => {
     setCurrentLib,
     setCurrentNote,
     updateRenderLibrary,
+    patchLibraryNode,
+    appendLibraryChild,
     createLibrary,
     renameLibrary,
     deleteLibrary,
@@ -110,9 +112,7 @@ const LibrarySidebar: FC = () => {
                             renameLibrary(lib, newName)
                               .then(res => {
                                 if (res && res.status === 0) {
-                                  const runtimeRelativePath = `${lib.parent.relativePath}/${newName}`;
-                                  const newLib = { ...lib, name: newName, relativePath: runtimeRelativePath };
-                                  updateRenderLibrary(newLib);
+                                  patchLibraryNode(lib, { name: newName });
                                 }
                               })
                               .finally(() => {
@@ -197,7 +197,7 @@ const LibrarySidebar: FC = () => {
                       .then(res => {
                         const { data, status } = res;
                         if (status === 0 && isEffectObject(data)) {
-                          updateRenderLibrary({ ...data, parent: libraryTree } as RendererLibraryTree, 'append');
+                          appendLibraryChild(libraryTree, data as RendererLibraryTree);
                         }
                       })
                       .finally(() => {
@@ -243,7 +243,7 @@ const LibrarySidebar: FC = () => {
                   createNote(currentLib, name)
                     .then(res => {
                       if (res && res.status === 0) {
-                        updateRenderLibrary({ ...res.data, parent: currentLib } as RendererLibraryTree, 'append');
+                        appendLibraryChild(currentLib, res.data as RendererLibraryTree);
                       }
                     })
                     .finally(() => {
