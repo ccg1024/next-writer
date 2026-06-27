@@ -22,6 +22,48 @@
       overflow: auto;
       padding-bottom: 40px;
       flex-grow: 1;
+
+      ._next_writer-menu,
+      ._next_writer-menu-root,
+      ._next_writer-menu-item,
+      ._next_writer-menu-item-selected,
+      ._next_writer-menu-item-active {
+        outline: none;
+        box-shadow: none;
+      }
+
+      ._next_writer-menu:focus,
+      ._next_writer-menu:focus-visible,
+      ._next_writer-menu:focus-within,
+      ._next_writer-menu-root:focus,
+      ._next_writer-menu-root:focus-visible,
+      ._next_writer-menu-root:focus-within,
+      ._next_writer-menu-item:focus,
+      ._next_writer-menu-item:focus-visible,
+      ._next_writer-menu-item:focus-within {
+        outline: none;
+        box-shadow: none;
+      }
+
+      ._next_writer-menu-item {
+        &:hover,
+        &:active,
+        &._next_writer-menu-item-active {
+          background-color: rgba(0, 0, 0, 0.02);
+        }
+
+        &._next_writer-menu-item-selected,
+        &._next_writer-menu-item-selected:hover,
+        &._next_writer-menu-item-selected:active,
+        &._next_writer-menu-item-selected._next_writer-menu-item-active {
+          color: unset;
+          background-color: rgba(0, 0, 0, 0.06);
+        }
+
+        &::after {
+          border-color: transparent;
+        }
+      }
     }
 
     .library-sidebar-footer {
