@@ -7,6 +7,13 @@ import { rules } from './webpack.rules';
 
 const assets = ['img'];
 
+const styleLoader = {
+  loader: 'style-loader',
+  options: {
+    injectType: 'singletonStyleTag'
+  }
+};
+
 const copyPlugins = [
   new CopyWebpackPlugin({
     patterns: assets.map(asset => ({
@@ -19,11 +26,11 @@ const copyPlugins = [
 rules.push(
   {
     test: /\.css$/,
-    use: [{ loader: 'style-loader' }, { loader: 'css-loader' }]
+    use: [styleLoader, { loader: 'css-loader' }]
   },
   {
     test: /\.less$/i,
-    use: [{ loader: 'style-loader' }, { loader: 'css-loader' }, { loader: 'less-loader' }]
+    use: [styleLoader, { loader: 'css-loader' }, { loader: 'less-loader' }]
   }
 );
 
