@@ -11,6 +11,7 @@ export interface RendererIpcActionCallback {
 class RendererIpcListener {
   private callbacks: RendererIpcActionCallback[];
   private removeListener: CallableFunction;
+
   constructor() {
     this.callbacks = [];
     this.dispatch = this.dispatch.bind(this);

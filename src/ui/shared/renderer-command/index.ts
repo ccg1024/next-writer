@@ -1,6 +1,8 @@
 import { useEffect, useRef } from 'react';
 import { RendererListenerAction } from '_types';
-import rendererIpcListener, { RendererIpcActionCallback } from 'src/ui/modules/ipc';
+import rendererIpcListener, { RendererIpcActionCallback } from './renderer-ipc-listener';
+
+export { default as rendererIpcListener } from './renderer-ipc-listener';
 
 export function useRendererCommand(
   type: RendererListenerAction['type'],

@@ -18,11 +18,11 @@ Responsibility: React hook boundary for commands dispatched from the main proces
 
 Public API: `useRendererCommand(type, handler)`.
 
-Dependencies: Transitional `src/ui/modules/ipc` listener singleton.
+Dependencies: Internal `renderer-ipc-listener` singleton in the same shared boundary.
 
 Side-effect boundary: Registers/deregisters command callbacks during component lifecycle.
 
-Tests: Existing behavior is preserved through `use-renderer-ipc-action` compatibility; focused hook tests are still pending.
+Tests: Existing behavior is preserved through `useRendererCommand`; focused hook tests are still pending.
 
 ## `domain/library`
 
@@ -30,9 +30,9 @@ Responsibility: Own renderer library tree state, selected library, selected note
 
 Public API: `LibraryProvider`, `useLibraryState()`, `useLibraryActions()`, and exported `libraryReducer` for tests.
 
-Data flow: `Home` loads the initial tree through `rendererGateway.readConfig()` and calls `setLibraryTree`. `LibrarySidebar` reads state and calls domain actions for selection and library/note mutations. Tree updates reuse `refreshRendererTree`, `updateRendererTree`, and `findRendererNodeById`.
+Data flow: `Home` loads the initial tree through `rendererGateway.readConfig()` and calls `setLibraryTree`. `features/library-workspace` reads state and calls domain actions for selection and library/note mutations. Tree updates reuse `refreshRendererTree`, `updateRendererTree`, and `findRendererNodeById`.
 
-Side-effect boundary: Domain mutation actions call `rendererGateway.updateLib`; UI-specific confirmation, validation messages, and loading state remain in the sidebar during this migration slice.
+Side-effect boundary: Domain mutation actions call `rendererGateway.updateLib`; UI-specific confirmation, validation messages, and loading state remain in the library workspace feature during this migration slice.
 
 Tests: `src/ui/domain/library/index.test.tsx` covers initial runtime field generation, selected-node sync after update, and append/remove operations.
 
@@ -67,8 +67,6 @@ Tests: Pending editor session and outline command tests.
 Manual acceptance: Open a note with headings, edit headings, toggle the outline, and click headings to jump the editor.
 
 ## Transitional Compatibility
-
-`src/ui/libs/main-process/index.ts` now delegates to `rendererGateway`.
 
 `src/ui/hooks/use-renderer-ipc-action.ts` now delegates to `useRendererCommand`.
 

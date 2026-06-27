@@ -14,7 +14,7 @@ Rebuild `src/ui` toward domain providers, shared side-effect adapters, and featu
 - [x] Extract editor outline state and scroll command into `EditorProvider`.
 - [x] Rewire `Home`, `LibrarySidebar`, `Main`, and `Outline` to the new providers.
 - [x] Add focused reducer coverage for migrated library state.
-- [ ] Split `LibrarySidebar` into feature container/presentational components.
+- [x] Split `LibrarySidebar` into feature container/presentational components.
 - [ ] Move editor read/cache/save/rename flows into dedicated editor use-cases.
 - [ ] Split CodeMirror extensions, lifecycle, theme, and mouse aspects under `editor/codemirror`.
 - [ ] Remove transitional `HomeContext`, `messagePublish`, and `renderStore` compatibility usage after all consumers migrate.
@@ -24,17 +24,23 @@ Rebuild `src/ui` toward domain providers, shared side-effect adapters, and featu
 
 - `src/ui/shared/ipc/renderer-gateway.ts`
 - `src/ui/shared/renderer-command/index.ts`
+- `src/ui/shared/renderer-command/renderer-ipc-listener.ts`
 - `src/ui/shared/async/use-async-action.ts`
 - `src/ui/domain/library/index.tsx`
 - `src/ui/domain/library/index.test.tsx`
 - `src/ui/domain/runtime/index.tsx`
 - `src/ui/domain/editor/index.tsx`
+- `src/ui/features/library-workspace/index.ts`
+- `src/ui/features/library-workspace/library-sidebar.tsx`
+- `src/ui/features/library-workspace/library-list.tsx`
+- `src/ui/features/library-workspace/note-list.tsx`
+- `src/ui/features/library-workspace/note-list-item.tsx`
+- `src/ui/features/library-workspace/rename-modal.tsx`
+- `src/ui/features/library-workspace/library-tree-selectors.ts`
 - `src/ui/home/index.tsx`
 - `src/ui/home/module.context.ts`
-- `src/ui/modules/library-sidebar/index.tsx`
 - `src/ui/modules/main/index.tsx`
 - `src/ui/modules/outline/index.tsx`
-- `src/ui/libs/main-process/index.ts`
 - `src/ui/hooks/use-renderer-ipc-action.ts`
 - `src/ui/app.tsx`
 
@@ -42,7 +48,7 @@ Rebuild `src/ui` toward domain providers, shared side-effect adapters, and featu
 
 - `messagePublish` is still emitted from `Main` for migration compatibility; no migrated consumer depends on it.
 - `renderStore` is still maintained by `useCodemirror` and `Home` for transitional compatibility.
-- Library mutations are now domain actions, but loading/message/modal UI feedback is still composed in `LibrarySidebar`.
+- Library mutations are now domain actions, but loading/message/modal UI feedback is still composed in `features/library-workspace`.
 - `Main` still owns editor cache/save/read effects; those should move into editor use-cases next.
 
 ## Verification

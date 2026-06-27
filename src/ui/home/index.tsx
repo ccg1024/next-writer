@@ -2,10 +2,9 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { message } from 'antd';
 import { ReadConfigResponse, RendererRootLibraryTree } from '_types';
 import { BaseLayout } from '../modules/layout';
-import LibrarySidebar from '../modules/library-sidebar';
+import LibrarySidebar from '../features/library-workspace';
 import Main from '../modules/main';
 import { ThemeProvider } from './module.context';
-import rendererIpcListener from '../modules/ipc';
 import PluginGlobal from '../plugins/global';
 import Outline from '../modules/outline';
 import rendererGateway from 'src/ui/shared/ipc/renderer-gateway';
@@ -13,6 +12,7 @@ import renderStore from '../modules/store';
 import { LibraryProvider, useLibraryActions } from 'src/ui/domain/library';
 import { RuntimeProvider, useRuntimeLayout } from 'src/ui/domain/runtime';
 import { EditorProvider } from 'src/ui/domain/editor';
+import { rendererIpcListener } from 'src/ui/shared/renderer-command';
 
 import './index.css';
 

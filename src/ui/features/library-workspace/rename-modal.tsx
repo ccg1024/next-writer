@@ -1,17 +1,13 @@
 import React, { useImperativeHandle, useState } from 'react';
-import { Modal, Form, Input, Button } from 'antd';
+import { Button, Form, Input, Modal } from 'antd';
 import { getPromise } from 'src/tools/utils';
 
-type SideBarModalConfig = {
+type RenameModalConfig = {
   title?: React.ReactNode;
 };
 
-export interface ExposedHandler {
-  show(
-    oldName: string,
-    callback?: (newName: string) => void,
-    config?: SideBarModalConfig
-  ): Promise<{ newName: string }>;
+export interface ForwardRenameHandler {
+  show(oldName: string, callback?: (newName: string) => void, config?: RenameModalConfig): Promise<{ newName: string }>;
 }
 
 type StoreCallback = (name: string) => void;
@@ -26,12 +22,11 @@ const renameModalStore: {
   callback: null
 };
 
-const RenameModal: React.ForwardRefRenderFunction<ExposedHandler> = (_, ref) => {
+const RenameModal: React.ForwardRefRenderFunction<ForwardRenameHandler> = (_, ref) => {
   const [open, setOpen] = useState(false);
-  const [config, setConfig] = useState<SideBarModalConfig>(null);
+  const [config, setConfig] = useState<RenameModalConfig>(null);
   const [form] = Form.useForm();
 
-  // Exposing handler
   useImperativeHandle(
     ref,
     () => ({
@@ -99,4 +94,4 @@ const RenameModal: React.ForwardRefRenderFunction<ExposedHandler> = (_, ref) => 
   );
 };
 
-export const FrowardRenameModal = React.forwardRef(RenameModal);
+export const ForwardRenameModal = React.forwardRef(RenameModal);
