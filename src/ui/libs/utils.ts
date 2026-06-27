@@ -1,10 +1,5 @@
-import { isEffectArray, isEffectObject, isTrulyEmpty } from 'src/tools/utils';
-import { RendererLibraryTree } from '_types';
-
-// Mock a unique id
-function generateUniqueId(slate: string) {
-  return `${Math.random().toString(36).substring(2, 15)}_${new Date().valueOf().toString(36)}_${slate || ''}`;
-}
+import { isEffectArray, isEffectObject } from 'src/tools/utils';
+import { RendererLibraryNode, RendererLibraryTree } from '_types';
 
 /**
  * Make a debounce function.
@@ -25,24 +20,13 @@ export function debounceFn<F extends (...args: unknown[]) => unknown>(fn: F, del
 /**
  * Generate a unique id for each lib struct (description of the file or folder) at runtime
  */
-export function generateRuntimeInfo(libTree: RendererLibraryTree, parent: RendererLibraryTree | null) {
+export function generateRuntimeInfo(libTree: RendererLibraryNode, parent: RendererLibraryNode | null) {
   if (isEffectObject(libTree)) {
-    // The first level of LibraryTree struct is point to root folder,
-    // for example, the default root is ~/Documents/nwriter/
-    // the libTree is generated as {children: [{name: 'custom-folder-name'}]}
-    if (isTrulyEmpty(libTree.relativePath)) {
-      libTree.relativePath = parent ? `${parent.relativePath}/${libTree.name}` : `.`;
-    }
-
-    if (isTrulyEmpty(libTree.parent)) {
+    if ('name' in libTree) {
       libTree.parent = parent;
     }
 
-    if (isTrulyEmpty(libTree.id)) {
-      libTree.id = generateUniqueId(libTree.relativePath);
-    }
-
-    if (isEffectArray(libTree.children)) {
+    if (isEffectArray<RendererLibraryTree>(libTree.children)) {
       libTree.children.forEach(child => generateRuntimeInfo(child, libTree));
     }
   }

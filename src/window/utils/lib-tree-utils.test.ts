@@ -1,6 +1,14 @@
 /// <reference types="jest" />
 
-import { extractTargetAndParent, getParentPathTokens, getTargetName, parsePathInfo } from './lib-tree-utils';
+import { ROOT_LIBRARY_ID } from 'src/config/env';
+import {
+  extractTargetAndParent,
+  getParentPathTokens,
+  getTargetName,
+  normalizeLibraryTree,
+  parsePathInfo,
+  resolveLibraryNodePath
+} from './lib-tree-utils';
 import type IFileSystem from '../interface/file-system';
 
 describe('lib-tree-utils', () => {
@@ -39,5 +47,67 @@ describe('lib-tree-utils', () => {
       parentPathTokens: ['docs', 'drafts']
     });
     expect(pathTokens).toEqual(['docs', 'drafts']);
+  });
+
+  it('normalizes old library records with persistent ids', () => {
+    const migration = normalizeLibraryTree({
+      children: [
+        {
+          name: 'docs',
+          type: 'folder',
+          birthTime: '',
+          modifiedTime: '',
+          relativePath: './docs',
+          children: [
+            {
+              name: 'readme',
+              type: 'file',
+              birthTime: '',
+              modifiedTime: '',
+              relativePath: './docs/readme',
+              children: []
+            }
+          ]
+        }
+      ]
+    });
+
+    expect(migration.migrated).toBe(true);
+    expect(migration.tree.id).toBe(ROOT_LIBRARY_ID);
+    expect(migration.tree.children[0].id).toEqual(expect.any(String));
+    expect(migration.tree.children[0].children[0].id).toEqual(expect.any(String));
+  });
+
+  it('resolves a node id to the current filesystem path', () => {
+    const resolved = resolveLibraryNodePath(
+      {
+        id: ROOT_LIBRARY_ID,
+        children: [
+          {
+            id: 'folder-id',
+            name: 'archive',
+            type: 'folder',
+            birthTime: '',
+            modifiedTime: '',
+            children: [
+              {
+                id: 'note-id',
+                name: 'note',
+                type: 'file',
+                birthTime: '',
+                modifiedTime: '',
+                children: []
+              }
+            ]
+          }
+        ]
+      },
+      'note-id',
+      '/workspace'
+    );
+
+    expect(resolved.pathTokens).toEqual(['archive', 'note']);
+    expect(resolved.parentPathTokens).toEqual(['archive']);
+    expect(resolved.fullPath).toBe('/workspace/archive/note.md');
   });
 });

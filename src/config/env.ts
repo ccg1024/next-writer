@@ -17,6 +17,9 @@ export const ROOT_DIR_NAME = IS_DEV ? 'nwriter-dev' : 'nwriter';
 // Default library info; ~/Documents/${ROOT_DIR_NAME}/${ROOT_CONFIG_NAME}
 export const ROOT_CONFIG_NAME = '.nwriter.info.json';
 
+// Stable identity of the in-memory library root node.
+export const ROOT_LIBRARY_ID = '__root__';
+
 // The maximum length of the file description
 export const MAX_FILE_DESCRIPTION_LENGTH = 100;
 

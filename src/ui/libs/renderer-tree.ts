@@ -1,44 +1,37 @@
-import { RendererLibraryTree } from '_types';
+import { RendererLibraryNode, RendererLibraryTree, RendererRootLibraryTree } from '_types';
 import { isEffectArray, isEffectObject, isTrulyEmpty } from 'src/tools/utils';
-import { generateRuntimeInfo } from './utils';
 
 export type RendererTreeOperation = 'append' | 'remove' | 'update';
 
-export function refreshRendererTree(root: RendererLibraryTree): RendererLibraryTree {
-  const nextRoot = cloneRendererNode(root, null);
-  generateRuntimeInfo(nextRoot, null);
-  return nextRoot;
+type TransientState = Pick<RendererLibraryTree, 'description' | 'isChange'>;
+
+export function refreshRendererTree(
+  root: RendererRootLibraryTree,
+  previousRoot?: RendererRootLibraryTree
+): RendererRootLibraryTree {
+  const transientState = collectTransientState(previousRoot);
+  return cloneRendererRoot(root, transientState);
 }
 
 export function updateRendererTree(
-  root: RendererLibraryTree,
+  root: RendererRootLibraryTree,
   target: RendererLibraryTree,
   operation: RendererTreeOperation
-): RendererLibraryTree {
+): RendererRootLibraryTree {
   if (!isEffectObject(root) || !isEffectObject(target)) {
     return root;
   }
 
-  const nextRoot = applyRendererTreeOperation(root, target, operation, null);
-  generateRuntimeInfo(nextRoot, null);
-  return nextRoot;
+  return applyRendererRootOperation(root, target, operation);
 }
 
-export function findRendererNodeById(root: RendererLibraryTree, id?: string): RendererLibraryTree | null {
+export function findRendererNodeById(root: RendererRootLibraryTree, id?: string): RendererLibraryTree | null {
   if (isTrulyEmpty(id) || !isEffectObject(root)) {
     return null;
   }
 
-  if (root.id === id) {
-    return root;
-  }
-
-  if (!isEffectArray(root.children)) {
-    return null;
-  }
-
   for (const child of root.children) {
-    const target = findRendererNodeById(child, id);
+    const target = findRendererTreeNodeById(child, id);
     if (target) {
       return target;
     }
@@ -47,11 +40,36 @@ export function findRendererNodeById(root: RendererLibraryTree, id?: string): Re
   return null;
 }
 
-function applyRendererTreeOperation(
+function applyRendererRootOperation(
+  root: RendererRootLibraryTree,
+  target: RendererLibraryTree,
+  operation: RendererTreeOperation
+): RendererRootLibraryTree {
+  const nextRoot: RendererRootLibraryTree = {
+    id: root.id,
+    children: []
+  };
+  const sourceChildren = isEffectArray(root.children) ? root.children : [];
+  nextRoot.children = sourceChildren.reduce<RendererLibraryTree[]>((children, child) => {
+    if (operation === 'remove' && child.id === target.id) {
+      return children;
+    }
+    children.push(applyRendererNodeOperation(child, target, operation, nextRoot));
+    return children;
+  }, []);
+
+  if (operation === 'append' && target.parent?.id === root.id) {
+    nextRoot.children.push(cloneRendererNode(target, nextRoot));
+  }
+
+  return nextRoot;
+}
+
+function applyRendererNodeOperation(
   node: RendererLibraryTree,
   target: RendererLibraryTree,
   operation: RendererTreeOperation,
-  parent: RendererLibraryTree | null
+  parent: RendererLibraryNode
 ): RendererLibraryTree {
   const source = operation === 'update' && node.id === target.id ? target : node;
   const nextNode = cloneRendererNodeWithoutChildren(source, parent);
@@ -60,7 +78,7 @@ function applyRendererTreeOperation(
     if (operation === 'remove' && child.id === target.id) {
       return children;
     }
-    children.push(applyRendererTreeOperation(child, target, operation, nextNode));
+    children.push(applyRendererNodeOperation(child, target, operation, nextNode));
     return children;
   }, []);
 
@@ -72,21 +90,90 @@ function applyRendererTreeOperation(
   return nextNode;
 }
 
-function cloneRendererNode(node: RendererLibraryTree, parent: RendererLibraryTree | null): RendererLibraryTree {
-  const nextNode = cloneRendererNodeWithoutChildren(node, parent);
+function cloneRendererRoot(
+  root: RendererRootLibraryTree,
+  transientState: Map<string, TransientState> = new Map()
+): RendererRootLibraryTree {
+  const nextRoot: RendererRootLibraryTree = {
+    id: root.id,
+    children: []
+  };
+  const children = isEffectArray(root.children) ? root.children : [];
+  nextRoot.children = children.map(child => cloneRendererNode(child, nextRoot, transientState));
+  return nextRoot;
+}
+
+function cloneRendererNode(
+  node: RendererLibraryTree,
+  parent: RendererLibraryNode,
+  transientState: Map<string, TransientState> = new Map()
+): RendererLibraryTree {
+  const nextNode = cloneRendererNodeWithoutChildren(node, parent, transientState);
   const children = isEffectArray(node.children) ? node.children : [];
-  nextNode.children = children.map(child => cloneRendererNode(child, nextNode));
+  nextNode.children = children.map(child => cloneRendererNode(child, nextNode, transientState));
   return nextNode;
 }
 
 function cloneRendererNodeWithoutChildren(
   node: RendererLibraryTree,
-  parent: RendererLibraryTree | null
+  parent: RendererLibraryNode,
+  transientState: Map<string, TransientState> = new Map()
 ): RendererLibraryTree {
-  return {
+  const transient = transientState.get(node.id);
+  const nextNode: RendererLibraryTree = {
     ...node,
-    parent: parent || undefined,
-    relativePath: parent ? `${parent.relativePath}/${node.name}` : node.relativePath || '.',
+    parent,
     children: []
   };
+
+  if (transient?.isChange !== undefined) {
+    nextNode.isChange = transient.isChange;
+  }
+
+  if (transient?.isChange && transient.description !== undefined) {
+    nextNode.description = transient.description;
+  }
+
+  return nextNode;
+}
+
+function findRendererTreeNodeById(node: RendererLibraryTree, id: string): RendererLibraryTree | null {
+  if (node.id === id) {
+    return node;
+  }
+
+  if (!isEffectArray(node.children)) {
+    return null;
+  }
+
+  for (const child of node.children) {
+    const target = findRendererTreeNodeById(child, id);
+    if (target) {
+      return target;
+    }
+  }
+
+  return null;
+}
+
+function collectTransientState(root?: RendererRootLibraryTree): Map<string, TransientState> {
+  const map = new Map<string, TransientState>();
+
+  if (!root) {
+    return map;
+  }
+
+  root.children.forEach(child => collectTransientNodeState(child, map));
+  return map;
+}
+
+function collectTransientNodeState(node: RendererLibraryTree, map: Map<string, TransientState>): void {
+  if (node.isChange !== undefined) {
+    map.set(node.id, {
+      isChange: node.isChange,
+      description: node.description
+    });
+  }
+
+  node.children.forEach(child => collectTransientNodeState(child, map));
 }

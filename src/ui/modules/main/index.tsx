@@ -28,14 +28,14 @@ const Main: FC = () => {
   const { message } = App.useApp();
   const { currentNote } = useLibraryState();
   const [initialEditorState, setInitialEditorState] = useState<InitialEditorState>(null);
-  const { patchCurrentNote } = useLibraryActions();
+  const { patchCurrentNote, renameNode, setLibraryTree } = useLibraryActions();
   const { setEditorView, syncOutlineFromView } = useEditorActions();
   const cacheUpdateTimerRef = useRef<NodeJS.Timeout | null>(null);
   const cacheRevisionRef = useRef(0);
   // Track whether current file is already marked as modified
   const isModifiedRef = useRef<boolean>(false);
   // Track previous file info for cleanup on switch
-  const prevNoteInfoRef = useRef<{ relativePath?: string; id?: string }>({});
+  const prevNoteInfoRef = useRef<{ id?: string }>({});
 
   // 处理自定义编辑器事件
   const debounceEditorTransaction = useMemo(() => {
@@ -58,9 +58,9 @@ const Main: FC = () => {
   }, []);
 
   const updateFileCache = useCallback(
-    (path: string, content: string, isChange: boolean) =>
+    (id: string, content: string, isChange: boolean) =>
       rendererGateway.updateCache({
-        path,
+        id,
         content,
         isChange,
         revision: nextCacheRevision()
@@ -76,14 +76,14 @@ const Main: FC = () => {
 
       cacheUpdateTimerRef.current = setTimeout(() => {
         const content = view.state.doc.toString();
-        const path = currentNote?.relativePath;
-        if (path) {
-          updateFileCache(path, content, isModifiedRef.current);
+        const id = currentNote?.id;
+        if (id) {
+          updateFileCache(id, content, isModifiedRef.current);
         }
         cacheUpdateTimerRef.current = null;
       }, 1000);
     },
-    [currentNote?.relativePath, updateFileCache]
+    [currentNote?.id, updateFileCache]
   );
 
   const onEditorDocChange = useCallback(
@@ -104,14 +104,14 @@ const Main: FC = () => {
       });
 
       // Immediate state update: only if transitioning to modified
-      if (!isModifiedRef.current && currentNote?.relativePath) {
+      if (!isModifiedRef.current && currentNote?.id) {
         isModifiedRef.current = true;
 
         // Update UI state immediately (no delay)
         patchCurrentNote({ isChange: true });
 
         // Update cache state immediately (no delay)
-        updateFileCache(currentNote.relativePath, update.view.state.doc.toString(), true);
+        updateFileCache(currentNote.id, update.view.state.doc.toString(), true);
       }
 
       scheduleCacheUpdate(update.view);
@@ -121,7 +121,7 @@ const Main: FC = () => {
       messagePublish.pub('docChanged', update.view);
     },
     [
-      currentNote?.relativePath,
+      currentNote?.id,
       patchCurrentNote,
       debounceEditorTransaction,
       updateFileCache,
@@ -137,12 +137,12 @@ const Main: FC = () => {
   const [divRef, editor] = useCodemirror<HTMLDivElement>({ initialEditorState, onEditorDocChange, onEditorChange });
 
   const handleWriteFile = useCallback(() => {
-    if (!editor || !currentNote?.relativePath) {
+    if (!editor || !currentNote?.id) {
       return;
     }
 
     const content = editor.state.doc.toString();
-    const pathBeforeSave = prevNoteInfoRef.current.relativePath ?? currentNote.relativePath;
+    const noteId = currentNote.id;
     if (cacheUpdateTimerRef.current) {
       clearTimeout(cacheUpdateTimerRef.current);
       cacheUpdateTimerRef.current = null;
@@ -152,37 +152,27 @@ const Main: FC = () => {
 
     nwSpin.loading(true);
     rendererGateway
-      .writeFile({ path: pathBeforeSave, content, nameInRuntime: currentNote.name, revision: saveRevision })
+      .writeFile({ id: noteId, content, revision: saveRevision })
       .then(res => {
         if (res.status !== 0) {
           message.error(res.message || '保存文件失败');
           isModifiedRef.current = wasModifiedBeforeSave;
           patchCurrentNote({ isChange: wasModifiedBeforeSave });
           if (wasModifiedBeforeSave) {
-            updateFileCache(pathBeforeSave, content, true);
+            updateFileCache(noteId, content, true);
           }
           return;
         }
 
         // Reset modified state immediately
         isModifiedRef.current = false;
-
-        // Update relative path
-        const oldRelativePathToken = pathBeforeSave.split('/');
-        oldRelativePathToken.pop();
-        oldRelativePathToken.push(currentNote.name);
-        const newRelativePath = oldRelativePathToken.join('/');
-        // Update prevNoteInfoRef with new path after save
-        prevNoteInfoRef.current = {
-          ...prevNoteInfoRef.current,
-          relativePath: newRelativePath
-        };
-        patchCurrentNote({ relativePath: newRelativePath, isChange: false });
+        setLibraryTree(res.data);
+        patchCurrentNote({ isChange: false });
       })
       .finally(() => {
         nwSpin.loading(false);
       });
-  }, [currentNote, editor, message, nextCacheRevision, patchCurrentNote, updateFileCache]);
+  }, [currentNote, editor, message, nextCacheRevision, patchCurrentNote, setLibraryTree, updateFileCache]);
 
   useRendererCommand('write-file', handleWriteFile);
 
@@ -197,7 +187,7 @@ const Main: FC = () => {
 
     let shouldUpdate = true;
     const readNote = async () => {
-      const { status, data } = await rendererGateway.readFile({ path: currentNote.relativePath });
+      const { status, data } = await rendererGateway.readFile({ id: currentNote.id });
       if (shouldUpdate && status === 0) {
         setInitialEditorState({ initDoc: data.content });
       }
@@ -218,7 +208,6 @@ const Main: FC = () => {
     // Initialize cache info when editor mounts or note switches
     isModifiedRef.current = currentNote.isChange ?? false;
     prevNoteInfoRef.current = {
-      relativePath: currentNote.relativePath,
       id: currentNote.id
     };
 
@@ -230,8 +219,8 @@ const Main: FC = () => {
       }
 
       // Always update cache with latest content when switching files
-      if (prevNoteInfoRef.current.relativePath) {
-        updateFileCache(prevNoteInfoRef.current.relativePath, editor.state.doc.toString(), isModifiedRef.current);
+      if (prevNoteInfoRef.current.id) {
+        updateFileCache(prevNoteInfoRef.current.id, editor.state.doc.toString(), isModifiedRef.current);
       }
     };
   }, [editor, updateFileCache]);
@@ -282,13 +271,20 @@ const Main: FC = () => {
               headInProcess.current = text;
             },
             onEnd: () => {
-              const nextName = headInProcess.current;
+              const nextName = headInProcess.current.trim();
               if (nextName !== currentNote.name) {
-                isModifiedRef.current = true;
-                patchCurrentNote({ name: nextName, isChange: true });
-                if (prevNoteInfoRef.current.relativePath && editor) {
-                  updateFileCache(prevNoteInfoRef.current.relativePath, editor.state.doc.toString(), true);
-                }
+                nwSpin.loading(true);
+                renameNode(currentNote, nextName)
+                  .then(res => {
+                    if (res.status === 0) {
+                      setLibraryTree(res.data);
+                    } else {
+                      message.error(res.message || '重命名失败');
+                    }
+                  })
+                  .finally(() => {
+                    nwSpin.loading(false);
+                  });
               }
               // Cleaning the data in process
               headInProcess.current = '';

@@ -68,7 +68,7 @@ describe('IpcRouter', () => {
     senderValidator.isTrusted.mockReturnValue(false);
     router.registerHandler(handler);
 
-    await expect(router.listener(event, { type: IPC_CHANNEL.READ_FILE, data: { path: './note' } })).resolves.toEqual({
+    await expect(router.listener(event, { type: IPC_CHANNEL.READ_FILE, data: { id: 'note-id' } })).resolves.toEqual({
       status: -1,
       data: null,
       message: 'Untrusted IPC sender.'
@@ -80,12 +80,12 @@ describe('IpcRouter', () => {
     const handler = createHandler(IPC_CHANNEL.READ_FILE, { content: 'content' });
     router.registerHandler(handler);
 
-    await expect(router.listener(event, { type: IPC_CHANNEL.READ_FILE, data: { path: './note' } })).resolves.toEqual({
+    await expect(router.listener(event, { type: IPC_CHANNEL.READ_FILE, data: { id: 'note-id' } })).resolves.toEqual({
       status: 0,
       data: { content: 'content' }
     });
     expect(handler.handle).toHaveBeenCalledWith(
-      { path: './note' },
+      { id: 'note-id' },
       expect.objectContaining({ event, senderFrame: null, window: null })
     );
   });
@@ -95,7 +95,7 @@ describe('IpcRouter', () => {
     router.registerHandler(handler);
 
     await expect(
-      router.listener(event, { type: IPC_CHANNEL.WRITE_FILE, data: { path: './note', content: 'content' } })
+      router.listener(event, { type: IPC_CHANNEL.WRITE_FILE, data: { id: 'note-id', content: 'content' } })
     ).resolves.toEqual({
       status: 0,
       data: null
@@ -107,7 +107,7 @@ describe('IpcRouter', () => {
     (handler.handle as jest.Mock).mockRejectedValueOnce(new Error('read failed'));
     router.registerHandler(handler);
 
-    await expect(router.listener(event, { type: IPC_CHANNEL.READ_FILE, data: { path: './note' } })).resolves.toEqual({
+    await expect(router.listener(event, { type: IPC_CHANNEL.READ_FILE, data: { id: 'note-id' } })).resolves.toEqual({
       status: -1,
       data: null,
       message: 'read failed'

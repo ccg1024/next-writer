@@ -1,7 +1,8 @@
 /// <reference types="jest" />
 
 import 'reflect-metadata';
-import type { LibraryTree } from '_types';
+import { ROOT_LIBRARY_ID } from 'src/config/env';
+import type { LibraryTree, RootLibraryTree } from '_types';
 import LibraryTreeStore from './library-tree-store';
 
 describe('LibraryTreeStore', () => {
@@ -42,18 +43,16 @@ describe('LibraryTreeStore', () => {
   });
 });
 
-function createTree(fileNames: string[]): LibraryTree {
+function createTree(fileNames: string[]): RootLibraryTree {
   return {
-    name: 'root',
-    type: 'folder',
-    birthTime: '',
-    modifiedTime: '',
+    id: ROOT_LIBRARY_ID,
     children: fileNames.map(createFileNode)
   };
 }
 
 function createFileNode(name: string): LibraryTree {
   return {
+    id: `${name}-id`,
     name,
     type: 'file',
     birthTime: '',

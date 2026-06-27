@@ -1,5 +1,5 @@
 import { inject, injectable } from 'inversify';
-import { WriteFileRequest } from '_types';
+import { RootLibraryTree, WriteFileRequest } from '_types';
 import IDocumentService from '../../interface/document-service';
 import IIpcHandler from '../../interface/ipc-handler';
 import { TYPES } from '../../types';
@@ -11,9 +11,8 @@ class WriteFileHandler implements IIpcHandler<typeof IPC_CHANNEL.WRITE_FILE> {
 
   constructor(@inject(TYPES.IDocumentService) private documentService: IDocumentService) {}
 
-  async handle(reqData: WriteFileRequest): Promise<null> {
-    await this.documentService.writeFile(reqData);
-    return null;
+  async handle(reqData: WriteFileRequest): Promise<RootLibraryTree> {
+    return this.documentService.writeFile(reqData);
   }
 }
 

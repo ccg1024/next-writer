@@ -7,6 +7,7 @@ import IConfigService from '../interface/config-service';
 import IFileSystem from '../interface/file-system';
 import ILibraryTreeStore from '../interface/library-tree-store';
 import IWorkspaceService from '../interface/workspace-service';
+import { normalizeLibraryTree, persistLibTree } from '../utils/lib-tree-utils';
 import { TYPES } from '../types';
 
 @injectable()
@@ -54,12 +55,18 @@ class WorkspaceService implements IWorkspaceService {
 
     const recordPath = nodePath.resolve(realRoot, ROOT_CONFIG_NAME);
     let buffer = JSON.stringify({ children: [] });
+    const recordExists = await this.fileSystem.exists(recordPath);
 
-    if (await this.fileSystem.exists(recordPath)) {
+    if (recordExists) {
       buffer = await this.fileSystem.readFile(recordPath, { encoding: 'utf8' });
     }
 
-    this.libraryTreeStore.setTree(JSON.parse(buffer));
+    const migration = normalizeLibraryTree(JSON.parse(buffer));
+    this.libraryTreeStore.setTree(migration.tree);
+
+    if (!recordExists || migration.migrated) {
+      await persistLibTree(migration.tree, realRoot, this.fileSystem);
+    }
   }
 }
 

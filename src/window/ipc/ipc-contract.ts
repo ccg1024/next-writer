@@ -3,6 +3,7 @@ import type {
   ReadConfigResponse,
   ReadFileRequest,
   ReadFileResponse,
+  RootLibraryTree,
   UpdateCacheRequest,
   UpdateLibRequest,
   UpdateLibResponse,
@@ -40,8 +41,8 @@ export type IpcRequestMap = {
 export type IpcResponseMap = {
   [IPC_CHANNEL.READ_CONFIG]: ReadConfigResponse;
   [IPC_CHANNEL.READ_FILE]: ReadFileResponse;
-  [IPC_CHANNEL.UPDATE_LIB]: UpdateLibResponse | Record<string, never>;
-  [IPC_CHANNEL.WRITE_FILE]: null;
+  [IPC_CHANNEL.UPDATE_LIB]: UpdateLibResponse;
+  [IPC_CHANNEL.WRITE_FILE]: RootLibraryTree;
   [IPC_CHANNEL.RUNTIME]: RuntimeConfigResponse;
   [IPC_CHANNEL.UPDATE_CACHE]: { success: boolean };
 };

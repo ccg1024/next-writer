@@ -1,9 +1,9 @@
-import type { LibraryTree } from '_types';
+import type { RootLibraryTree } from '_types';
 
 interface ILibraryTreeStore {
-  setTree(tree: LibraryTree): void;
-  getTree(): LibraryTree;
-  updateTree<T>(updater: (tree: LibraryTree) => T | Promise<T>): Promise<T>;
+  setTree(tree: RootLibraryTree): void;
+  getTree(): RootLibraryTree;
+  updateTree<T>(updater: (tree: RootLibraryTree) => T | Promise<T>): Promise<T>;
 }
 
 export default ILibraryTreeStore;

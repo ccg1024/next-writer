@@ -3,8 +3,9 @@
 
 import { render, screen } from '@testing-library/react';
 import React from 'react';
+import { ROOT_LIBRARY_ID } from 'src/config/env';
 import { debounceFn, generateRuntimeInfo } from './utils';
-import type { RendererLibraryTree } from '_types';
+import type { RendererRootLibraryTree } from '_types';
 
 describe('renderer test environment', () => {
   it('renders React components with jest-dom matchers', () => {
@@ -33,13 +34,11 @@ describe('ui utils', () => {
   });
 
   it('generates renderer runtime fields recursively', () => {
-    const libTree: RendererLibraryTree = {
-      name: 'root',
-      type: 'folder' as const,
-      birthTime: '2024-01-01',
-      modifiedTime: '2024-01-01',
+    const libTree: RendererRootLibraryTree = {
+      id: ROOT_LIBRARY_ID,
       children: [
         {
+          id: 'draft-id',
           name: 'draft.md',
           type: 'file' as const,
           birthTime: '2024-01-01',
@@ -51,9 +50,7 @@ describe('ui utils', () => {
 
     generateRuntimeInfo(libTree, null);
 
-    expect(libTree.relativePath).toBe('.');
-    expect(libTree.id).toEqual(expect.any(String));
-    expect(libTree.children[0].relativePath).toBe('./draft.md');
+    expect(libTree.id).toBe(ROOT_LIBRARY_ID);
     expect(libTree.children[0].parent).toBe(libTree);
   });
 });

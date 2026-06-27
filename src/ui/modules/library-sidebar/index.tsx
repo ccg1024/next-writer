@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { FC, useCallback, useRef } from 'react';
 import { isEffectArray, isEffectObject } from 'src/tools/utils';
 import { WindowDragBox } from 'src/ui/components/drag';
-import { RendererLibraryTree } from '_types';
+import { RendererLibraryTree, RendererRootLibraryTree } from '_types';
 import { VerticalEmpty } from 'src/ui/components/antd/preset/empty';
 import { useRunmode } from 'src/ui/hooks/useRunmode';
 import { nwSyntaxHighlight } from 'src/ui/hooks/useCodemirror';
@@ -23,19 +23,24 @@ export interface LibrarySidebarExpoused {
   updateLibItem(libItem: RendererLibraryTree): void;
 }
 
-function findNodeById(ids: string[], tree: RendererLibraryTree) {
-  if (isEffectArray(ids)) {
-    const tempIds = [...ids];
-    let tempTree = tree;
-    while (tempIds.length > 0 && tempTree) {
-      const id = tempIds.shift();
-      tempTree = tempTree.children?.find(child => child.id === id);
-    }
-
-    return tempTree;
+function findNodeById(ids: string[], tree: RendererRootLibraryTree): RendererLibraryTree | undefined {
+  if (!isEffectArray(ids) || !tree) {
+    return void 0;
   }
 
-  return void 0;
+  let children = tree.children;
+  let target: RendererLibraryTree | undefined;
+  const tempIds = [...ids];
+  while (tempIds.length > 0) {
+    const id = tempIds.shift();
+    target = children?.find(child => child.id === id);
+    if (!target) {
+      return void 0;
+    }
+    children = target.children;
+  }
+
+  return target;
 }
 
 /**
@@ -44,17 +49,8 @@ function findNodeById(ids: string[], tree: RendererLibraryTree) {
 const LibrarySidebar: FC = () => {
   // For lib side bar of the leftmost
   const { libraryTree, currentLib, currentNote } = useLibraryState();
-  const {
-    setCurrentLib,
-    setCurrentNote,
-    updateRenderLibrary,
-    patchLibraryNode,
-    appendLibraryChild,
-    createLibrary,
-    renameLibrary,
-    deleteLibrary,
-    createNote
-  } = useLibraryActions();
+  const { setLibraryTree, setCurrentLib, setCurrentNote, createLibrary, renameLibrary, deleteLibrary, createNote } =
+    useLibraryActions();
   const { librarySidebarVisible, detailSidebarVisible, setLibrarySidebarVisible, setDetailSidebarVisible } =
     useRuntimeLayout();
   const renameRef = useRef<ForwardRenameHandler>(null);
@@ -112,7 +108,7 @@ const LibrarySidebar: FC = () => {
                             renameLibrary(lib, newName)
                               .then(res => {
                                 if (res && res.status === 0) {
-                                  patchLibraryNode(lib, { name: newName });
+                                  setLibraryTree(res.data);
                                 }
                               })
                               .finally(() => {
@@ -141,7 +137,7 @@ const LibrarySidebar: FC = () => {
                           deleteLibrary(lib)
                             .then(res => {
                               if (res && res.status === 0) {
-                                updateRenderLibrary(lib, 'remove');
+                                setLibraryTree(res.data);
                               }
                             })
                             .finally(() => {
@@ -197,7 +193,7 @@ const LibrarySidebar: FC = () => {
                       .then(res => {
                         const { data, status } = res;
                         if (status === 0 && isEffectObject(data)) {
-                          appendLibraryChild(libraryTree, data as RendererLibraryTree);
+                          setLibraryTree(data);
                         }
                       })
                       .finally(() => {
@@ -243,7 +239,7 @@ const LibrarySidebar: FC = () => {
                   createNote(currentLib, name)
                     .then(res => {
                       if (res && res.status === 0) {
-                        appendLibraryChild(currentLib, res.data as RendererLibraryTree);
+                        setLibraryTree(res.data);
                       }
                     })
                     .finally(() => {
@@ -286,7 +282,7 @@ interface LibDetailHeaderProps {
  */
 const LibDetailHeader: FC<LibDetailHeaderProps> = props => {
   const { lib, note, onAddNote } = props;
-  const { updateRenderLibrary, deleteNote } = useLibraryActions();
+  const { setLibraryTree, deleteNote } = useLibraryActions();
   const { modal } = App.useApp();
 
   const showEditIcon = isEffectObject(lib) && lib.type === 'folder';
@@ -317,7 +313,7 @@ const LibDetailHeader: FC<LibDetailHeaderProps> = props => {
                     deleteNote(note)
                       .then(res => {
                         if (res && res.status === 0) {
-                          updateRenderLibrary(note, 'remove');
+                          setLibraryTree(res.data);
                         }
                       })
                       .finally(() => {

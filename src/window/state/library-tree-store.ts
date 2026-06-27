@@ -1,21 +1,21 @@
 import { injectable } from 'inversify';
-import type { LibraryTree } from '_types';
+import type { RootLibraryTree } from '_types';
 import ILibraryTreeStore from '../interface/library-tree-store';
 
 @injectable()
 class LibraryTreeStore implements ILibraryTreeStore {
-  private tree: LibraryTree;
+  private tree: RootLibraryTree;
   private updateQueue: Promise<void> = Promise.resolve();
 
-  setTree(tree: LibraryTree): void {
+  setTree(tree: RootLibraryTree): void {
     this.tree = this.cloneTree(tree);
   }
 
-  getTree(): LibraryTree {
+  getTree(): RootLibraryTree {
     return this.cloneTree(this.tree);
   }
 
-  async updateTree<T>(updater: (tree: LibraryTree) => T | Promise<T>): Promise<T> {
+  async updateTree<T>(updater: (tree: RootLibraryTree) => T | Promise<T>): Promise<T> {
     let result: T;
 
     const update = this.updateQueue.then(async () => {
@@ -30,7 +30,7 @@ class LibraryTreeStore implements ILibraryTreeStore {
     return result;
   }
 
-  private cloneTree(tree: LibraryTree): LibraryTree {
+  private cloneTree(tree: RootLibraryTree): RootLibraryTree {
     return tree ? JSON.parse(JSON.stringify(tree)) : tree;
   }
 }

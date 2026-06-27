@@ -1,7 +1,8 @@
 import nodePath from 'path';
+import { randomUUID } from 'crypto';
 import { isTrulyEmpty } from 'src/tools/utils';
-import { ROOT_CONFIG_NAME } from 'src/config/env';
-import { LibraryTree } from '_types';
+import { ROOT_CONFIG_NAME, ROOT_LIBRARY_ID } from 'src/config/env';
+import { LibraryTree, RootLibraryTree } from '_types';
 import IFileSystem from '../interface/file-system';
 
 /**
@@ -79,7 +80,10 @@ export function parsePathInfo(
  * @param pathTokens - 路径标记数组（不包含目标名称）
  * @returns 父级节点，未找到返回 undefined
  */
-export function findParentLibNode(libTree: LibraryTree, pathTokens: string[]): LibraryTree | undefined {
+export function findParentLibNode(
+  libTree: LibraryTree | RootLibraryTree,
+  pathTokens: string[]
+): LibraryTree | RootLibraryTree | undefined {
   let parentLib = libTree;
   for (let i = 0; i < pathTokens.length; i += 1) {
     if (!parentLib) break;
@@ -94,8 +98,163 @@ export function findParentLibNode(libTree: LibraryTree, pathTokens: string[]): L
  * @param rootDir - 根目录
  * @param fileSys - 文件系统实例
  */
-export async function persistLibTree(libTree: LibraryTree, rootDir: string, fileSys: IFileSystem): Promise<void> {
+export async function persistLibTree(libTree: RootLibraryTree, rootDir: string, fileSys: IFileSystem): Promise<void> {
   await fileSys.writeFile(nodePath.join(rootDir, ROOT_CONFIG_NAME), JSON.stringify(libTree, null, 2));
+}
+
+export type LibraryTreeMigration = {
+  tree: RootLibraryTree;
+  migrated: boolean;
+};
+
+export type ResolvedLibraryNode = {
+  node: LibraryTree | RootLibraryTree;
+  parent: LibraryTree | RootLibraryTree | null;
+  pathTokens: string[];
+  parentPathTokens: string[];
+  fullPath: string;
+};
+
+export function createLibraryNodeId(): string {
+  return randomUUID();
+}
+
+export function normalizeLibraryTree(input: unknown): LibraryTreeMigration {
+  const record = isRecord(input) ? input : {};
+  const rootId = record.id === ROOT_LIBRARY_ID ? ROOT_LIBRARY_ID : ROOT_LIBRARY_ID;
+  const childrenInput = Array.isArray(record.children) ? record.children : [];
+  let migrated =
+    record.id !== ROOT_LIBRARY_ID ||
+    !Array.isArray(record.children) ||
+    'relativePath' in record ||
+    'parent' in record ||
+    'name' in record ||
+    'type' in record;
+  const children: LibraryTree[] = [];
+
+  childrenInput.forEach(childInput => {
+    const normalized = normalizeLibraryNode(childInput);
+    if (normalized.node) {
+      children.push(normalized.node);
+    }
+    migrated = migrated || normalized.migrated;
+  });
+
+  return {
+    tree: {
+      id: rootId,
+      children
+    },
+    migrated
+  };
+}
+
+export function resolveLibraryNodePath(libTree: RootLibraryTree, nodeId: string, rootDir: string): ResolvedLibraryNode {
+  if (nodeId === ROOT_LIBRARY_ID) {
+    return {
+      node: libTree,
+      parent: null,
+      pathTokens: [],
+      parentPathTokens: [],
+      fullPath: nodePath.resolve(rootDir)
+    };
+  }
+
+  const resolved = findLibraryNodePath(libTree, nodeId, []);
+
+  if (!resolved) {
+    throw new Error('The library node is not found.');
+  }
+
+  const fullPathWithoutSuffix = nodePath.resolve(rootDir, ...resolved.pathTokens);
+  const fullPath =
+    isLibraryTreeNode(resolved.node) && resolved.node.type === 'file'
+      ? `${fullPathWithoutSuffix}.md`
+      : fullPathWithoutSuffix;
+
+  return {
+    ...resolved,
+    fullPath
+  };
+}
+
+export function isLibraryTreeNode(node: LibraryTree | RootLibraryTree): node is LibraryTree {
+  return 'type' in node;
+}
+
+function normalizeLibraryNode(input: unknown): { node: LibraryTree | null; migrated: boolean } {
+  if (!isRecord(input)) {
+    return { node: null, migrated: true };
+  }
+
+  const type = input.type;
+  const name = input.name;
+  if ((type !== 'file' && type !== 'folder') || typeof name !== 'string' || name.trim() === '') {
+    return { node: null, migrated: true };
+  }
+
+  const id = typeof input.id === 'string' && input.id.trim() !== '' ? input.id : createLibraryNodeId();
+  const childrenInput = type === 'folder' && Array.isArray(input.children) ? input.children : [];
+  let migrated =
+    input.id !== id ||
+    !Array.isArray(input.children) ||
+    'relativePath' in input ||
+    'parent' in input ||
+    (type === 'file' && Array.isArray(input.children) && input.children.length > 0);
+  const children: LibraryTree[] = [];
+
+  childrenInput.forEach(childInput => {
+    const normalized = normalizeLibraryNode(childInput);
+    if (normalized.node) {
+      children.push(normalized.node);
+    }
+    migrated = migrated || normalized.migrated;
+  });
+
+  return {
+    node: {
+      id,
+      name,
+      type,
+      birthTime: typeof input.birthTime === 'string' ? input.birthTime : '',
+      modifiedTime: typeof input.modifiedTime === 'string' ? input.modifiedTime : '',
+      description: typeof input.description === 'string' ? input.description : undefined,
+      children
+    },
+    migrated
+  };
+}
+
+function findLibraryNodePath(
+  node: RootLibraryTree | LibraryTree,
+  nodeId: string,
+  parentTokens: string[]
+): Omit<ResolvedLibraryNode, 'fullPath'> | null {
+  for (const child of node.children) {
+    const pathTokens = [...parentTokens, child.name];
+
+    if (child.id === nodeId) {
+      return {
+        node: child,
+        parent: node,
+        pathTokens,
+        parentPathTokens: parentTokens
+      };
+    }
+
+    if (child.type === 'folder') {
+      const resolved = findLibraryNodePath(child, nodeId, pathTokens);
+      if (resolved) {
+        return resolved;
+      }
+    }
+  }
+
+  return null;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Object.prototype.toString.call(value) === '[object Object]';
 }
 
 /**

@@ -1,4 +1,4 @@
-import type { RendererLibraryBase, RendererLibraryTree } from '_types';
+import type { RendererLibraryBase, RendererLibraryNode, RendererLibraryTree, RendererRootLibraryTree } from '_types';
 import {
   findRendererNodeById,
   refreshRendererTree,
@@ -23,11 +23,10 @@ export class LibraryStateContainer {
     return this.state;
   }
 
-  setLibraryTree(tree: RendererLibraryTree): LibraryStateContainer {
+  setLibraryTree(tree: RendererRootLibraryTree): LibraryStateContainer {
+    const libraryTree = refreshRendererTree(tree, this.state.libraryTree);
     return new LibraryStateContainer({
-      libraryTree: refreshRendererTree(tree),
-      currentLib: null,
-      currentNote: null
+      ...this.syncSelectedNodes(libraryTree)
     });
   }
 
@@ -44,7 +43,7 @@ export class LibraryStateContainer {
       return this;
     }
 
-    const libraryTree = refreshRendererTree(this.state.libraryTree);
+    const libraryTree = refreshRendererTree(this.state.libraryTree, this.state.libraryTree);
     return new LibraryStateContainer(this.syncSelectedNodes(libraryTree));
   }
 
@@ -70,7 +69,7 @@ export class LibraryStateContainer {
     return this.updateNode({ ...node, ...patch }, 'update');
   }
 
-  appendChild(parent: RendererLibraryTree, child: RendererLibraryTree): LibraryStateContainer {
+  appendChild(parent: RendererLibraryNode, child: RendererLibraryTree): LibraryStateContainer {
     if (!parent || !child) {
       return this;
     }
@@ -86,7 +85,7 @@ export class LibraryStateContainer {
     return newNode;
   }
 
-  private syncSelectedNodes(libraryTree: RendererLibraryTree): LibraryState {
+  private syncSelectedNodes(libraryTree: RendererRootLibraryTree): LibraryState {
     return {
       libraryTree,
       currentLib: findRendererNodeById(libraryTree, this.state.currentLib?.id),

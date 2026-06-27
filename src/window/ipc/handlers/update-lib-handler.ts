@@ -1,5 +1,5 @@
 import { inject, injectable } from 'inversify';
-import { LibraryTree, UpdateLibRequest } from '_types';
+import { RootLibraryTree, UpdateLibRequest } from '_types';
 import IIpcHandler from '../../interface/ipc-handler';
 import ILibraryService from '../../interface/library-service';
 import { TYPES } from '../../types';
@@ -15,7 +15,7 @@ class UpdateLibHandler implements IIpcHandler<typeof IPC_CHANNEL.UPDATE_LIB> {
 
   constructor(@inject(TYPES.ILibraryService) private libraryService: ILibraryService) {}
 
-  async handle(data: UpdateLibRequest): Promise<LibraryTree | Record<string, never>> {
+  async handle(data: UpdateLibRequest): Promise<RootLibraryTree> {
     return this.libraryService.updateLibrary(data);
   }
 }

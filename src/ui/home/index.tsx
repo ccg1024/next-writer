@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { message } from 'antd';
-import { ReadConfigResponse, RendererLibraryTree } from '_types';
+import { ReadConfigResponse, RendererRootLibraryTree } from '_types';
 import { BaseLayout } from '../modules/layout';
 import LibrarySidebar from '../modules/library-sidebar';
 import Main from '../modules/main';
@@ -45,7 +45,7 @@ const HomeContent = () => {
         setRenderConfig(config);
 
         // Generating information
-        setLibraryTree(libTree as RendererLibraryTree);
+        setLibraryTree(libTree as RendererRootLibraryTree);
 
         // change css variable
         const r = document.querySelector('body');

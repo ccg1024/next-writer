@@ -1,5 +1,5 @@
 import { createContext, useContext, useMemo } from 'react';
-import { ReadConfigResponse, RendererLibraryTree } from '_types';
+import { ReadConfigResponse, RendererLibraryTree, RendererRootLibraryTree } from '_types';
 import type { RuntimeRecord } from '../modules/store';
 import { useLibraryActions, useLibraryState } from 'src/ui/domain/library';
 import { useRuntimeLayout } from 'src/ui/domain/runtime';
@@ -13,7 +13,7 @@ export interface Library {
 }
 
 export interface IHomeContext {
-  libraryTree: RendererLibraryTree;
+  libraryTree: RendererRootLibraryTree;
   updateRenderLibrary: (
     newNode: RendererLibraryTree | ((preLib: RendererLibraryTree, preNote: RendererLibraryTree) => RendererLibraryTree),
     type?: 'append' | 'remove' | 'update'

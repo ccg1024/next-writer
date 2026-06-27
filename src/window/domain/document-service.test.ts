@@ -4,12 +4,12 @@ import 'reflect-metadata';
 import nodeFs from 'fs';
 import nodeOs from 'os';
 import nodePath from 'path';
-import { CacheContent, LibraryTree } from '_types';
+import { ROOT_LIBRARY_ID } from 'src/config/env';
+import { CacheContent, RootLibraryTree } from '_types';
 import FileSystem from '../infrastructure/file-system';
 import IAppPathStore from '../interface/app-path-store';
 import IDocumentCacheService from '../interface/document-cache-service';
 import ILibraryTreeStore from '../interface/library-tree-store';
-import IPathResolver from '../interface/path-resolver';
 import DocumentService from './document-service';
 
 class MemoryCache implements IDocumentCacheService {
@@ -53,7 +53,7 @@ class MemoryCache implements IDocumentCacheService {
 
 describe('DocumentService cache revisions', () => {
   let rootDir: string;
-  let libraryTree: LibraryTree;
+  let libraryTree: RootLibraryTree;
   let cache: MemoryCache;
   let service: DocumentService;
 
@@ -62,12 +62,10 @@ describe('DocumentService cache revisions', () => {
     await nodeFs.promises.writeFile(nodePath.join(rootDir, 'note.md'), 'saved', { encoding: 'utf8' });
 
     libraryTree = {
-      name: 'root',
-      type: 'folder',
-      birthTime: '',
-      modifiedTime: '',
+      id: ROOT_LIBRARY_ID,
       children: [
         {
+          id: 'note-id',
           name: 'note',
           type: 'file',
           birthTime: '',
@@ -77,13 +75,7 @@ describe('DocumentService cache revisions', () => {
       ]
     };
     cache = new MemoryCache();
-    service = new DocumentService(
-      new FileSystem(),
-      createAppPathStore(),
-      createLibraryTreeStore(),
-      cache,
-      createPathResolver()
-    );
+    service = new DocumentService(new FileSystem(), createAppPathStore(), createLibraryTreeStore(), cache);
   });
 
   afterEach(async () => {
@@ -91,13 +83,11 @@ describe('DocumentService cache revisions', () => {
   });
 
   it('ignores stale dirty cache updates that arrive after a save', async () => {
-    const notePath = nodePath.join(rootDir, 'note.md');
+    await service.updateCache({ id: 'note-id', content: 'dirty', isChange: true, revision: 1 });
+    await service.writeFile({ id: 'note-id', content: 'saved cleanly', revision: 2 });
+    await service.updateCache({ id: 'note-id', content: 'dirty', isChange: true, revision: 1 });
 
-    await service.updateCache({ path: './note', content: 'dirty', isChange: true, revision: 1 });
-    await service.writeFile({ path: './note', content: 'saved cleanly', nameInRuntime: 'note', revision: 2 });
-    await service.updateCache({ path: './note', content: 'dirty', isChange: true, revision: 1 });
-
-    expect(cache.getCache(notePath)).toEqual({
+    expect(cache.getCache('note-id')).toEqual({
       isChange: false,
       content: 'saved cleanly',
       revision: 2
@@ -106,12 +96,10 @@ describe('DocumentService cache revisions', () => {
   });
 
   it('does not clear a newer dirty cache entry when an older save finishes', async () => {
-    const notePath = nodePath.join(rootDir, 'note.md');
+    await service.updateCache({ id: 'note-id', content: 'newer dirty content', isChange: true, revision: 3 });
+    await service.writeFile({ id: 'note-id', content: 'older saved content', revision: 2 });
 
-    await service.updateCache({ path: './note', content: 'newer dirty content', isChange: true, revision: 3 });
-    await service.writeFile({ path: './note', content: 'older saved content', nameInRuntime: 'note', revision: 2 });
-
-    expect(cache.getCache(notePath)).toEqual({
+    expect(cache.getCache('note-id')).toEqual({
       isChange: true,
       content: 'newer dirty content',
       revision: 3
@@ -119,21 +107,62 @@ describe('DocumentService cache revisions', () => {
     expect(cache.hasModified()).toBe(true);
   });
 
-  it('blocks stale updates on the old path after a renamed save', async () => {
+  it('keeps cache identity stable after a file is renamed in the library tree', async () => {
     const oldPath = nodePath.join(rootDir, 'note.md');
     const newPath = nodePath.join(rootDir, 'renamed.md');
 
-    await service.updateCache({ path: './note', content: 'dirty', isChange: true, revision: 1 });
-    await service.writeFile({ path: './note', content: 'renamed cleanly', nameInRuntime: 'renamed', revision: 2 });
-    await service.updateCache({ path: './note', content: 'dirty', isChange: true, revision: 1 });
+    await service.updateCache({ id: 'note-id', content: 'dirty', isChange: true, revision: 1 });
+    await nodeFs.promises.rename(oldPath, newPath);
+    libraryTree.children[0].name = 'renamed';
+    await service.writeFile({ id: 'note-id', content: 'renamed cleanly', revision: 2 });
+    await service.updateCache({ id: 'note-id', content: 'dirty', isChange: true, revision: 1 });
 
-    expect(cache.getCache(oldPath)).toBeNull();
-    expect(cache.getCache(newPath)).toEqual({
+    expect(cache.getCache('note-id')).toEqual({
       isChange: false,
       content: 'renamed cleanly',
       revision: 2
     });
+    await expect(nodeFs.promises.readFile(newPath, { encoding: 'utf8' })).resolves.toBe('renamed cleanly');
     expect(cache.hasModified()).toBe(false);
+  });
+
+  it('saves an opened note after its parent folder is renamed', async () => {
+    const oldFolderPath = nodePath.join(rootDir, 'drafts');
+    const newFolderPath = nodePath.join(rootDir, 'archive');
+    await nodeFs.promises.mkdir(oldFolderPath);
+    await nodeFs.promises.writeFile(nodePath.join(oldFolderPath, 'note.md'), 'saved', { encoding: 'utf8' });
+    await nodeFs.promises.rename(oldFolderPath, newFolderPath);
+    libraryTree.children = [
+      {
+        id: 'folder-id',
+        name: 'archive',
+        type: 'folder',
+        birthTime: '',
+        modifiedTime: '',
+        children: [
+          {
+            id: 'nested-note-id',
+            name: 'note',
+            type: 'file',
+            birthTime: '',
+            modifiedTime: '',
+            children: []
+          }
+        ]
+      }
+    ];
+
+    await service.updateCache({ id: 'nested-note-id', content: 'dirty', isChange: true, revision: 1 });
+    await service.writeFile({ id: 'nested-note-id', content: 'saved after folder rename', revision: 2 });
+
+    await expect(nodeFs.promises.readFile(nodePath.join(newFolderPath, 'note.md'), { encoding: 'utf8' })).resolves.toBe(
+      'saved after folder rename'
+    );
+    expect(cache.getCache('nested-note-id')).toEqual({
+      isChange: false,
+      content: 'saved after folder rename',
+      revision: 2
+    });
   });
 
   function createAppPathStore(): IAppPathStore {
@@ -158,44 +187,14 @@ describe('DocumentService cache revisions', () => {
 
   function createLibraryTreeStore(): ILibraryTreeStore {
     return {
-      setTree(tree: LibraryTree) {
+      setTree(tree: RootLibraryTree) {
         libraryTree = tree;
       },
       getTree() {
         return libraryTree;
       },
-      async updateTree<T>(updater: (tree: LibraryTree) => T | Promise<T>): Promise<T> {
+      async updateTree<T>(updater: (tree: RootLibraryTree) => T | Promise<T>): Promise<T> {
         return updater(libraryTree);
-      }
-    };
-  }
-
-  function createPathResolver(): IPathResolver {
-    return {
-      resolveWithinRoot(targetRootDir: string, targetPath: string): string {
-        const root = nodePath.resolve(targetRootDir);
-        const target = nodePath.resolve(targetPath);
-        const relative = nodePath.relative(root, target);
-
-        if (relative.startsWith('..') || nodePath.isAbsolute(relative)) {
-          throw new Error('The path is outside of the allowed root.');
-        }
-
-        return target;
-      },
-      resolveLibraryPath(path: string, options?: { suffix?: string }) {
-        const relativePath = path
-          .split(nodePath.win32.sep)
-          .join(nodePath.posix.sep)
-          .replace(/^\.?\//, '');
-        const suffix = options?.suffix ?? '';
-        const pathWithSuffix = suffix && !relativePath.endsWith(suffix) ? `${relativePath}${suffix}` : relativePath;
-
-        return {
-          relativePath,
-          fullPath: nodePath.join(rootDir, pathWithSuffix),
-          pathToken: relativePath.split('/').filter(Boolean)
-        };
       }
     };
   }

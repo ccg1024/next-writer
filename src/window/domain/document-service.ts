@@ -1,15 +1,12 @@
-import nodePath from 'path';
 import { inject, injectable } from 'inversify';
 import { MAX_FILE_DESCRIPTION_LENGTH } from 'src/config/env';
-import { isTrulyEmpty } from 'src/tools/utils';
-import { ReadFileRequest, ReadFileResponse, UpdateCacheRequest, WriteFileRequest } from '_types';
+import { ReadFileRequest, ReadFileResponse, RootLibraryTree, UpdateCacheRequest, WriteFileRequest } from '_types';
 import IAppPathStore from '../interface/app-path-store';
 import IDocumentCacheService from '../interface/document-cache-service';
 import IFileSystem from '../interface/file-system';
 import ILibraryTreeStore from '../interface/library-tree-store';
 import IDocumentService from '../interface/document-service';
-import IPathResolver from '../interface/path-resolver';
-import { findParentLibNode, getParentPathTokens, getTargetName, persistLibTree } from '../utils/lib-tree-utils';
+import { isLibraryTreeNode, persistLibTree, resolveLibraryNodePath } from '../utils/lib-tree-utils';
 import { TYPES } from '../types';
 
 @injectable()
@@ -20,13 +17,13 @@ class DocumentService implements IDocumentService {
     @inject(TYPES.IFileSystem) private fileSystem: IFileSystem,
     @inject(TYPES.IAppPathStore) private appPathStore: IAppPathStore,
     @inject(TYPES.ILibraryTreeStore) private libraryTreeStore: ILibraryTreeStore,
-    @inject(TYPES.IDocumentCacheService) private cache: IDocumentCacheService,
-    @inject(TYPES.IPathResolver) private pathResolver: IPathResolver
+    @inject(TYPES.IDocumentCacheService) private cache: IDocumentCacheService
   ) {}
 
   async readFile(data: ReadFileRequest): Promise<ReadFileResponse> {
-    const pathInfo = this.pathResolver.resolveLibraryPath(data?.path, { suffix: '.md' });
-    const buffer = this.cache.getCache(pathInfo.fullPath);
+    const { id } = data ?? {};
+    const pathInfo = this.resolveFileNode(id);
+    const buffer = this.cache.getCache(id);
     const isCacheContentEmpty =
       buffer && (buffer.content === '' || buffer.content === undefined || buffer.content === null);
     const content =
@@ -35,93 +32,75 @@ class DocumentService implements IDocumentService {
         : await this.fileSystem.readFile(pathInfo.fullPath, { encoding: 'utf8' });
 
     if (!buffer || isCacheContentEmpty) {
-      this.cache.addCache(pathInfo.fullPath, { isChange: false, content });
+      this.cache.addCache(id, { isChange: false, content });
     }
 
     return { content };
   }
 
-  async writeFile(data: WriteFileRequest): Promise<void> {
-    const { path, content, nameInRuntime, revision } = data ?? {};
-    const pathInfo = this.pathResolver.resolveLibraryPath(path, { suffix: '.md' });
+  async writeFile(data: WriteFileRequest): Promise<RootLibraryTree> {
+    const { id, content, revision } = data ?? {};
     const saveRevision = this.normalizeRevision(revision);
-
-    if (pathInfo.pathToken.length === 0) {
-      throw new Error('The path is invalid.');
-    }
-
-    const targetName = getTargetName(pathInfo.pathToken, { stripExtension: true });
     const rootDir = this.appPathStore.getRootDir();
 
-    await this.libraryTreeStore.updateTree(async libTree => {
-      let fullPath = pathInfo.fullPath;
-      let oldFullPath = fullPath;
-      const parentLib = findParentLibNode(libTree, getParentPathTokens(pathInfo.pathToken));
-
-      if (isTrulyEmpty(parentLib)) {
-        throw new Error('Cannot find target library path');
-      }
-
-      const target = parentLib.children.find(lib => lib.name === targetName);
-
-      if (isTrulyEmpty(target)) {
-        throw new Error('Some thing wrong when find target lib token');
-      }
-
-      if (!isTrulyEmpty(nameInRuntime)) {
-        const dirname = nodePath.dirname(fullPath);
-        oldFullPath = fullPath;
-        fullPath = this.pathResolver.resolveWithinRoot(rootDir, nodePath.join(dirname, `${nameInRuntime}.md`));
-        await this.fileSystem.rename(oldFullPath, fullPath);
-        target.name = nameInRuntime;
-      }
-
+    return this.libraryTreeStore.updateTree(async libTree => {
+      const pathInfo = this.resolveFileNode(id, libTree);
       try {
-        await this.fileSystem.writeFile(fullPath, content);
+        await this.fileSystem.writeFile(pathInfo.fullPath, content);
 
-        if (this.isRevisionCurrent(saveRevision, oldFullPath, fullPath)) {
-          this.markRevision(saveRevision, oldFullPath, fullPath);
+        if (this.isRevisionCurrent(saveRevision, id)) {
+          this.markRevision(saveRevision, id);
 
-          if (this.cache.hasCache(fullPath)) {
-            this.cache.update(fullPath, { isChange: false, content, revision: saveRevision });
+          if (this.cache.hasCache(id)) {
+            this.cache.update(id, { isChange: false, content, revision: saveRevision });
           } else {
-            this.cache.addCache(fullPath, { isChange: false, content, revision: saveRevision });
-          }
-
-          if (oldFullPath !== fullPath && this.cache.hasCache(oldFullPath)) {
-            this.cache.removeCache(oldFullPath);
+            this.cache.addCache(id, { isChange: false, content, revision: saveRevision });
           }
         }
 
-        const newStat = await this.fileSystem.stat(fullPath);
-        target.modifiedTime = newStat.mtime.toLocaleString();
-        target.description = content.substring(0, MAX_FILE_DESCRIPTION_LENGTH);
+        const newStat = await this.fileSystem.stat(pathInfo.fullPath);
+        pathInfo.node.modifiedTime = newStat.mtime.toLocaleString();
+        pathInfo.node.description = content.substring(0, MAX_FILE_DESCRIPTION_LENGTH);
       } catch {
         throw new Error('保存文件失败');
       }
 
       await persistLibTree(libTree, rootDir, this.fileSystem);
+      return libTree;
     });
   }
 
   async updateCache(data: UpdateCacheRequest): Promise<{ success: boolean }> {
-    const { path, content, isChange, revision } = data ?? {};
-    const pathInfo = this.pathResolver.resolveLibraryPath(path, { suffix: '.md' });
+    const { id, content, isChange, revision } = data ?? {};
+    this.resolveFileNode(id);
     const cacheRevision = this.normalizeRevision(revision);
 
-    if (!this.isRevisionCurrent(cacheRevision, pathInfo.fullPath)) {
+    if (!this.isRevisionCurrent(cacheRevision, id)) {
       return { success: true };
     }
 
-    this.markRevision(cacheRevision, pathInfo.fullPath);
+    this.markRevision(cacheRevision, id);
 
-    if (this.cache.hasCache(pathInfo.fullPath)) {
-      this.cache.update(pathInfo.fullPath, { isChange, content, revision: cacheRevision });
+    if (this.cache.hasCache(id)) {
+      this.cache.update(id, { isChange, content, revision: cacheRevision });
     } else {
-      this.cache.addCache(pathInfo.fullPath, { isChange, content, revision: cacheRevision });
+      this.cache.addCache(id, { isChange, content, revision: cacheRevision });
     }
 
     return { success: true };
+  }
+
+  private resolveFileNode(id: string, libTree: RootLibraryTree = this.libraryTreeStore.getTree()) {
+    const pathInfo = resolveLibraryNodePath(libTree, id, this.appPathStore.getRootDir());
+
+    if (!isLibraryTreeNode(pathInfo.node) || pathInfo.node.type !== 'file') {
+      throw new Error('The target library node is not a file.');
+    }
+
+    return {
+      ...pathInfo,
+      node: pathInfo.node
+    };
   }
 
   private normalizeRevision(revision?: number): number {

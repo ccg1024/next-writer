@@ -19,7 +19,7 @@ export interface IPC {
   readConfig: () => Promise<Response<ReadConfigResponse>>;
   readFile: (data: ReadFileRequest) => Promise<Response<ReadFileResponse>>;
   updateLib: (data: UpdateLibRequest) => Promise<Response<UpdateLibResponse>>;
-  writeFile: (data: WriteFileRequest) => Promise<Response<null>>;
+  writeFile: (data: WriteFileRequest) => Promise<Response<RootLibraryTree>>;
   queryRuntimeConfig: () => Promise<Response<{ menuStatus: MainProcessMenuStatus }>>;
   updateCache: (data: UpdateCacheRequest) => Promise<Response<{ success: boolean }>>;
   rendererListener: (cb: RendererListenerCallback) => () => void;
@@ -64,6 +64,7 @@ declare global {
 export type LibraryType = 'folder' | 'file';
 
 export type LibraryBase = {
+  id: string; // Stable node identity persisted by the main process
   name: string; // Referer to file name
   type: LibraryType;
   birthTime: string;
@@ -76,20 +77,19 @@ export type LibraryTree = LibraryBase & {
 };
 
 export type RootLibraryTree = {
-  isRoot: boolean; // Is root library
+  id: '__root__';
   children: LibraryTree[];
 };
 
 // The runtime information is not stored, but generated at runtime
 export type RendererLibraryBase = {
-  id?: string; // Generated at runtime [runtime information]
+  id: string;
   name: string; // Referer to file name
   type: LibraryType;
   birthTime: string;
   modifiedTime: string;
   description?: string; // Description for file object
-  relativePath?: string; // Relative path to curent file or folder [runtime information]
-  parent?: RendererLibraryTree; // Parent node [runtime information]
+  parent?: RendererLibraryTree | RendererRootLibraryTree; // Parent node [runtime information]
   isChange?: boolean // For type 'file', generally, whether file was changed
 };
 
@@ -97,13 +97,20 @@ export type RendererLibraryTree = RendererLibraryBase & {
   children: RendererLibraryTree[];
 };
 
+export type RendererRootLibraryTree = {
+  id: '__root__';
+  children: RendererLibraryTree[];
+};
+
+export type RendererLibraryNode = RendererRootLibraryTree | RendererLibraryTree;
+
 export type MainProcessConfig = Partial<{
   rootDir: string; // Absolute path of library
   configDir: string; // next-writer configuration path
   logDir: string; // next-writer log file storage path
   menuStatus: MainProcessMenuStatus; // Record optional menu status, true or false, true means that the menu option is applied
   renderConfig: NormalObject;
-  libraryTree: LibraryTree;
+  libraryTree: RootLibraryTree;
 }>;
 
 export type MainProcessMenuStatus = {
@@ -128,11 +135,11 @@ export type Response<T = unknown> = IpcResponse<T>;
 
 export type ReadConfigResponse = {
   config: NormalObject;
-  libTree: LibraryTree;
+  libTree: RootLibraryTree;
 };
 
 export type ReadFileRequest = {
-  path: string;
+  id: string;
 };
 
 export type ReadFileResponse = {
@@ -140,23 +147,32 @@ export type ReadFileResponse = {
 };
 
 export type WriteFileRequest = {
-  path: string;
+  id: string;
   content: string;
-  nameInRuntime?: string; // using to rename
   revision?: number;
 };
 
-export type UpdateLibRequest = {
-  operate: 'add' | 'del' | 'update';
-  path: string;
-  type: 'file' | 'folder';
-  pathInRuntime?: string;
-};
+export type UpdateLibRequest =
+  | {
+      operate: 'add';
+      parentId: string;
+      type: 'file' | 'folder';
+      name: string;
+    }
+  | {
+      operate: 'del';
+      id: string;
+    }
+  | {
+      operate: 'rename';
+      id: string;
+      name: string;
+    };
 
-export type UpdateLibResponse = LibraryTree | Record<string, never>;
+export type UpdateLibResponse = RootLibraryTree;
 
 export type UpdateCacheRequest = {
-  path: string;
+  id: string;
   content: string;
   isChange: boolean;
   revision?: number;

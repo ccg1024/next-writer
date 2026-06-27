@@ -1,11 +1,12 @@
 import React, { createContext, useCallback, useContext, useMemo, useReducer } from 'react';
-import { RendererLibraryTree } from '_types';
+import { RendererLibraryNode, RendererLibraryTree, RendererRootLibraryTree } from '_types';
+import { ROOT_LIBRARY_ID } from 'src/config/env';
 import rendererGateway from 'src/ui/shared/ipc/renderer-gateway';
 import { RendererTreeOperation } from 'src/ui/libs/renderer-tree';
 import { LibraryNodePatch, LibraryNodeProducer, LibraryStateContainer } from './library-state-container';
 
 export type LibraryState = {
-  libraryTree: RendererLibraryTree;
+  libraryTree: RendererRootLibraryTree;
   currentLib: RendererLibraryTree;
   currentNote: RendererLibraryTree;
 };
@@ -14,10 +15,10 @@ type LibraryAction =
   | { type: 'fresh-tree' }
   | { type: 'set-current-lib'; node: RendererLibraryTree }
   | { type: 'set-current-note'; node: RendererLibraryTree }
-  | { type: 'set-library-tree'; tree: RendererLibraryTree }
+  | { type: 'set-library-tree'; tree: RendererRootLibraryTree }
   | { type: 'patch-current-note'; patch: LibraryNodePatch }
   | { type: 'patch-library-node'; node: RendererLibraryTree; patch: LibraryNodePatch }
-  | { type: 'append-library-child'; parent: RendererLibraryTree; child: RendererLibraryTree }
+  | { type: 'append-library-child'; parent: RendererLibraryNode; child: RendererLibraryTree }
   | {
       type: 'update-node';
       newNode: LibraryNodeProducer;
@@ -25,16 +26,17 @@ type LibraryAction =
     };
 
 export type LibraryActions = {
-  setLibraryTree: (tree: RendererLibraryTree) => void;
+  setLibraryTree: (tree: RendererRootLibraryTree) => void;
   setCurrentLib: (node: RendererLibraryTree) => void;
   setCurrentNote: (node: RendererLibraryTree) => void;
   freshTree: () => void;
   updateRenderLibrary: (newNode: LibraryNodeProducer, type?: RendererTreeOperation) => void;
   patchCurrentNote: (patch: LibraryNodePatch) => void;
   patchLibraryNode: (node: RendererLibraryTree, patch: LibraryNodePatch) => void;
-  appendLibraryChild: (parent: RendererLibraryTree, child: RendererLibraryTree) => void;
+  appendLibraryChild: (parent: RendererLibraryNode, child: RendererLibraryTree) => void;
   createLibrary: (name: string) => ReturnType<typeof rendererGateway.updateLib>;
   renameLibrary: (lib: RendererLibraryTree, newName: string) => ReturnType<typeof rendererGateway.updateLib>;
+  renameNode: (node: RendererLibraryTree, newName: string) => ReturnType<typeof rendererGateway.updateLib>;
   deleteLibrary: (lib: RendererLibraryTree) => ReturnType<typeof rendererGateway.updateLib>;
   createNote: (lib: RendererLibraryTree, name: string) => ReturnType<typeof rendererGateway.updateLib>;
   deleteNote: (note: RendererLibraryTree) => ReturnType<typeof rendererGateway.updateLib>;
@@ -77,7 +79,7 @@ export function libraryReducer(state: LibraryState, action: LibraryAction): Libr
 export function LibraryProvider({ children }: React.PropsWithChildren) {
   const [state, dispatch] = useReducer(libraryReducer, initialLibraryState);
 
-  const setLibraryTree = useCallback((tree: RendererLibraryTree) => {
+  const setLibraryTree = useCallback((tree: RendererRootLibraryTree) => {
     dispatch({ type: 'set-library-tree', tree });
   }, []);
 
@@ -105,7 +107,7 @@ export function LibraryProvider({ children }: React.PropsWithChildren) {
     dispatch({ type: 'patch-library-node', node, patch });
   }, []);
 
-  const appendLibraryChild = useCallback((parent: RendererLibraryTree, child: RendererLibraryTree) => {
+  const appendLibraryChild = useCallback((parent: RendererLibraryNode, child: RendererLibraryTree) => {
     dispatch({ type: 'append-library-child', parent, child });
   }, []);
 
@@ -120,24 +122,22 @@ export function LibraryProvider({ children }: React.PropsWithChildren) {
       patchLibraryNode,
       appendLibraryChild,
       createLibrary(name) {
-        return rendererGateway.updateLib({ operate: 'add', type: 'folder', path: `./${name}` });
+        return rendererGateway.updateLib({ operate: 'add', type: 'folder', parentId: ROOT_LIBRARY_ID, name });
       },
       renameLibrary(lib, newName) {
-        return rendererGateway.updateLib({
-          operate: 'update',
-          type: 'folder',
-          path: lib.relativePath,
-          pathInRuntime: `${lib.parent.relativePath}/${newName}`
-        });
+        return rendererGateway.updateLib({ operate: 'rename', id: lib.id, name: newName });
+      },
+      renameNode(node, newName) {
+        return rendererGateway.updateLib({ operate: 'rename', id: node.id, name: newName });
       },
       deleteLibrary(lib) {
-        return rendererGateway.updateLib({ operate: 'del', type: 'folder', path: lib.relativePath });
+        return rendererGateway.updateLib({ operate: 'del', id: lib.id });
       },
       createNote(lib, name) {
-        return rendererGateway.updateLib({ operate: 'add', type: 'file', path: `${lib.relativePath}/${name}` });
+        return rendererGateway.updateLib({ operate: 'add', type: 'file', parentId: lib.id, name });
       },
       deleteNote(note) {
-        return rendererGateway.updateLib({ operate: 'del', type: 'file', path: note.relativePath });
+        return rendererGateway.updateLib({ operate: 'del', id: note.id });
       }
     }),
     [

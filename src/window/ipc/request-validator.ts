@@ -54,20 +54,16 @@ function validateNoPayload(value: Record<string, unknown>, type: IpcChannel): Ip
 }
 
 function validateReadFile(data: unknown, type: IpcChannel): IpcRequestValidation {
-  if (!isRecord(data) || !isNonEmptyString(data.path)) {
-    return invalid('Read file request requires a non-empty path.');
+  if (!isRecord(data) || !isNonEmptyString(data.id)) {
+    return invalid('Read file request requires a non-empty id.');
   }
 
-  return valid({ type, data: { path: data.path } } as AnyIpcRequest);
+  return valid({ type, data: { id: data.id } } as AnyIpcRequest);
 }
 
 function validateWriteFile(data: unknown, type: IpcChannel): IpcRequestValidation {
-  if (!isRecord(data) || !isNonEmptyString(data.path) || typeof data.content !== 'string') {
-    return invalid('Write file request requires a non-empty path and string content.');
-  }
-
-  if (data.nameInRuntime !== undefined && typeof data.nameInRuntime !== 'string') {
-    return invalid('Write file request nameInRuntime must be a string.');
+  if (!isRecord(data) || !isNonEmptyString(data.id) || typeof data.content !== 'string') {
+    return invalid('Write file request requires a non-empty id and string content.');
   }
 
   if (!isOptionalFiniteNumber(data.revision)) {
@@ -77,9 +73,8 @@ function validateWriteFile(data: unknown, type: IpcChannel): IpcRequestValidatio
   return valid({
     type,
     data: {
-      path: data.path,
+      id: data.id,
       content: data.content,
-      nameInRuntime: data.nameInRuntime,
       revision: data.revision
     }
   } as AnyIpcRequest);
@@ -88,11 +83,11 @@ function validateWriteFile(data: unknown, type: IpcChannel): IpcRequestValidatio
 function validateUpdateCache(data: unknown, type: IpcChannel): IpcRequestValidation {
   if (
     !isRecord(data) ||
-    !isNonEmptyString(data.path) ||
+    !isNonEmptyString(data.id) ||
     typeof data.content !== 'string' ||
     typeof data.isChange !== 'boolean'
   ) {
-    return invalid('Update cache request requires path, content, and isChange.');
+    return invalid('Update cache request requires id, content, and isChange.');
   }
 
   if (!isOptionalFiniteNumber(data.revision)) {
@@ -102,7 +97,7 @@ function validateUpdateCache(data: unknown, type: IpcChannel): IpcRequestValidat
   return valid({
     type,
     data: {
-      path: data.path,
+      id: data.id,
       content: data.content,
       isChange: data.isChange,
       revision: data.revision
@@ -111,29 +106,58 @@ function validateUpdateCache(data: unknown, type: IpcChannel): IpcRequestValidat
 }
 
 function validateUpdateLib(data: unknown, type: IpcChannel): IpcRequestValidation {
-  if (!isRecord(data) || !isNonEmptyString(data.path)) {
-    return invalid('Update library request requires a non-empty path.');
+  if (!isRecord(data)) {
+    return invalid('Update library request requires data.');
   }
 
-  if (data.operate !== 'add' && data.operate !== 'del' && data.operate !== 'update') {
-    return invalid('Update library request operate must be add, del, or update.');
+  if (data.operate !== 'add' && data.operate !== 'del' && data.operate !== 'rename') {
+    return invalid('Update library request operate must be add, del, or rename.');
   }
 
-  if (data.type !== 'file' && data.type !== 'folder') {
-    return invalid('Update library request type must be file or folder.');
+  if (data.operate === 'add') {
+    if (!isNonEmptyString(data.parentId) || !isNonEmptyString(data.name)) {
+      return invalid('Add library request requires parentId and name.');
+    }
+
+    if (data.type !== 'file' && data.type !== 'folder') {
+      return invalid('Add library request type must be file or folder.');
+    }
+
+    return valid({
+      type,
+      data: {
+        operate: data.operate,
+        parentId: data.parentId,
+        type: data.type,
+        name: data.name
+      }
+    } as AnyIpcRequest);
   }
 
-  if (data.pathInRuntime !== undefined && typeof data.pathInRuntime !== 'string') {
-    return invalid('Update library request pathInRuntime must be a string.');
+  if (data.operate === 'del') {
+    if (!isNonEmptyString(data.id)) {
+      return invalid('Delete library request requires id.');
+    }
+
+    return valid({
+      type,
+      data: {
+        operate: data.operate,
+        id: data.id
+      }
+    } as AnyIpcRequest);
+  }
+
+  if (!isNonEmptyString(data.id) || !isNonEmptyString(data.name)) {
+    return invalid('Rename library request requires id and name.');
   }
 
   return valid({
     type,
     data: {
       operate: data.operate,
-      path: data.path,
-      type: data.type,
-      pathInRuntime: data.pathInRuntime
+      id: data.id,
+      name: data.name
     }
   } as AnyIpcRequest);
 }
