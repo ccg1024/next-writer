@@ -29,7 +29,7 @@ export type RuntimeConfigResponse = {
   menuStatus: MainProcessMenuStatus;
 };
 
-export type IpcRequestMap = {
+type IpcRequestMap = {
   [IPC_CHANNEL.READ_CONFIG]: undefined;
   [IPC_CHANNEL.READ_FILE]: ReadFileRequest;
   [IPC_CHANNEL.UPDATE_LIB]: UpdateLibRequest;
@@ -38,7 +38,7 @@ export type IpcRequestMap = {
   [IPC_CHANNEL.UPDATE_CACHE]: UpdateCacheRequest;
 };
 
-export type IpcResponseMap = {
+type IpcResponseMap = {
   [IPC_CHANNEL.READ_CONFIG]: ReadConfigResponse;
   [IPC_CHANNEL.READ_FILE]: ReadFileResponse;
   [IPC_CHANNEL.UPDATE_LIB]: UpdateLibResponse;
@@ -50,7 +50,7 @@ export type IpcResponseMap = {
 export type IpcRequestData<C extends IpcChannel> = IpcRequestMap[C];
 export type IpcResponseData<C extends IpcChannel> = IpcResponseMap[C];
 
-export type IpcRequest<C extends IpcChannel = IpcChannel> =
+type IpcRequest<C extends IpcChannel = IpcChannel> =
   IpcRequestData<C> extends undefined
     ? {
         type: C;

@@ -19,10 +19,6 @@ import './index.less';
 const { Text, Title, Paragraph } = Typography;
 type MenuItem = Required<MenuProps>['items'][number];
 
-export interface LibrarySidebarExpoused {
-  updateLibItem(libItem: RendererLibraryTree): void;
-}
-
 function findNodeById(ids: string[], tree: RendererRootLibraryTree): RendererLibraryTree | undefined {
   if (!isEffectArray(ids) || !tree) {
     return void 0;

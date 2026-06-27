@@ -3,7 +3,7 @@ import { Decoration, EditorView } from '@codemirror/view';
 
 type LineDecorationSpec = Parameters<typeof Decoration.line>[0];
 
-export type FilterableDecoSpec = {
+type FilterableDecoSpec = {
   needFilter?: boolean;
   from?: number; // the lowest position to check with cursor;
   to?: number; // the highest position to check with cursor;

@@ -1,4 +1,4 @@
-import type { IpcChannel, IpcResponse } from 'src/window/ipc/ipc-contract';
+import type { IpcResponse } from 'src/window/ipc/ipc-contract';
 
 export type NormalObject = Record<
   string | symbol,
@@ -13,7 +13,7 @@ export type RendererListenerAction<T = Record<string, unknown>> = {
   type: (typeof RENDERER_LISTENER_ACTIONS)[number];
   payload?: T;
 };
-export type RendererListenerCallback = (action?: RendererListenerAction) => void;
+type RendererListenerCallback = (action?: RendererListenerAction) => void;
 
 export interface IPC {
   readConfig: () => Promise<Response<ReadConfigResponse>>;
@@ -61,9 +61,9 @@ declare global {
 // ============================================================
 // ==                    New Type define                     ==
 // ============================================================
-export type LibraryType = 'folder' | 'file';
+type LibraryType = 'folder' | 'file';
 
-export type LibraryBase = {
+type LibraryBase = {
   id: string; // Stable node identity persisted by the main process
   name: string; // Referer to file name
   type: LibraryType;
@@ -104,15 +104,6 @@ export type RendererRootLibraryTree = {
 
 export type RendererLibraryNode = RendererRootLibraryTree | RendererLibraryTree;
 
-export type MainProcessConfig = Partial<{
-  rootDir: string; // Absolute path of library
-  configDir: string; // next-writer configuration path
-  logDir: string; // next-writer log file storage path
-  menuStatus: MainProcessMenuStatus; // Record optional menu status, true or false, true means that the menu option is applied
-  renderConfig: NormalObject;
-  libraryTree: RootLibraryTree;
-}>;
-
 export type MainProcessMenuStatus = {
   librarySidebar: boolean;
   detailSidebar: boolean;
@@ -124,14 +115,9 @@ export type MainProcessMenuStatus = {
 // Just for Ipc communication -- start
 // ============================================================
 
-export type Request<T = unknown> = {
-  type: IpcChannel;
-  data?: T;
-};
-
 export type Response<T = unknown> = IpcResponse<T>;
 
-// NOTE: the type here is fill to data feild of Request or Response
+// NOTE: the type here is fill to data feild of Response
 
 export type ReadConfigResponse = {
   config: NormalObject;

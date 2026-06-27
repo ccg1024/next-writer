@@ -2,7 +2,7 @@ import { TagStyle } from '@codemirror/language';
 import { MarkdownConfig } from '@lezer/markdown';
 import { Tag } from '@lezer/highlight';
 
-export const boldItalicTag = {
+const boldItalicTag = {
   BoldItalic: Tag.define(),
   BoldItalicMark: Tag.define()
 };

@@ -10,7 +10,7 @@ type ValidationFailure = {
   message: string;
 };
 
-export type IpcRequestValidation = ValidationSuccess | ValidationFailure;
+type IpcRequestValidation = ValidationSuccess | ValidationFailure;
 
 const ALLOWED_CHANNELS = new Set<string>(IPC_CHANNELS);
 

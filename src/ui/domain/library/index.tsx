@@ -25,7 +25,7 @@ type LibraryAction =
       operation: RendererTreeOperation;
     };
 
-export type LibraryActions = {
+type LibraryActions = {
   setLibraryTree: (tree: RendererRootLibraryTree) => void;
   setCurrentLib: (node: RendererLibraryTree) => void;
   setCurrentNote: (node: RendererLibraryTree) => void;

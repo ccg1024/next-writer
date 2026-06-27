@@ -18,12 +18,6 @@ const { Title } = Typography;
 
 const MAX_DESCRIPTION_LENGTH = 100 as const;
 
-const editorTransactionActions = ['docChange', 'updateDescription'] as const;
-type EditorTransactionAction = {
-  type: (typeof editorTransactionActions)[number];
-  doc?: string;
-};
-
 const Main: FC = () => {
   const { message } = App.useApp();
   const { currentNote } = useLibraryState();
@@ -38,17 +32,10 @@ const Main: FC = () => {
   const prevNoteInfoRef = useRef<{ id?: string }>({});
 
   // 处理自定义编辑器事件
-  const debounceEditorTransaction = useMemo(() => {
-    function transaction(action: EditorTransactionAction) {
-      switch (action.type) {
-        case 'updateDescription': {
-          patchCurrentNote({ description: action.doc });
-          break;
-        }
-      }
-    }
-    return debounceFn(transaction);
-  }, [patchCurrentNote]);
+  const debounceDescriptionUpdate = useMemo(
+    () => debounceFn((description: string) => patchCurrentNote({ description })),
+    [patchCurrentNote]
+  );
 
   const headInProcess = useRef<string>('');
 
@@ -97,7 +84,7 @@ const Main: FC = () => {
               const doc =
                 fullDoc.length > MAX_DESCRIPTION_LENGTH ? fullDoc.substring(0, MAX_DESCRIPTION_LENGTH) : fullDoc;
               // Must using debounce function
-              debounceEditorTransaction({ type: 'updateDescription', doc });
+              debounceDescriptionUpdate(doc);
             }
           });
         }
@@ -123,18 +110,14 @@ const Main: FC = () => {
     [
       currentNote?.id,
       patchCurrentNote,
-      debounceEditorTransaction,
+      debounceDescriptionUpdate,
       updateFileCache,
       scheduleCacheUpdate,
       syncOutlineFromView
     ]
   );
 
-  const onEditorChange = useCallback((_update: ViewUpdate) => {
-    // ..
-  }, []);
-
-  const [divRef, editor] = useCodemirror<HTMLDivElement>({ initialEditorState, onEditorDocChange, onEditorChange });
+  const [divRef, editor] = useCodemirror<HTMLDivElement>({ initialEditorState, onEditorDocChange });
 
   const handleWriteFile = useCallback(() => {
     if (!editor || !currentNote?.id) {

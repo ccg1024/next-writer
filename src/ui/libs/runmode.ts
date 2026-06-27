@@ -72,7 +72,7 @@ function runmode(
   }
 }
 
-export function findLanguage(langName: string): LanguageDescription | null {
+function findLanguage(langName: string): LanguageDescription | null {
   const i = languages.findIndex((lang: LanguageDescription) => {
     if (lang.alias.indexOf(langName) >= 0) {
       return true;
