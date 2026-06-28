@@ -41,6 +41,7 @@ describe('AppMenu', () => {
     menuActions = {
       save: jest.fn(),
       toggleToc: jest.fn(),
+      toggleTypewriterMode: jest.fn(),
       toggleVisible: jest.fn(),
       synchronizeLibrary: jest.fn().mockResolvedValue(undefined)
     };
@@ -77,6 +78,12 @@ describe('AppMenu', () => {
     expect(menuActions.toggleVisible).toHaveBeenCalledWith('toggle-lib', win);
     expect(menuActions.toggleVisible).toHaveBeenCalledWith('toggle-lib-detail', win);
     expect(menuActions.toggleToc).toHaveBeenCalledWith(win);
+  });
+
+  it('delegates typewriter mode clicks to menu actions', () => {
+    clickMenuItem(appMenu.getMenuTemplate(), '编辑', '打字机模式', win);
+
+    expect(menuActions.toggleTypewriterMode).toHaveBeenCalledWith(win);
   });
 });
 

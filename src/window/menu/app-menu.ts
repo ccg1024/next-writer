@@ -15,6 +15,7 @@ class AppMenu implements IAppMenu {
     this.synchronousLibrary = this.synchronousLibrary.bind(this);
     this.save = this.save.bind(this);
     this.toggleToc = this.toggleToc.bind(this);
+    this.toggleTypewriterMode = this.toggleTypewriterMode.bind(this);
     this.toggleVisible = this.toggleVisible.bind(this);
   }
 
@@ -84,7 +85,8 @@ class AppMenu implements IAppMenu {
 
         {
           label: '打字机模式',
-          type: 'checkbox'
+          type: 'checkbox',
+          click: this.toggleTypewriterMode
         },
         {
           label: '专注模式',
@@ -124,6 +126,10 @@ class AppMenu implements IAppMenu {
 
   private toggleToc(_m: MenuItem, win: BrowserWindow): void {
     this.menuActions.toggleToc(win);
+  }
+
+  private toggleTypewriterMode(_m: MenuItem, win: BrowserWindow): void {
+    this.menuActions.toggleTypewriterMode(win);
   }
 
   toggleVisible(type: RendererListenerAction['type'], win: BrowserWindow): void {

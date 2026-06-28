@@ -15,6 +15,7 @@ describe('MenuStateStore', () => {
       librarySidebar: true,
       detailSidebar: true,
       tocSidebar: false,
+      typewriterMode: false,
       actionSidebar: false
     });
   });
@@ -28,10 +29,12 @@ describe('MenuStateStore', () => {
     expect(store.toggle('toggle-lib')).toBe(false);
     expect(store.toggle('toggle-lib-detail')).toBe(false);
     expect(store.toggle('toggle-toc')).toBe(true);
+    expect(store.toggle('toggle-typewriter-mode')).toBe(true);
     expect(store.getStatus()).toEqual({
       librarySidebar: false,
       detailSidebar: false,
       tocSidebar: true,
+      typewriterMode: true,
       actionSidebar: false
     });
   });

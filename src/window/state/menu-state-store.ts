@@ -6,6 +6,7 @@ const DEFAULT_MENU_STATUS: MainProcessMenuStatus = {
   librarySidebar: true,
   detailSidebar: true,
   tocSidebar: false,
+  typewriterMode: false,
   actionSidebar: false
 };
 
@@ -25,7 +26,12 @@ class MenuStateStore implements IMenuStateStore {
     return { ...this.status };
   }
 
-  toggle(type: Extract<RendererListenerAction['type'], 'toggle-lib' | 'toggle-lib-detail' | 'toggle-toc'>): boolean {
+  toggle(
+    type: Extract<
+      RendererListenerAction['type'],
+      'toggle-lib' | 'toggle-lib-detail' | 'toggle-toc' | 'toggle-typewriter-mode'
+    >
+  ): boolean {
     switch (type) {
       case 'toggle-lib':
         this.status = { ...this.status, librarySidebar: !this.status.librarySidebar };
@@ -36,6 +42,9 @@ class MenuStateStore implements IMenuStateStore {
       case 'toggle-toc':
         this.status = { ...this.status, tocSidebar: !this.status.tocSidebar };
         return this.status.tocSidebar;
+      case 'toggle-typewriter-mode':
+        this.status = { ...this.status, typewriterMode: !this.status.typewriterMode };
+        return this.status.typewriterMode;
     }
   }
 }

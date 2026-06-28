@@ -11,6 +11,7 @@ import { nwSpin } from 'src/ui/mix-components/spin';
 import rendererGateway from 'src/ui/shared/ipc/renderer-gateway';
 import { useLibraryActions, useLibraryState } from 'src/ui/domain/library';
 import { useEditorActions } from 'src/ui/domain/editor';
+import { useRuntimeLayout } from 'src/ui/domain/runtime';
 
 import './index.less';
 
@@ -21,7 +22,9 @@ const MAX_DESCRIPTION_LENGTH = 100 as const;
 const Main: FC = () => {
   const { message } = App.useApp();
   const { currentNote } = useLibraryState();
+  const { runtimeConfig } = useRuntimeLayout();
   const [initialEditorState, setInitialEditorState] = useState<InitialEditorState>(null);
+  const [typewriterMode, setTypewriterMode] = useState(false);
   const { patchCurrentNote, renameNode, setLibraryTree } = useLibraryActions();
   const { setEditorView, syncOutlineFromView } = useEditorActions();
   const cacheUpdateTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -117,7 +120,11 @@ const Main: FC = () => {
     ]
   );
 
-  const [divRef, editor] = useCodemirror<HTMLDivElement>({ initialEditorState, onEditorDocChange });
+  const [divRef, editor] = useCodemirror<HTMLDivElement>({
+    initialEditorState,
+    onEditorDocChange,
+    typewriterMode
+  });
 
   const handleWriteFile = useCallback(() => {
     if (!editor || !currentNote?.id) {
@@ -159,9 +166,17 @@ const Main: FC = () => {
 
   useRendererCommand('write-file', handleWriteFile);
 
+  useRendererCommand('toggle-typewriter-mode', (_e, action) => {
+    setTypewriterMode(Boolean(action.payload));
+  });
+
   // ============================================================
   // Effect
   // ============================================================
+  useEffect(() => {
+    setTypewriterMode(runtimeConfig?.menuStatus?.typewriterMode ?? false);
+  }, [runtimeConfig?.menuStatus?.typewriterMode]);
+
   // Effect 1: Read file content when note changes
   useEffect(() => {
     if (isTrulyEmpty(currentNote?.id)) {

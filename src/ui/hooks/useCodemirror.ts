@@ -4,14 +4,16 @@ import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
 import { bracketMatching, foldKeymap, HighlightStyle, indentOnInput, syntaxHighlighting } from '@codemirror/language';
 import { languages } from '@codemirror/language-data';
 import { highlightSelectionMatches, searchKeymap } from '@codemirror/search';
-import { Compartment, EditorState } from '@codemirror/state';
+import { Compartment, EditorState, Extension } from '@codemirror/state';
 import {
   drawSelection,
   dropCursor,
   EditorView,
   highlightSpecialChars,
   keymap,
+  PluginValue,
   rectangularSelection,
+  ViewPlugin,
   ViewUpdate
 } from '@codemirror/view';
 import React, { CSSProperties, useEffect, useMemo, useRef, useState } from 'react';
@@ -39,6 +41,7 @@ interface Props {
   initialEditorState: InitialEditorState;
   onEditorChange?: IMountUpdateListener['onChange'];
   onEditorDocChange?: IMountUpdateListener['onDocChange'];
+  typewriterMode?: boolean;
 }
 /**
  * Return a ref object which to contain the codemirror edito, and a codemirror view instance
@@ -46,7 +49,7 @@ interface Props {
  * @author crazycodegame
  */
 const useCodemirror = <T extends Element>(props: Props): [React.MutableRefObject<T | null>, EditorView] => {
-  const { initialEditorState, onEditorChange, onEditorDocChange } = props;
+  const { initialEditorState, onEditorChange, onEditorDocChange, typewriterMode = false } = props;
   const [editorView, setEditorView] = useState<EditorView>(null);
   const containerRef = useRef<T>(null);
   const callbackRef = useRef<CallbackRef>({ onChange: void 0, onDocChange: void 0 });
@@ -103,6 +106,24 @@ const useCodemirror = <T extends Element>(props: Props): [React.MutableRefObject
     };
   }, [initialEditorState]);
 
+  useEffect(() => {
+    if (!editorView) {
+      return;
+    }
+
+    const effects = [typewriterModeCompartment.reconfigure(typewriterMode ? typewriterModeExtension : [])];
+    if (typewriterMode) {
+      effects.push(
+        EditorView.scrollIntoView(editorView.state.selection.main.head, {
+          y: 'center',
+          yMargin: 24
+        })
+      );
+    }
+
+    editorView.dispatch({ effects });
+  }, [editorView, typewriterMode]);
+
   return [containerRef, editorView];
 };
 
@@ -130,6 +151,7 @@ function defaultExtension() {
       addKeymap: true,
       extensions: [markdownTagExtension(), ...nextWriterSyntaxExtension.syntax]
     }),
+    typewriterModeCompartment.of([]),
     defaultTheme
   ];
 }
@@ -176,6 +198,112 @@ function markdownTagExtension(): MarkdownConfig {
       })
     ]
   };
+}
+
+// ============================================================
+// Typewriter mode
+// ============================================================
+
+const TYPEWRITER_FOCUS_RADIUS = 48;
+const TYPEWRITER_FADE_RADIUS = 360;
+
+const typewriterModeCompartment = new Compartment();
+
+class TypewriterModePlugin implements PluginValue {
+  private animationFrame: number | null = null;
+  private readonly view: EditorView;
+  private readonly updateCursorY = () => {
+    this.scheduleCursorYUpdate(this.view);
+  };
+
+  constructor(view: EditorView) {
+    this.view = view;
+    view.contentDOM.style.setProperty('--nw-typewriter-focus-radius', `${TYPEWRITER_FOCUS_RADIUS}px`);
+    view.contentDOM.style.setProperty('--nw-typewriter-fade-radius', `${TYPEWRITER_FADE_RADIUS}px`);
+    view.scrollDOM.addEventListener('scroll', this.updateCursorY);
+    this.scheduleCursorYUpdate(view);
+  }
+
+  update(update: ViewUpdate) {
+    if (update.docChanged || update.selectionSet || update.geometryChanged) {
+      this.scheduleCursorYUpdate(update.view);
+    }
+  }
+
+  destroy() {
+    this.view.scrollDOM.removeEventListener('scroll', this.updateCursorY);
+    if (this.animationFrame !== null) {
+      cancelAnimationFrame(this.animationFrame);
+      this.animationFrame = null;
+    }
+    this.view.contentDOM.style.removeProperty('--nw-typewriter-cursor-y');
+    this.view.contentDOM.style.removeProperty('--nw-typewriter-focus-radius');
+    this.view.contentDOM.style.removeProperty('--nw-typewriter-fade-radius');
+  }
+
+  private scheduleCursorYUpdate(view?: EditorView): void {
+    if (this.animationFrame !== null) {
+      cancelAnimationFrame(this.animationFrame);
+    }
+
+    this.animationFrame = requestAnimationFrame(() => {
+      this.animationFrame = null;
+      if (!view?.dom.isConnected) {
+        return;
+      }
+
+      updateTypewriterCursorY(view);
+    });
+  }
+}
+
+const typewriterModeExtension: Extension = [
+  EditorView.editorAttributes.of({ class: 'nw-typewriter-mode' }),
+  EditorView.baseTheme({
+    '&.nw-typewriter-mode .cm-content': {
+      WebkitMaskImage:
+        'linear-gradient(to bottom, transparent 0, transparent calc(var(--nw-typewriter-cursor-y) - var(--nw-typewriter-fade-radius)), black calc(var(--nw-typewriter-cursor-y) - var(--nw-typewriter-focus-radius)), black calc(var(--nw-typewriter-cursor-y) + var(--nw-typewriter-focus-radius)), transparent calc(var(--nw-typewriter-cursor-y) + var(--nw-typewriter-fade-radius)), transparent 100%)',
+      maskImage:
+        'linear-gradient(to bottom, transparent 0, transparent calc(var(--nw-typewriter-cursor-y) - var(--nw-typewriter-fade-radius)), black calc(var(--nw-typewriter-cursor-y) - var(--nw-typewriter-focus-radius)), black calc(var(--nw-typewriter-cursor-y) + var(--nw-typewriter-focus-radius)), transparent calc(var(--nw-typewriter-cursor-y) + var(--nw-typewriter-fade-radius)), transparent 100%)',
+      WebkitMaskRepeat: 'no-repeat',
+      maskRepeat: 'no-repeat',
+      transition: 'mask-image 120ms ease, -webkit-mask-image 120ms ease'
+    }
+  }),
+  ViewPlugin.fromClass(TypewriterModePlugin),
+  EditorView.updateListener.of(update => {
+    if (!update.docChanged && !update.selectionSet) {
+      return;
+    }
+
+    scrollCursorToTypewriterCenter(update.view);
+  })
+];
+
+function scrollCursorToTypewriterCenter(view: EditorView): void {
+  requestAnimationFrame(() => {
+    if (!view.dom.isConnected) {
+      return;
+    }
+
+    view.dispatch({
+      effects: EditorView.scrollIntoView(view.state.selection.main.head, {
+        y: 'center',
+        yMargin: 24
+      })
+    });
+  });
+}
+
+function updateTypewriterCursorY(view: EditorView): void {
+  const cursorRect = view.coordsAtPos(view.state.selection.main.head);
+  if (!cursorRect) {
+    return;
+  }
+
+  const contentRect = view.contentDOM.getBoundingClientRect();
+  const cursorY = cursorRect.top + (cursorRect.bottom - cursorRect.top) / 2 - contentRect.top;
+  view.contentDOM.style.setProperty('--nw-typewriter-cursor-y', `${cursorY}px`);
 }
 
 export const nwSyntaxHighlight = HighlightStyle.define([

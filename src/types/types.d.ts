@@ -9,7 +9,13 @@ export type NormalObject = Record<
 // -----------------------------------------------
 // For Renderer process
 // -----------------------------------------------
-const RENDERER_LISTENER_ACTIONS = ['write-file', 'toggle-toc', 'toggle-lib', 'toggle-lib-detail'] as const;
+const RENDERER_LISTENER_ACTIONS = [
+  'write-file',
+  'toggle-toc',
+  'toggle-lib',
+  'toggle-lib-detail',
+  'toggle-typewriter-mode'
+] as const;
 export type RendererListenerAction<T = Record<string, unknown>> = {
   type: (typeof RENDERER_LISTENER_ACTIONS)[number];
   payload?: T;
@@ -111,6 +117,7 @@ export type MainProcessMenuStatus = {
   librarySidebar: boolean;
   detailSidebar: boolean;
   tocSidebar: boolean;
+  typewriterMode: boolean;
   actionSidebar: boolean; // The Drawer component sidebar which contain delete, rename, etc option for a library or a library's file
 };
 

@@ -25,6 +25,14 @@ class MenuActionService implements IMenuActionService {
     } as RendererListenerAction<boolean>);
   }
 
+  toggleTypewriterMode(win: BrowserWindow): void {
+    const typewriterMode = this.menuStateStore.toggle('toggle-typewriter-mode');
+    win.webContents.send('next-ipc-client', {
+      type: 'toggle-typewriter-mode',
+      payload: typewriterMode
+    } as RendererListenerAction<boolean>);
+  }
+
   toggleVisible(type: RendererListenerAction['type'], win: BrowserWindow): void {
     let payload: boolean | null = null;
     switch (type) {

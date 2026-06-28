@@ -5,6 +5,7 @@ export type RuntimeRecord = {
     librarySidebar: boolean;
     detailSidebar: boolean;
     tocSidebar: boolean;
+    typewriterMode: boolean;
     actionSidebar: boolean;
   };
 };
