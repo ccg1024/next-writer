@@ -6,7 +6,7 @@ import { filterableReplaceDeco, replaceDecorationFilter } from '../../global/uti
 
 const theme = EditorView.baseTheme({
   '.cm-content > .cm-code-block': {
-    backgroundColor: '#cccccc22',
+    backgroundColor: 'var(--nw-hover-bg)',
     fontFamily: 'var(--nw-editor-code-font-family)',
     position: 'relative',
     marginInline: '16px',
@@ -19,7 +19,7 @@ const theme = EditorView.baseTheme({
       width: '16px',
       zIndex: -1,
       transform: 'translateX(-100%)',
-      backgroundColor: '#cccccc22'
+      backgroundColor: 'var(--nw-hover-bg)'
     },
     '&::after': {
       content: '""',
@@ -30,7 +30,7 @@ const theme = EditorView.baseTheme({
       width: '16px',
       zIndex: -1,
       transform: 'translateX(100%)',
-      backgroundColor: '#cccccc22'
+      backgroundColor: 'var(--nw-hover-bg)'
     }
   }
 });

@@ -30,8 +30,11 @@ export function validateIpcRequest(value: unknown): IpcRequestValidation {
 
   switch (channel) {
     case IPC_CHANNEL.READ_CONFIG:
+    case IPC_CHANNEL.LIST_THEMES:
     case IPC_CHANNEL.RUNTIME:
       return validateNoPayload(value, channel);
+    case IPC_CHANNEL.APPLY_THEME:
+      return validateApplyTheme(data, channel);
     case IPC_CHANNEL.READ_FILE:
       return validateReadFile(data, channel);
     case IPC_CHANNEL.UPDATE_LIB:
@@ -43,6 +46,14 @@ export function validateIpcRequest(value: unknown): IpcRequestValidation {
     default:
       return invalid('Invalid IPC channel.');
   }
+}
+
+function validateApplyTheme(data: unknown, type: IpcChannel): IpcRequestValidation {
+  if (!isRecord(data) || !isNonEmptyString(data.themeId)) {
+    return invalid('Apply theme request requires a non-empty themeId.');
+  }
+
+  return valid({ type, data: { themeId: data.themeId } } as AnyIpcRequest);
 }
 
 function validateNoPayload(value: Record<string, unknown>, type: IpcChannel): IpcRequestValidation {

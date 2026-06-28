@@ -45,10 +45,14 @@ import IDocumentService from '../interface/document-service';
 import DocumentService from '../domain/document-service';
 import IMenuActionService from '../interface/menu-action-service';
 import MenuActionService from '../menu/menu-action-service';
+import IThemeService from '../interface/theme-service';
+import ThemeService from '../domain/theme-service';
 import ISenderValidator from '../interface/sender-validator';
 import SenderValidator from '../ipc/sender-validator';
 import IIpcHandler from '../interface/ipc-handler';
 import {
+  ApplyThemeHandler,
+  ListThemesHandler,
   ReadConfigHandler,
   ReadFileHandler,
   RuntimeHandler,
@@ -87,9 +91,12 @@ container.bind<IWorkspaceService>(TYPES.IWorkspaceService).to(WorkspaceService).
 container.bind<ILibraryService>(TYPES.ILibraryService).to(LibraryService).inSingletonScope();
 container.bind<IDocumentService>(TYPES.IDocumentService).to(DocumentService).inSingletonScope();
 container.bind<IMenuActionService>(TYPES.IMenuActionService).to(MenuActionService).inSingletonScope();
+container.bind<IThemeService>(TYPES.IThemeService).to(ThemeService).inSingletonScope();
 container.bind<ISenderValidator>(TYPES.ISenderValidator).to(SenderValidator).inSingletonScope();
 
 container.bind<IIpcHandler>(TYPES.IIpcHandler).to(ReadConfigHandler).inSingletonScope();
+container.bind<IIpcHandler>(TYPES.IIpcHandler).to(ListThemesHandler).inSingletonScope();
+container.bind<IIpcHandler>(TYPES.IIpcHandler).to(ApplyThemeHandler).inSingletonScope();
 container.bind<IIpcHandler>(TYPES.IIpcHandler).to(ReadFileHandler).inSingletonScope();
 container.bind<IIpcHandler>(TYPES.IIpcHandler).to(UpdateLibHandler).inSingletonScope();
 container.bind<IIpcHandler>(TYPES.IIpcHandler).to(WriteFileHandler).inSingletonScope();

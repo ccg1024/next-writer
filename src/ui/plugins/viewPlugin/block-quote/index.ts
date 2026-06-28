@@ -6,7 +6,7 @@ import { measureText } from '../../global/utils';
 
 const theme = EditorView.baseTheme({
   '.cm-block-quote': {
-    backgroundColor: 'rgba(226,232,240,0.5)'
+    backgroundColor: 'var(--nw-hover-bg)'
   }
 });
 class BlockQuote implements PluginValue {

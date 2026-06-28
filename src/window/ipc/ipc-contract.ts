@@ -1,19 +1,24 @@
 import type {
   MainProcessMenuStatus,
+  ApplyThemeRequest,
   ReadConfigResponse,
   ReadFileRequest,
   ReadFileResponse,
   RootLibraryTree,
+  ThemeStateResponse,
   UpdateCacheRequest,
   UpdateLibRequest,
   UpdateLibResponse,
   WriteFileRequest
 } from '_types';
+import type { ResolvedTheme } from 'src/theme/theme-contract';
 
 export const IPC_SERVER_NAME = 'next-ipc-server';
 
 export const IPC_CHANNEL = {
   READ_CONFIG: 'read-config',
+  LIST_THEMES: 'list-themes',
+  APPLY_THEME: 'apply-theme',
   READ_FILE: 'read-file',
   UPDATE_LIB: 'update-lib',
   WRITE_FILE: 'write-file',
@@ -31,6 +36,8 @@ export type RuntimeConfigResponse = {
 
 type IpcRequestMap = {
   [IPC_CHANNEL.READ_CONFIG]: undefined;
+  [IPC_CHANNEL.LIST_THEMES]: undefined;
+  [IPC_CHANNEL.APPLY_THEME]: ApplyThemeRequest;
   [IPC_CHANNEL.READ_FILE]: ReadFileRequest;
   [IPC_CHANNEL.UPDATE_LIB]: UpdateLibRequest;
   [IPC_CHANNEL.WRITE_FILE]: WriteFileRequest;
@@ -40,6 +47,8 @@ type IpcRequestMap = {
 
 type IpcResponseMap = {
   [IPC_CHANNEL.READ_CONFIG]: ReadConfigResponse;
+  [IPC_CHANNEL.LIST_THEMES]: ThemeStateResponse;
+  [IPC_CHANNEL.APPLY_THEME]: ResolvedTheme;
   [IPC_CHANNEL.READ_FILE]: ReadFileResponse;
   [IPC_CHANNEL.UPDATE_LIB]: UpdateLibResponse;
   [IPC_CHANNEL.WRITE_FILE]: RootLibraryTree;

@@ -1,4 +1,5 @@
 import type { IpcResponse } from 'src/window/ipc/ipc-contract';
+import type { ResolvedTheme, ThemeListItem } from 'src/theme/theme-contract';
 
 export type NormalObject = Record<
   string | symbol,
@@ -17,6 +18,8 @@ type RendererListenerCallback = (action?: RendererListenerAction) => void;
 
 export interface IPC {
   readConfig: () => Promise<Response<ReadConfigResponse>>;
+  listThemes: () => Promise<Response<ThemeStateResponse>>;
+  applyTheme: (data: ApplyThemeRequest) => Promise<Response<ResolvedTheme>>;
   readFile: (data: ReadFileRequest) => Promise<Response<ReadFileResponse>>;
   updateLib: (data: UpdateLibRequest) => Promise<Response<UpdateLibResponse>>;
   writeFile: (data: WriteFileRequest) => Promise<Response<RootLibraryTree>>;
@@ -122,6 +125,17 @@ export type Response<T = unknown> = IpcResponse<T>;
 export type ReadConfigResponse = {
   config: NormalObject;
   libTree: RootLibraryTree;
+  themes: ThemeListItem[];
+  activeTheme: ResolvedTheme;
+};
+
+export type ThemeStateResponse = {
+  themes: ThemeListItem[];
+  activeTheme: ResolvedTheme;
+};
+
+export type ApplyThemeRequest = {
+  themeId: string;
 };
 
 export type ReadFileRequest = {

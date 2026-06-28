@@ -13,12 +13,12 @@ const theme = EditorView.baseTheme({
       top: '50%',
       left: 0,
       width: '100%',
-      borderTop: '2px solid #586EA5',
+      borderTop: '2px solid var(--nw-theme-head-content)',
       transform: 'translateY(-50%)'
     }
   },
   '.cm-inline-code': {
-    backgroundColor: 'rgba(175, 184, 193, 0.2)',
+    backgroundColor: 'var(--nw-hover-bg)',
     padding: '0.15em 0.3em',
     borderRadius: '4px',
     fontFamily: 'var(--nw-editor-code-font-family)'
@@ -26,7 +26,7 @@ const theme = EditorView.baseTheme({
   '.cm-inline-code-mark': {
     borderStartStartRadius: '4px',
     borderEndStartRadius: '4px',
-    backgroundColor: 'rgba(175, 184, 193, 0.2)',
+    backgroundColor: 'var(--nw-hover-bg)',
     color: 'var(--nw-theme-code-mark)',
     padding: '0.15em 0',
     fontFamily: 'var(--nw-editor-code-font-family)'

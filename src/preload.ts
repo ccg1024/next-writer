@@ -19,9 +19,16 @@ function post(param: unknown) {
 
 // Expose protected methods that allow the renderer process to use
 contextBridge.exposeInMainWorld('ipc', {
-
   readConfig() {
     return post({ type: IPC_CHANNEL.READ_CONFIG });
+  },
+
+  listThemes() {
+    return post({ type: IPC_CHANNEL.LIST_THEMES });
+  },
+
+  applyTheme(data: unknown) {
+    return post({ type: IPC_CHANNEL.APPLY_THEME, data });
   },
 
   readFile(data: unknown) {

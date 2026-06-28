@@ -51,6 +51,18 @@
   --nw-letter-spacing: 0.1em;
   --nw-editor-text-align: left;
   --nw-editor-content-padding: 0px;
+  --nw-app-bg: #ffffff;
+  --nw-panel-bg: #ffffff;
+  --nw-sidebar-bg: #ebebeb;
+  --nw-border-color: rgba(0, 0, 0, 0.1);
+  --nw-text-primary: rgba(0, 0, 0, 0.88);
+  --nw-text-secondary: rgba(0, 0, 0, 0.65);
+  --nw-hover-bg: rgba(0, 0, 0, 0.04);
+  --nw-selected-bg: rgba(0, 0, 0, 0.06);
+  --nw-danger-color: #ff4d4f;
+  --nw-editor-bg: #ffffff;
+  --nw-editor-text: #000000;
+  --nw-editor-selection-bg: rgba(217, 217, 217, 0.5);
 }
 
 @keyframes animation-rotate {
@@ -73,6 +85,8 @@
   box-sizing: border-box;
   position: relative;
   height: 100vh;
+  color: var(--nw-text-primary);
+  background-color: var(--nw-app-bg);
 }
 
 #home {
@@ -88,8 +102,8 @@
   flex-basis: 0;
   min-width: 0;
   overflow: hidden;
-  background-color: #ffffff;
-  border-left: 1px solid #ccc;
+  background-color: var(--nw-app-bg);
+  border-left: 1px solid var(--nw-border-color);
   font-size: 16px;
   position: relative;
   display: flex;

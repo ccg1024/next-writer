@@ -6,6 +6,10 @@ import { validateIpcRequest } from './request-validator';
 describe('validateIpcRequest', () => {
   it('accepts valid requests for every IPC channel', () => {
     expect(validateIpcRequest({ type: IPC_CHANNEL.READ_CONFIG })).toMatchObject({ valid: true });
+    expect(validateIpcRequest({ type: IPC_CHANNEL.LIST_THEMES })).toMatchObject({ valid: true });
+    expect(validateIpcRequest({ type: IPC_CHANNEL.APPLY_THEME, data: { themeId: 'default-light' } })).toMatchObject({
+      valid: true
+    });
     expect(validateIpcRequest({ type: IPC_CHANNEL.RUNTIME })).toMatchObject({ valid: true });
     expect(validateIpcRequest({ type: IPC_CHANNEL.READ_FILE, data: { id: 'note-id' } })).toMatchObject({
       valid: true
@@ -59,6 +63,13 @@ describe('validateIpcRequest', () => {
     expect(validateIpcRequest({ type: IPC_CHANNEL.READ_FILE, data: { id: '' } })).toEqual({
       valid: false,
       message: 'Read file request requires a non-empty id.'
+    });
+  });
+
+  it('rejects invalid apply-theme payloads', () => {
+    expect(validateIpcRequest({ type: IPC_CHANNEL.APPLY_THEME, data: { themeId: '' } })).toEqual({
+      valid: false,
+      message: 'Apply theme request requires a non-empty themeId.'
     });
   });
 

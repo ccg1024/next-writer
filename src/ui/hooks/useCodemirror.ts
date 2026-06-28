@@ -349,7 +349,9 @@ const defaultThemeCss: { [key: string]: CSSProperties | StyleSpec } = {
   '&': {
     // css in cm-editor
     fontSize: '1em',
-    height: '100%'
+    height: '100%',
+    color: 'var(--nw-editor-text)',
+    backgroundColor: 'var(--nw-editor-bg)'
   },
   '.cm-scroller': {
     lineHeight: 1.5,
@@ -370,7 +372,7 @@ const defaultThemeCss: { [key: string]: CSSProperties | StyleSpec } = {
     padding: 0
   },
   '&.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground': {
-    backgroundColor: 'rgba(217, 217, 217, 0.5)'
+    backgroundColor: 'var(--nw-editor-selection-bg)'
   }
 };
 const _defaultTheme = EditorView.theme(defaultThemeCss as { [key: string]: StyleSpec });

@@ -25,6 +25,7 @@ export const MAX_FILE_DESCRIPTION_LENGTH = 100;
 
 // Default config
 export const NW_CONFIG = {
+  themeId: 'default-light',
   uiFontSize: '14px',
   editorFontSize: '14px',
   editorFont: "'PingFang SC'",

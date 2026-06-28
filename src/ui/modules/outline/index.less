@@ -2,11 +2,12 @@
   box-sizing: border-box;
   width: 240px;
   padding: 16px;
-  border-left: 1px solid rgba(0, 0, 0, 0.1);
+  border-left: 1px solid var(--nw-border-color);
   flex-shrink: 0;
   flex-grow: 0;
   min-width: 0px;
-  background-color: #ebebeb;
+  color: var(--nw-text-primary);
+  background-color: var(--nw-sidebar-bg);
 
   .next-writer-outline-content {
     overflow: auto;
@@ -18,7 +19,7 @@
 
       &:hover {
         cursor: pointer;
-        background-color: rgba(0, 0, 0, 0.04);
+        background-color: var(--nw-hover-bg);
       }
     }
   }

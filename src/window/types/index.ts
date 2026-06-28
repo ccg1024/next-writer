@@ -28,6 +28,7 @@ const TYPES = {
   ILibraryService: Symbol.for('ILibraryService'),
   IDocumentService: Symbol.for('IDocumentService'),
   IMenuActionService: Symbol.for('IMenuActionService'),
+  IThemeService: Symbol.for('IThemeService'),
   ISenderValidator: Symbol.for('ISenderValidator')
 };
 

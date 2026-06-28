@@ -16,19 +16,23 @@ import { rendererIpcListener } from 'src/ui/shared/renderer-command';
 
 import './index.css';
 
-const Home = () => {
+type HomeProps = {
+  initialConfigData?: ReadConfigResponse | null;
+};
+
+const Home = ({ initialConfigData }: HomeProps) => {
   return (
     <RuntimeProvider>
       <LibraryProvider>
         <EditorProvider>
-          <HomeContent />
+          <HomeContent initialConfigData={initialConfigData} />
         </EditorProvider>
       </LibraryProvider>
     </RuntimeProvider>
   );
 };
 
-const HomeContent = () => {
+const HomeContent = ({ initialConfigData }: HomeProps) => {
   const [renderConfig, setRenderConfig] = useState(null);
   const { setLibraryTree } = useLibraryActions();
   const { setRuntimeConfig } = useRuntimeLayout();
@@ -37,33 +41,42 @@ const HomeContent = () => {
   // Effects
   // ============================================================
   useLayoutEffect(() => {
+    const applyConfig = (data: ReadConfigResponse) => {
+      const { config, libTree } = data;
+      setRenderConfig(config);
+
+      // Generating information
+      setLibraryTree(libTree as RendererRootLibraryTree);
+
+      // change css variable
+      const r = document.querySelector('body');
+      const c = config ?? {};
+      if (c.codeFont) {
+        r.style.setProperty('--nw-editor-code-font-family', c.codeFont as string);
+      }
+      if (c.editorFont) {
+        r.style.setProperty('--nw-editor-font-family', c.editorFont as string);
+      }
+      if (c.editorFontSize) {
+        r.style.setProperty('--nw-editor-font-size', c.editorFontSize as string);
+      }
+    };
+
+    if (initialConfigData) {
+      applyConfig(initialConfigData);
+      return;
+    }
+
     rendererGateway.readConfig().then(res => {
       const { status, data, message: msg } = res || {};
 
       if (status === 0) {
-        const { config, libTree } = (data ?? {}) as ReadConfigResponse;
-        setRenderConfig(config);
-
-        // Generating information
-        setLibraryTree(libTree as RendererRootLibraryTree);
-
-        // change css variable
-        const r = document.querySelector('body');
-        const c = config ?? {};
-        if (c.codeFont) {
-          r.style.setProperty('--nw-editor-code-font-family', c.codeFont);
-        }
-        if (c.editorFont) {
-          r.style.setProperty('--nw-editor-font-family', c.editorFont);
-        }
-        if (c.editorFontSize) {
-          r.style.setProperty('--nw-editor-font-size', c.editorFontSize);
-        }
+        applyConfig((data ?? {}) as ReadConfigResponse);
       } else {
         message.error(msg || '读取配置失败');
       }
     });
-  }, [setLibraryTree]);
+  }, [initialConfigData, setLibraryTree]);
 
   useEffect(() => {
     rendererGateway.queryRuntimeConfig().then(res => {

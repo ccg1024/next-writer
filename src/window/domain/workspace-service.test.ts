@@ -7,6 +7,7 @@ import nodePath from 'path';
 import { ROOT_CONFIG_NAME, ROOT_DIR_NAME, ROOT_LIBRARY_ID } from 'src/config/env';
 import FileSystem from '../infrastructure/file-system';
 import IConfigService from '../interface/config-service';
+import IThemeService from '../interface/theme-service';
 import AppPathStore from '../state/app-path-store';
 import LibraryTreeStore from '../state/library-tree-store';
 import WorkspaceService from './workspace-service';
@@ -54,9 +55,17 @@ describe('WorkspaceService', () => {
       })
     );
     const libraryTreeStore = new LibraryTreeStore();
-    const workspaceService = new WorkspaceService(new FileSystem(), new AppPathStore(), libraryTreeStore, {
-      initConfig: jest.fn().mockResolvedValue(undefined)
-    } as unknown as IConfigService);
+    const workspaceService = new WorkspaceService(
+      new FileSystem(),
+      new AppPathStore(),
+      libraryTreeStore,
+      {
+        initConfig: jest.fn().mockResolvedValue(undefined)
+      } as unknown as IConfigService,
+      {
+        initThemes: jest.fn().mockResolvedValue(undefined)
+      } as unknown as IThemeService
+    );
 
     await workspaceService.initWorkspace();
 

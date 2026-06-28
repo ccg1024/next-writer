@@ -6,6 +6,7 @@ import IAppPathStore from '../interface/app-path-store';
 import IConfigService from '../interface/config-service';
 import IFileSystem from '../interface/file-system';
 import ILibraryTreeStore from '../interface/library-tree-store';
+import IThemeService from '../interface/theme-service';
 import IWorkspaceService from '../interface/workspace-service';
 import { normalizeLibraryTree, persistLibTree } from '../utils/lib-tree-utils';
 import { TYPES } from '../types';
@@ -16,7 +17,8 @@ class WorkspaceService implements IWorkspaceService {
     @inject(TYPES.IFileSystem) private fileSystem: IFileSystem,
     @inject(TYPES.IAppPathStore) private appPathStore: IAppPathStore,
     @inject(TYPES.ILibraryTreeStore) private libraryTreeStore: ILibraryTreeStore,
-    @inject(TYPES.IConfigService) private configService: IConfigService
+    @inject(TYPES.IConfigService) private configService: IConfigService,
+    @inject(TYPES.IThemeService) private themeService: IThemeService
   ) {}
 
   async initWorkspace(): Promise<void> {
@@ -45,6 +47,7 @@ class WorkspaceService implements IWorkspaceService {
     }
 
     await this.configService.initConfig();
+    await this.themeService.initThemes();
 
     const realRoot = this.appPathStore.getRootDir();
     if (isTrulyEmpty(realRoot)) {
