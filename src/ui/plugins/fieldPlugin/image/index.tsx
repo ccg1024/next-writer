@@ -71,7 +71,6 @@ const IMAGE_WIDGET_VERTICAL_PADDING = 4;
 const DEFAULT_IMAGE_WIDGET_ESTIMATED_HEIGHT = 240 + IMAGE_WIDGET_VERTICAL_PADDING;
 const imageHeightCache = new Map<string, ImageHeightCache>();
 const IMAGE_WIDGET_DECORATION_KIND = 'image-widget';
-const IMAGE_SYNTAX_LINE_BREAK_DECORATION_KIND = 'image-syntax-line-break';
 const IMAGE_SYNTAX_HIDDEN_DECORATION_KIND = 'image-syntax-hidden';
 
 function getImageHeightCacheKey({ url, width, float }: ImageWidgetParams) {
@@ -204,27 +203,6 @@ export const imageDecoration = (param: ImageWidgetParams) =>
     imageDecorationKind: IMAGE_WIDGET_DECORATION_KIND
   });
 
-class ImageSyntaxLineBreakWidget extends WidgetType {
-  eq(widget: WidgetType) {
-    return widget instanceof ImageSyntaxLineBreakWidget;
-  }
-
-  toDOM() {
-    return document.createElement('br');
-  }
-
-  get lineBreaks(): number {
-    return 1;
-  }
-}
-
-export const imageSyntaxLineBreakDecoration = () =>
-  Decoration.widget({
-    widget: new ImageSyntaxLineBreakWidget(),
-    side: 1,
-    imageDecorationKind: IMAGE_SYNTAX_LINE_BREAK_DECORATION_KIND
-  });
-
 export const imageSyntaxHiddenDecoration = () =>
   Decoration.replace({
     inclusive: false,
@@ -238,7 +216,6 @@ type RangeImg = {
   to: number;
   syntaxTo: number;
   widgetFrom: number;
-  lineBreakFrom?: number;
   url: string;
   width?: string;
   float: ImageFloat;
@@ -284,10 +261,6 @@ function getImageAttributeNode(imageNode: SyntaxNodeRef): SyntaxNode | undefined
 
 function getImageSyntaxTo(imageNode: SyntaxNodeRef, attributeNode: SyntaxNode | undefined) {
   return attributeNode?.to ?? imageNode.to;
-}
-
-function getImageSyntaxLineBreakFrom(state: EditorState, syntaxTo: number): number | undefined {
-  return syntaxTo < state.doc.lineAt(syntaxTo).to ? syntaxTo : undefined;
 }
 
 function readAttributeValue(state: EditorState, valueNode: SyntaxNode): string {
@@ -359,7 +332,6 @@ const getImageList = (state: EditorState, from: number, to: number, ensureTotal?
             to: node.to,
             syntaxTo,
             widgetFrom: node.from,
-            lineBreakFrom: getImageSyntaxLineBreakFrom(state, syntaxTo),
             url,
             ...attributes
           });
@@ -374,15 +346,7 @@ const getImageList = (state: EditorState, from: number, to: number, ensureTotal?
 export { getImageList };
 
 function getImageDecorationRanges(img: RangeImg) {
-  const ranges: Range<Decoration>[] = [
-    imageDecoration({ url: img.url, width: img.width, float: img.float }).range(img.widgetFrom)
-  ];
-
-  if (img.lineBreakFrom !== undefined) {
-    ranges.push(imageSyntaxLineBreakDecoration().range(img.lineBreakFrom));
-  }
-
-  return ranges;
+  return [imageDecoration({ url: img.url, width: img.width, float: img.float }).range(img.widgetFrom)];
 }
 
 function isImageDecorationKind(value: Decoration, kind: string) {
@@ -474,9 +438,7 @@ export const imageField = StateField.define<DecorationSet>({
         imageField = imageField.update({
           filter(from, _to, value) {
             return !preImageList.find(
-              p =>
-                (isImageDecorationKind(value, IMAGE_WIDGET_DECORATION_KIND) && p.widgetFrom === from) ||
-                (isImageDecorationKind(value, IMAGE_SYNTAX_LINE_BREAK_DECORATION_KIND) && p.lineBreakFrom === from)
+              p => isImageDecorationKind(value, IMAGE_WIDGET_DECORATION_KIND) && p.widgetFrom === from
             );
           }
         });

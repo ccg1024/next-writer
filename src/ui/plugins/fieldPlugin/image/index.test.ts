@@ -9,7 +9,6 @@ import {
   getImageList,
   imageDecoration,
   imageField,
-  imageSyntaxLineBreakDecoration,
   ImageSyntaxVisibilityPlugin,
   imageSyntaxVisibilityPlugin,
   normalizeImageFloat,
@@ -223,7 +222,7 @@ describe('image field plugin', () => {
     expect(imageDecoration({ url: '/tmp/image.png', float: 'none' }).spec.side).toBe(-1);
   });
 
-  it('adds a visual line break decoration when text follows image syntax on the same line', () => {
+  it('does not add a visual line break decoration when text follows image syntax on the same line', () => {
     const imageSyntax = '![img](/tmp/image.png)';
     const imageAttributes = '{width=100}';
     const imageSyntaxTo = imageSyntax.length + imageAttributes.length;
@@ -235,7 +234,6 @@ describe('image field plugin', () => {
         to: imageSyntax.length,
         syntaxTo: imageSyntaxTo,
         widgetFrom: 0,
-        lineBreakFrom: imageSyntaxTo,
         url: '/tmp/image.png',
         width: '100px',
         float: 'none'
@@ -249,26 +247,8 @@ describe('image field plugin', () => {
         side: -1,
         block: true,
         lineBreaks: 0
-      },
-      {
-        from: imageSyntaxTo,
-        to: imageSyntaxTo,
-        kind: 'image-syntax-line-break',
-        side: 1,
-        block: undefined,
-        lineBreaks: 1
       }
     ]);
-  });
-
-  it('uses an inline br widget for image syntax visual line breaks', () => {
-    const widget = imageSyntaxLineBreakDecoration().spec.widget as {
-      lineBreaks: number;
-      toDOM: () => HTMLElement;
-    };
-
-    expect(widget.lineBreaks).toBe(1);
-    expect(widget.toDOM().tagName).toBe('BR');
   });
 
   it('does not add a visual line break when image syntax is already followed by a document line break', () => {
@@ -276,8 +256,7 @@ describe('image field plugin', () => {
     const state = createMarkdownState(`${imageSyntax}\ntext`, [imageField]);
 
     expect(getImageList(state, 0, state.doc.length, true)[0]).toMatchObject({
-      syntaxTo: imageSyntax.length,
-      lineBreakFrom: undefined
+      syntaxTo: imageSyntax.length
     });
     expect(collectImageFieldDecorations(state)).toEqual([
       {
@@ -296,8 +275,7 @@ describe('image field plugin', () => {
     const state = createMarkdownState(imageSyntax, [imageField]);
 
     expect(getImageList(state, 0, state.doc.length, true)[0]).toMatchObject({
-      syntaxTo: imageSyntax.length,
-      lineBreakFrom: undefined
+      syntaxTo: imageSyntax.length
     });
     expect(collectImageFieldDecorations(state)).toHaveLength(1);
   });
@@ -368,7 +346,7 @@ describe('image field plugin', () => {
     ]);
   });
 
-  it('keeps adjacent image widgets and line breaks when one image updates', () => {
+  it('keeps adjacent image widgets when one image updates', () => {
     const firstImage = '![a](a.png)';
     const secondImage = '![b](b.png)';
     const state = createMarkdownState(`${firstImage}${secondImage}tail`, [imageField]);
@@ -396,22 +374,6 @@ describe('image field plugin', () => {
         side: -1,
         block: true,
         lineBreaks: 0
-      },
-      {
-        from: firstImage.length,
-        to: firstImage.length,
-        kind: 'image-syntax-line-break',
-        side: 1,
-        block: undefined,
-        lineBreaks: 1
-      },
-      {
-        from: firstImage.length + '![b](updated.png)'.length,
-        to: firstImage.length + '![b](updated.png)'.length,
-        kind: 'image-syntax-line-break',
-        side: 1,
-        block: undefined,
-        lineBreaks: 1
       }
     ]);
   });
@@ -538,14 +500,6 @@ describe('image field plugin', () => {
         side: -1,
         block: true,
         lineBreaks: 0
-      },
-      {
-        from: imageSyntax.length + imageAttributes.length,
-        to: imageSyntax.length + imageAttributes.length,
-        kind: 'image-syntax-line-break',
-        side: 1,
-        block: undefined,
-        lineBreaks: 1
       }
     ]);
 
