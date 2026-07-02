@@ -1,6 +1,14 @@
 import { ensureSyntaxTree, syntaxTree } from '@codemirror/language';
 import { EditorState, Extension, Range, StateField } from '@codemirror/state';
-import { Decoration, DecorationSet, EditorView, WidgetType } from '@codemirror/view';
+import {
+  Decoration,
+  DecorationSet,
+  EditorView,
+  PluginValue,
+  ViewPlugin,
+  ViewUpdate,
+  WidgetType
+} from '@codemirror/view';
 import type { SyntaxNode, SyntaxNodeRef } from '@lezer/common';
 import { nwImage } from 'src/ui/mix-components/image';
 
@@ -64,6 +72,7 @@ const DEFAULT_IMAGE_WIDGET_ESTIMATED_HEIGHT = 240 + IMAGE_WIDGET_VERTICAL_PADDIN
 const imageHeightCache = new Map<string, ImageHeightCache>();
 const IMAGE_WIDGET_DECORATION_KIND = 'image-widget';
 const IMAGE_SYNTAX_LINE_BREAK_DECORATION_KIND = 'image-syntax-line-break';
+const IMAGE_SYNTAX_HIDDEN_DECORATION_KIND = 'image-syntax-hidden';
 
 function getImageHeightCacheKey({ url, width, float }: ImageWidgetParams) {
   return [url, width ?? '', float].join('\u0000');
@@ -214,6 +223,12 @@ export const imageSyntaxLineBreakDecoration = () =>
     widget: new ImageSyntaxLineBreakWidget(),
     side: 1,
     imageDecorationKind: IMAGE_SYNTAX_LINE_BREAK_DECORATION_KIND
+  });
+
+export const imageSyntaxHiddenDecoration = () =>
+  Decoration.replace({
+    inclusive: false,
+    imageDecorationKind: IMAGE_SYNTAX_HIDDEN_DECORATION_KIND
   });
 
 const WIDTH_REGX = /^(\d+(?:\.\d+)?)(px|%)?$/;
@@ -374,6 +389,63 @@ function isImageDecorationKind(value: Decoration, kind: string) {
   return value.spec.imageDecorationKind === kind;
 }
 
+function selectionIntersectsImageSyntax(state: EditorState, img: RangeImg) {
+  return state.selection.ranges.some(range => {
+    if (range.empty) {
+      return range.from >= img.from && range.from <= img.syntaxTo;
+    }
+
+    return range.from < img.syntaxTo && range.to > img.from;
+  });
+}
+
+function getImageSyntaxVisibilityDecorations(view: EditorView) {
+  const ranges: Range<Decoration>[] = [];
+
+  for (const { from, to } of view.visibleRanges) {
+    getImageList(view.state, from, to).forEach(img => {
+      if (img.syntaxTo > view.state.doc.lineAt(img.from).to) {
+        return;
+      }
+
+      if (!view.hasFocus || !selectionIntersectsImageSyntax(view.state, img)) {
+        ranges.push(imageSyntaxHiddenDecoration().range(img.from, img.syntaxTo));
+      }
+    });
+  }
+
+  return Decoration.none.update({ add: ranges, sort: true });
+}
+
+export class ImageSyntaxVisibilityPlugin implements PluginValue {
+  public decorations: DecorationSet;
+
+  constructor(view: EditorView) {
+    this.decorations = getImageSyntaxVisibilityDecorations(view);
+  }
+
+  update(update: ViewUpdate): void {
+    const syntaxTreeChanged = syntaxTree(update.startState) !== syntaxTree(update.state);
+    if (
+      update.docChanged ||
+      update.viewportChanged ||
+      update.selectionSet ||
+      update.focusChanged ||
+      syntaxTreeChanged
+    ) {
+      this.decorations = getImageSyntaxVisibilityDecorations(update.view);
+    }
+  }
+
+  destroy(): void {
+    this.decorations = Decoration.none;
+  }
+}
+
+export const imageSyntaxVisibilityPlugin = ViewPlugin.fromClass(ImageSyntaxVisibilityPlugin, {
+  decorations: value => value.decorations
+});
+
 export const imageField = StateField.define<DecorationSet>({
   create(state) {
     const imgList = getImageList(state, 0, state.doc.length, true);
@@ -425,6 +497,6 @@ export const imageField = StateField.define<DecorationSet>({
   provide: f => EditorView.decorations.from(f)
 });
 
-const imageExtension: Extension[] = [theme, imageField];
+const imageExtension: Extension[] = [theme, imageField, imageSyntaxVisibilityPlugin];
 
 export default imageExtension;

@@ -2,14 +2,16 @@
 
 import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
 import { syntaxTree } from '@codemirror/language';
-import { EditorState, Extension } from '@codemirror/state';
-import type { EditorView } from '@codemirror/view';
+import { EditorSelection, EditorState, Extension, SelectionRange } from '@codemirror/state';
+import { EditorView } from '@codemirror/view';
 import { nextWriterSyntaxExtension } from 'src/ui/plugins/extension';
 import {
   getImageList,
   imageDecoration,
   imageField,
   imageSyntaxLineBreakDecoration,
+  ImageSyntaxVisibilityPlugin,
+  imageSyntaxVisibilityPlugin,
   normalizeImageFloat,
   normalizeImageWidth
 } from './index';
@@ -19,6 +21,29 @@ function createMarkdownState(doc: string, extensions: Extension[] = []) {
     doc,
     extensions: [markdown({ base: markdownLanguage, extensions: [...nextWriterSyntaxExtension.syntax] }), ...extensions]
   });
+}
+
+function createMarkdownView(doc: string, selection: SelectionRange = EditorSelection.cursor(0)) {
+  const parent = document.createElement('div');
+  document.body.appendChild(parent);
+
+  const view = new EditorView({
+    state: EditorState.create({
+      doc,
+      selection: EditorSelection.create([selection]),
+      extensions: [
+        markdown({ base: markdownLanguage, extensions: [...nextWriterSyntaxExtension.syntax] }),
+        imageField,
+        imageSyntaxVisibilityPlugin
+      ]
+    }),
+    parent
+  });
+  view.focus();
+  Object.defineProperty(view, 'hasFocus', { configurable: true, get: () => true });
+  view.dispatch({ selection: view.state.selection });
+
+  return view;
 }
 
 function collectNodeNames(state: EditorState) {
@@ -57,6 +82,22 @@ function collectImageFieldDecorations(state: EditorState) {
       side: value.spec.side,
       block: value.spec.block,
       lineBreaks: value.spec.widget?.lineBreaks
+    });
+  });
+
+  return decorations;
+}
+
+function collectImageSyntaxHiddenDecorations(view: EditorView) {
+  const plugin = view.plugin(imageSyntaxVisibilityPlugin) as ImageSyntaxVisibilityPlugin;
+  const decorations: { from: number; to: number; kind: string; inclusive: boolean | undefined }[] = [];
+
+  plugin.decorations.between(0, view.state.doc.length, (from, to, value) => {
+    decorations.push({
+      from,
+      to,
+      kind: value.spec.imageDecorationKind,
+      inclusive: value.spec.inclusive
     });
   });
 
@@ -373,5 +414,170 @@ describe('image field plugin', () => {
         lineBreaks: 1
       }
     ]);
+  });
+
+  it('hides the entire image syntax when the cursor is outside the syntax range', () => {
+    const imageSyntax = '![img](/tmp/image.png "preview")';
+    const imageAttributes = '{width=240 float=left}';
+    const doc = `${imageSyntax}${imageAttributes} text`;
+    const view = createMarkdownView(doc, EditorSelection.cursor(doc.length));
+
+    expect(collectImageSyntaxHiddenDecorations(view)).toEqual([
+      {
+        from: 0,
+        to: imageSyntax.length + imageAttributes.length,
+        kind: 'image-syntax-hidden',
+        inclusive: false
+      }
+    ]);
+
+    view.destroy();
+    view.dom.remove();
+  });
+
+  it.each([
+    ['left boundary', 0],
+    ['image marker', 1],
+    ['alt text', 3],
+    ['url', '![img]('.length + 5],
+    ['title', '![img](/tmp/image.png "'.length + 2],
+    ['attributes', '![img](/tmp/image.png "preview")'.length + 3],
+    ['right boundary', '![img](/tmp/image.png "preview"){width=240 float=left}'.length]
+  ])('shows image syntax when the cursor is inside the %s', (_name, cursor) => {
+    const doc = '![img](/tmp/image.png "preview"){width=240 float=left} text';
+    const view = createMarkdownView(doc, EditorSelection.cursor(cursor as number));
+
+    expect(collectImageSyntaxHiddenDecorations(view)).toEqual([]);
+
+    view.destroy();
+    view.dom.remove();
+  });
+
+  it('uses selection intersections to decide whether image syntax is visible', () => {
+    const imageSyntax = '![img](/tmp/image.png)';
+    const doc = `prefix ${imageSyntax} suffix`;
+    const imageFrom = doc.indexOf(imageSyntax);
+    const view = createMarkdownView(doc, EditorSelection.range(imageFrom - 2, imageFrom + 2));
+
+    expect(collectImageSyntaxHiddenDecorations(view)).toEqual([]);
+
+    view.dispatch({ selection: EditorSelection.range(0, imageFrom) });
+    expect(collectImageSyntaxHiddenDecorations(view)).toEqual([
+      {
+        from: imageFrom,
+        to: imageFrom + imageSyntax.length,
+        kind: 'image-syntax-hidden',
+        inclusive: false
+      }
+    ]);
+
+    view.destroy();
+    view.dom.remove();
+  });
+
+  it('hides image syntax when the editor loses focus', () => {
+    const imageSyntax = '![img](/tmp/image.png)';
+    const view = createMarkdownView(imageSyntax, EditorSelection.cursor(2));
+
+    expect(collectImageSyntaxHiddenDecorations(view)).toEqual([]);
+
+    Object.defineProperty(view, 'hasFocus', { configurable: true, get: () => false });
+    view.dispatch({ selection: view.state.selection });
+
+    expect(collectImageSyntaxHiddenDecorations(view)).toEqual([
+      {
+        from: 0,
+        to: imageSyntax.length,
+        kind: 'image-syntax-hidden',
+        inclusive: false
+      }
+    ]);
+
+    view.destroy();
+    view.dom.remove();
+  });
+
+  it('hides adjacent image syntax independently', () => {
+    const firstImage = '![a](a.png)';
+    const secondImage = '![b](b.png)';
+    const doc = `${firstImage}${secondImage}tail`;
+    const view = createMarkdownView(doc, EditorSelection.cursor(firstImage.length + 2));
+
+    expect(collectImageSyntaxHiddenDecorations(view)).toEqual([
+      {
+        from: 0,
+        to: firstImage.length,
+        kind: 'image-syntax-hidden',
+        inclusive: false
+      }
+    ]);
+
+    view.destroy();
+    view.dom.remove();
+  });
+
+  it('hides only the image syntax when text follows on the same line', () => {
+    const imageSyntax = '![img](/tmp/image.png)';
+    const imageAttributes = '{width=100}';
+    const doc = `${imageSyntax}${imageAttributes}other text`;
+    const view = createMarkdownView(doc, EditorSelection.cursor(doc.length));
+
+    expect(collectImageSyntaxHiddenDecorations(view)).toEqual([
+      {
+        from: 0,
+        to: imageSyntax.length + imageAttributes.length,
+        kind: 'image-syntax-hidden',
+        inclusive: false
+      }
+    ]);
+    expect(collectImageFieldDecorations(view.state)).toEqual([
+      {
+        from: 0,
+        to: 0,
+        kind: 'image-widget',
+        side: -1,
+        block: true,
+        lineBreaks: 0
+      },
+      {
+        from: imageSyntax.length + imageAttributes.length,
+        to: imageSyntax.length + imageAttributes.length,
+        kind: 'image-syntax-line-break',
+        side: 1,
+        block: undefined,
+        lineBreaks: 1
+      }
+    ]);
+
+    view.destroy();
+    view.dom.remove();
+  });
+
+  it('updates hidden image syntax ranges after editing image attributes', () => {
+    const imageSyntax = '![img](/tmp/image.png)';
+    const oldAttributes = '{width=100}';
+    const doc = `${imageSyntax}${oldAttributes}other text`;
+    const view = createMarkdownView(doc, EditorSelection.cursor(doc.length));
+
+    view.dispatch({
+      changes: {
+        from: imageSyntax.length + oldAttributes.indexOf('100'),
+        to: imageSyntax.length + oldAttributes.indexOf('100') + '100'.length,
+        insert: '240 float=right'
+      },
+      selection: { anchor: view.state.doc.length + ' float=right'.length }
+    });
+
+    expect(collectImageSyntaxHiddenDecorations(view)).toEqual([
+      {
+        from: 0,
+        to: imageSyntax.length + '{width=240 float=right}'.length,
+        kind: 'image-syntax-hidden',
+        inclusive: false
+      }
+    ]);
+
+    view.destroy();
+    view.dom.remove();
   });
 });
