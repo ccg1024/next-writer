@@ -88,7 +88,7 @@ describe('image field plugin', () => {
     const state = createMarkdownState('![img](/tmp/image.png "preview")\ntext');
 
     expect(getImageList(state, 0, state.doc.length, true)).toEqual([
-      { from: 0, to: 32, widgetTo: 32, url: '/tmp/image.png', float: 'none' }
+      { from: 0, to: 32, widgetFrom: 0, url: '/tmp/image.png', float: 'none' }
     ]);
   });
 
@@ -96,7 +96,7 @@ describe('image field plugin', () => {
     const state = createMarkdownState('![img](/tmp/image.png){width=240 float=left}\ntext');
 
     expect(getImageList(state, 0, state.doc.length, true)).toEqual([
-      { from: 0, to: 22, widgetTo: 44, url: '/tmp/image.png', width: '240px', float: 'left' }
+      { from: 0, to: 22, widgetFrom: 0, url: '/tmp/image.png', width: '240px', float: 'left' }
     ]);
   });
 
@@ -124,6 +124,13 @@ describe('image field plugin', () => {
     expect(imageDecoration({ url: '/tmp/image.png', float: 'left', width: '240px' }).spec.block).toBe(false);
     expect(imageDecoration({ url: '/tmp/image.png', float: 'right', width: '240px' }).spec.block).toBe(false);
     expect(imageDecoration({ url: '/tmp/image.png', float: 'none' }).spec.block).toBe(true);
+  });
+
+  it('anchors image widgets before the markdown image syntax', () => {
+    const state = createMarkdownState('![img](/tmp/image.png){width=240 float=left}\ntext');
+
+    expect(getImageList(state, 0, state.doc.length, true)[0]).toMatchObject({ widgetFrom: 0 });
+    expect(imageDecoration({ url: '/tmp/image.png', float: 'none' }).spec.side).toBe(-1);
   });
 
   it('provides an estimated height before the image is drawn', () => {
@@ -166,10 +173,10 @@ describe('image field plugin', () => {
     const newLine = newState.doc.lineAt(changedFrom);
 
     expect(getImageList(oldState, oldLine.from, oldLine.to)).toEqual([
-      { from: 0, to: 22, widgetTo: 44, url: '/tmp/image.png', width: '240px', float: 'left' }
+      { from: 0, to: 22, widgetFrom: 0, url: '/tmp/image.png', width: '240px', float: 'left' }
     ]);
     expect(getImageList(newState, newLine.from, newLine.to)).toEqual([
-      { from: 0, to: 22, widgetTo: 45, url: '/tmp/image.png', width: '320px', float: 'right' }
+      { from: 0, to: 22, widgetFrom: 0, url: '/tmp/image.png', width: '320px', float: 'right' }
     ]);
   });
 });

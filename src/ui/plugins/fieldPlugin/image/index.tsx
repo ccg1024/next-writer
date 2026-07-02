@@ -186,14 +186,14 @@ class ImageWidget extends WidgetType {
 }
 
 export const imageDecoration = (param: ImageWidgetParams) =>
-  Decoration.widget({ widget: new ImageWidget(param), side: 1, block: param.float === 'none' });
+  Decoration.widget({ widget: new ImageWidget(param), side: -1, block: param.float === 'none' });
 
 const WIDTH_REGX = /^(\d+(?:\.\d+)?)(px|%)?$/;
 
 type RangeImg = {
   from: number;
   to: number;
-  widgetTo: number;
+  widgetFrom: number;
   url: string;
   width?: string;
   float: ImageFloat;
@@ -303,7 +303,7 @@ const getImageList = (state: EditorState, from: number, to: number, ensureTotal?
           rangeImgList.push({
             from: node.from,
             to: node.to,
-            widgetTo: attributeNode?.to ?? node.to,
+            widgetFrom: node.from,
             url,
             ...attributes
           });
@@ -323,7 +323,7 @@ const imageField = StateField.define<DecorationSet>({
     if (imgList.length) {
       const initInProcess: Range<Decoration>[] = [];
       imgList.forEach(img => {
-        initInProcess.push(imageDecoration({ url: img.url, width: img.width, float: img.float }).range(img.widgetTo));
+        initInProcess.push(imageDecoration({ url: img.url, width: img.width, float: img.float }).range(img.widgetFrom));
       });
       return Decoration.none.update({ add: initInProcess });
     }
@@ -344,7 +344,7 @@ const imageField = StateField.define<DecorationSet>({
       if (preImageList.length) {
         imageField = imageField.update({
           filter(from) {
-            return !preImageList.find(p => p.widgetTo === from);
+            return !preImageList.find(p => p.widgetFrom === from);
           }
         });
       }
@@ -352,7 +352,7 @@ const imageField = StateField.define<DecorationSet>({
       if (curImageList.length) {
         const imgInProcess: Range<Decoration>[] = [];
         curImageList.forEach(p => {
-          imgInProcess.push(imageDecoration({ url: p.url, width: p.width, float: p.float }).range(p.widgetTo));
+          imgInProcess.push(imageDecoration({ url: p.url, width: p.width, float: p.float }).range(p.widgetFrom));
         });
         imageField = imageField.update({ add: imgInProcess });
       }
