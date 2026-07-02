@@ -62,6 +62,8 @@ type ImageHeightCache = {
 const IMAGE_WIDGET_VERTICAL_PADDING = 4;
 const DEFAULT_IMAGE_WIDGET_ESTIMATED_HEIGHT = 240 + IMAGE_WIDGET_VERTICAL_PADDING;
 const imageHeightCache = new Map<string, ImageHeightCache>();
+const IMAGE_WIDGET_DECORATION_KIND = 'image-widget';
+const IMAGE_SYNTAX_LINE_BREAK_DECORATION_KIND = 'image-syntax-line-break';
 
 function getImageHeightCacheKey({ url, width, float }: ImageWidgetParams) {
   return [url, width ?? '', float].join('\u0000');
@@ -186,14 +188,42 @@ class ImageWidget extends WidgetType {
 }
 
 export const imageDecoration = (param: ImageWidgetParams) =>
-  Decoration.widget({ widget: new ImageWidget(param), side: -1, block: param.float === 'none' });
+  Decoration.widget({
+    widget: new ImageWidget(param),
+    side: -1,
+    block: param.float === 'none',
+    imageDecorationKind: IMAGE_WIDGET_DECORATION_KIND
+  });
+
+class ImageSyntaxLineBreakWidget extends WidgetType {
+  eq(widget: WidgetType) {
+    return widget instanceof ImageSyntaxLineBreakWidget;
+  }
+
+  toDOM() {
+    return document.createElement('br');
+  }
+
+  get lineBreaks(): number {
+    return 1;
+  }
+}
+
+export const imageSyntaxLineBreakDecoration = () =>
+  Decoration.widget({
+    widget: new ImageSyntaxLineBreakWidget(),
+    side: 1,
+    imageDecorationKind: IMAGE_SYNTAX_LINE_BREAK_DECORATION_KIND
+  });
 
 const WIDTH_REGX = /^(\d+(?:\.\d+)?)(px|%)?$/;
 
 type RangeImg = {
   from: number;
   to: number;
+  syntaxTo: number;
   widgetFrom: number;
+  lineBreakFrom?: number;
   url: string;
   width?: string;
   float: ImageFloat;
@@ -235,6 +265,14 @@ export function trimAttributeValue(value: string): string {
 function getImageAttributeNode(imageNode: SyntaxNodeRef): SyntaxNode | undefined {
   const attributeNode = imageNode.node.nextSibling;
   return attributeNode?.name === 'ImageAttributes' && attributeNode.from === imageNode.to ? attributeNode : undefined;
+}
+
+function getImageSyntaxTo(imageNode: SyntaxNodeRef, attributeNode: SyntaxNode | undefined) {
+  return attributeNode?.to ?? imageNode.to;
+}
+
+function getImageSyntaxLineBreakFrom(state: EditorState, syntaxTo: number): number | undefined {
+  return syntaxTo < state.doc.lineAt(syntaxTo).to ? syntaxTo : undefined;
 }
 
 function readAttributeValue(state: EditorState, valueNode: SyntaxNode): string {
@@ -300,10 +338,13 @@ const getImageList = (state: EditorState, from: number, to: number, ensureTotal?
         if (url) {
           const attributeNode = getImageAttributeNode(node);
           const attributes = parseImageAttributes(state, attributeNode);
+          const syntaxTo = getImageSyntaxTo(node, attributeNode);
           rangeImgList.push({
             from: node.from,
             to: node.to,
+            syntaxTo,
             widgetFrom: node.from,
+            lineBreakFrom: getImageSyntaxLineBreakFrom(state, syntaxTo),
             url,
             ...attributes
           });
@@ -317,15 +358,31 @@ const getImageList = (state: EditorState, from: number, to: number, ensureTotal?
 
 export { getImageList };
 
-const imageField = StateField.define<DecorationSet>({
+function getImageDecorationRanges(img: RangeImg) {
+  const ranges: Range<Decoration>[] = [
+    imageDecoration({ url: img.url, width: img.width, float: img.float }).range(img.widgetFrom)
+  ];
+
+  if (img.lineBreakFrom !== undefined) {
+    ranges.push(imageSyntaxLineBreakDecoration().range(img.lineBreakFrom));
+  }
+
+  return ranges;
+}
+
+function isImageDecorationKind(value: Decoration, kind: string) {
+  return value.spec.imageDecorationKind === kind;
+}
+
+export const imageField = StateField.define<DecorationSet>({
   create(state) {
     const imgList = getImageList(state, 0, state.doc.length, true);
     if (imgList.length) {
       const initInProcess: Range<Decoration>[] = [];
       imgList.forEach(img => {
-        initInProcess.push(imageDecoration({ url: img.url, width: img.width, float: img.float }).range(img.widgetFrom));
+        initInProcess.push(...getImageDecorationRanges(img));
       });
-      return Decoration.none.update({ add: initInProcess });
+      return Decoration.none.update({ add: initInProcess, sort: true });
     }
     return Decoration.none;
   },
@@ -343,8 +400,12 @@ const imageField = StateField.define<DecorationSet>({
       const curImageList = uniqueImageList(curImg);
       if (preImageList.length) {
         imageField = imageField.update({
-          filter(from) {
-            return !preImageList.find(p => p.widgetFrom === from);
+          filter(from, _to, value) {
+            return !preImageList.find(
+              p =>
+                (isImageDecorationKind(value, IMAGE_WIDGET_DECORATION_KIND) && p.widgetFrom === from) ||
+                (isImageDecorationKind(value, IMAGE_SYNTAX_LINE_BREAK_DECORATION_KIND) && p.lineBreakFrom === from)
+            );
           }
         });
       }
@@ -352,9 +413,9 @@ const imageField = StateField.define<DecorationSet>({
       if (curImageList.length) {
         const imgInProcess: Range<Decoration>[] = [];
         curImageList.forEach(p => {
-          imgInProcess.push(imageDecoration({ url: p.url, width: p.width, float: p.float }).range(p.widgetFrom));
+          imgInProcess.push(...getImageDecorationRanges(p));
         });
-        imageField = imageField.update({ add: imgInProcess });
+        imageField = imageField.update({ add: imgInProcess, sort: true });
       }
     } else {
       imageField = imageField.map(tr.changes);
