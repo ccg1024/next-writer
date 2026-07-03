@@ -10,9 +10,7 @@ import {
   imageDecoration,
   imageField,
   ImageSyntaxVisibilityPlugin,
-  imageSyntaxVisibilityPlugin,
-  normalizeImageFloat,
-  normalizeImageWidth
+  imageSyntaxVisibilityPlugin
 } from './index';
 
 function createMarkdownState(doc: string, extensions: Extension[] = []) {
@@ -59,6 +57,7 @@ function collectNodeNames(state: EditorState) {
 function getImageWidget(param: Parameters<typeof imageDecoration>[0]) {
   return imageDecoration(param).spec.widget as {
     estimatedHeight: number;
+    preloadImage: HTMLImageElement;
     toDOM: (view: EditorView) => HTMLElement;
   };
 }
@@ -117,42 +116,13 @@ function createMeasureView() {
 }
 
 describe('image field plugin', () => {
-  it('normalizes supported image width values', () => {
-    expect(normalizeImageWidth('240')).toBe('240px');
-    expect(normalizeImageWidth('240px')).toBe('240px');
-    expect(normalizeImageWidth('40%')).toBe('40%');
-    expect(normalizeImageWidth('140%')).toBe('100%');
-    expect(normalizeImageWidth('0')).toBeUndefined();
-    expect(normalizeImageWidth('invalid')).toBeUndefined();
-  });
-
-  it('normalizes supported image float values', () => {
-    expect(normalizeImageFloat('left')).toBe('left');
-    expect(normalizeImageFloat('right')).toBe('right');
-    expect(normalizeImageFloat('none')).toBe('none');
-    expect(normalizeImageFloat('LEFT')).toBe('left');
-    expect(normalizeImageFloat('center')).toBe('none');
-    expect(normalizeImageFloat(undefined)).toBe('none');
-  });
-
-  it('adds image attribute nodes to the markdown syntax tree', () => {
+  it('does not add image attribute nodes to the markdown syntax tree', () => {
     const state = createMarkdownState('![img](/tmp/image.png){width=240 float=left}\ntext');
 
-    expect(collectNodeNames(state)).toEqual(
-      expect.arrayContaining([
-        'Image',
-        'ImageAttributes',
-        'ImageAttributeMark',
-        'ImageAttributeName',
-        'ImageAttributeValue'
-      ])
+    expect(collectNodeNames(state)).toContain('Image');
+    expect(collectNodeNames(state)).not.toEqual(
+      expect.arrayContaining(['ImageAttributes', 'ImageAttributeMark', 'ImageAttributeName', 'ImageAttributeValue'])
     );
-  });
-
-  it('does not parse link attribute suffixes as image attribute nodes', () => {
-    const state = createMarkdownState('[link](/tmp/image.png){width=240 float=left}\ntext');
-
-    expect(collectNodeNames(state)).not.toContain('ImageAttributes');
   });
 
   it('reads image urls from markdown URL nodes without including title text', () => {
@@ -165,13 +135,12 @@ describe('image field plugin', () => {
         to: imageSyntax.length,
         syntaxTo: imageSyntax.length,
         widgetFrom: 0,
-        url: '/tmp/image.png',
-        float: 'none'
+        url: '/tmp/image.png'
       }
     ]);
   });
 
-  it('reads width and float from image attribute nodes', () => {
+  it('treats legacy image attributes as plain text', () => {
     const imageSyntax = '![img](/tmp/image.png)';
     const imageAttributes = '{width=240 float=left}';
     const state = createMarkdownState(`${imageSyntax}${imageAttributes}\ntext`);
@@ -180,63 +149,54 @@ describe('image field plugin', () => {
       {
         from: 0,
         to: imageSyntax.length,
-        syntaxTo: imageSyntax.length + imageAttributes.length,
+        syntaxTo: imageSyntax.length,
         widgetFrom: 0,
-        url: '/tmp/image.png',
-        width: '240px',
-        float: 'left'
+        url: '/tmp/image.png'
       }
     ]);
   });
 
-  it('reads image attributes after escaped alt-text delimiters', () => {
+  it('reads image urls after escaped alt-text delimiters', () => {
     const state = createMarkdownState('![a \\] b](img.png){width=240}\ntext');
 
     expect(getImageList(state, 0, state.doc.length, true)[0]).toMatchObject({
       url: 'img.png',
-      width: '240px',
-      float: 'none'
+      syntaxTo: '![a \\] b](img.png)'.length
     });
   });
 
-  it('reads image attributes after escaped url delimiters', () => {
+  it('reads image urls after escaped url delimiters', () => {
     const state = createMarkdownState('![a](img\\)x){width=240}\ntext');
 
     expect(getImageList(state, 0, state.doc.length, true)[0]).toMatchObject({
       url: 'img\\)x',
-      width: '240px',
-      float: 'none'
+      syntaxTo: '![a](img\\)x)'.length
     });
   });
 
-  it('uses inline widgets for floated images and block widgets for regular images', () => {
-    expect(imageDecoration({ url: '/tmp/image.png', float: 'left', width: '240px' }).spec.block).toBe(false);
-    expect(imageDecoration({ url: '/tmp/image.png', float: 'right', width: '240px' }).spec.block).toBe(false);
-    expect(imageDecoration({ url: '/tmp/image.png', float: 'none' }).spec.block).toBe(true);
+  it('uses block widgets for images', () => {
+    expect(imageDecoration({ url: '/tmp/image.png' }).spec.block).toBe(true);
   });
 
   it('anchors image widgets before the markdown image syntax', () => {
     const state = createMarkdownState('![img](/tmp/image.png){width=240 float=left}\ntext');
 
     expect(getImageList(state, 0, state.doc.length, true)[0]).toMatchObject({ widgetFrom: 0 });
-    expect(imageDecoration({ url: '/tmp/image.png', float: 'none' }).spec.side).toBe(-1);
+    expect(imageDecoration({ url: '/tmp/image.png' }).spec.side).toBe(-1);
   });
 
   it('does not add a visual line break decoration when text follows image syntax on the same line', () => {
     const imageSyntax = '![img](/tmp/image.png)';
     const imageAttributes = '{width=100}';
-    const imageSyntaxTo = imageSyntax.length + imageAttributes.length;
     const state = createMarkdownState(`${imageSyntax}${imageAttributes}other text`, [imageField]);
 
     expect(getImageList(state, 0, state.doc.length, true)).toEqual([
       {
         from: 0,
         to: imageSyntax.length,
-        syntaxTo: imageSyntaxTo,
+        syntaxTo: imageSyntax.length,
         widgetFrom: 0,
-        url: '/tmp/image.png',
-        width: '100px',
-        float: 'none'
+        url: '/tmp/image.png'
       }
     ]);
     expect(collectImageFieldDecorations(state)).toEqual([
@@ -281,67 +241,61 @@ describe('image field plugin', () => {
   });
 
   it('provides an estimated height before the image is drawn', () => {
-    const widget = getImageWidget({ url: '/tmp/unknown-size.png', float: 'none' });
+    const widget = getImageWidget({ url: '/tmp/unknown-size.png' });
 
     expect(widget.estimatedHeight).toBeGreaterThan(0);
     expect(widget.estimatedHeight).not.toBe(-1);
   });
 
   it('uses measured image widget height for future estimates', () => {
-    const widget = getImageWidget({ url: '/tmp/measured-size.png', float: 'none' });
+    const widget = getImageWidget({ url: '/tmp/measured-size.png' });
     const view = createMeasureView();
     const dom = widget.toDOM(view);
     jest.spyOn(dom, 'getBoundingClientRect').mockReturnValue({ height: 366 } as DOMRect);
 
     (dom.querySelector('img')?.onload as (event: Event) => void)(new Event('load'));
 
-    const nextWidget = getImageWidget({ url: '/tmp/measured-size.png', float: 'none' });
+    const nextWidget = getImageWidget({ url: '/tmp/measured-size.png' });
     expect(nextWidget.estimatedHeight).toBe(366);
   });
 
-  it('estimates pixel-width images from their natural size', () => {
-    const widget = getImageWidget({ url: '/tmp/natural-size.png', width: '240px', float: 'none' });
-    const dom = widget.toDOM(createMeasureView());
-    const imgWidget = dom.querySelector('img') as HTMLImageElement;
-    Object.defineProperty(imgWidget, 'naturalWidth', { configurable: true, value: 120 });
-    Object.defineProperty(imgWidget, 'naturalHeight', { configurable: true, value: 80 });
+  it('requests measurement when the preloaded image finishes after the widget is drawn', () => {
+    const widget = getImageWidget({ url: '/tmp/preloaded-size.png' });
+    const view = createMeasureView();
+    const dom = widget.toDOM(view);
+    jest.spyOn(dom, 'getBoundingClientRect').mockReturnValue({ height: 420 } as DOMRect);
 
-    (imgWidget.onload as (event: Event) => void)(new Event('load'));
+    (widget.preloadImage.onload as (event: Event) => void)(new Event('load'));
 
-    const nextWidget = getImageWidget({ url: '/tmp/natural-size.png', width: '240px', float: 'none' });
-    expect(nextWidget.estimatedHeight).toBe(164);
+    expect(view.requestMeasure).toHaveBeenCalled();
+    expect(getImageWidget({ url: '/tmp/preloaded-size.png' }).estimatedHeight).toBe(420);
   });
 
-  it('finds updated image attributes when scanning a changed line', () => {
-    const oldImageSyntax = '![img](/tmp/image.png){width=240 float=left}';
-    const newImageSyntax = '![img](/tmp/image.png){width=320 float=right}';
-    const baseImageSyntax = '![img](/tmp/image.png)';
+  it('finds updated image urls when scanning a changed line', () => {
+    const oldImageSyntax = '![img](/tmp/image.png)';
+    const newImageSyntax = '![img](/tmp/updated.png)';
     const oldState = createMarkdownState(`${oldImageSyntax}\ntext`);
     const newState = createMarkdownState(`${newImageSyntax}\ntext`);
-    const changedFrom = newState.doc.toString().indexOf('320');
+    const changedFrom = newState.doc.toString().indexOf('updated.png');
     const oldLine = oldState.doc.lineAt(changedFrom);
     const newLine = newState.doc.lineAt(changedFrom);
 
     expect(getImageList(oldState, oldLine.from, oldLine.to)).toEqual([
       {
         from: 0,
-        to: baseImageSyntax.length,
+        to: oldImageSyntax.length,
         syntaxTo: oldImageSyntax.length,
         widgetFrom: 0,
-        url: '/tmp/image.png',
-        width: '240px',
-        float: 'left'
+        url: '/tmp/image.png'
       }
     ]);
     expect(getImageList(newState, newLine.from, newLine.to)).toEqual([
       {
         from: 0,
-        to: baseImageSyntax.length,
+        to: newImageSyntax.length,
         syntaxTo: newImageSyntax.length,
         widgetFrom: 0,
-        url: '/tmp/image.png',
-        width: '320px',
-        float: 'right'
+        url: '/tmp/updated.png'
       }
     ]);
   });
@@ -378,7 +332,7 @@ describe('image field plugin', () => {
     ]);
   });
 
-  it('hides the entire image syntax when the cursor is outside the syntax range', () => {
+  it('hides only the standard image syntax when legacy attributes follow it', () => {
     const imageSyntax = '![img](/tmp/image.png "preview")';
     const imageAttributes = '{width=240 float=left}';
     const doc = `${imageSyntax}${imageAttributes} text`;
@@ -387,7 +341,7 @@ describe('image field plugin', () => {
     expect(collectImageSyntaxHiddenDecorations(view)).toEqual([
       {
         from: 0,
-        to: imageSyntax.length + imageAttributes.length,
+        to: imageSyntax.length,
         kind: 'image-syntax-hidden',
         inclusive: false
       }
@@ -403,8 +357,7 @@ describe('image field plugin', () => {
     ['alt text', 3],
     ['url', '![img]('.length + 5],
     ['title', '![img](/tmp/image.png "'.length + 2],
-    ['attributes', '![img](/tmp/image.png "preview")'.length + 3],
-    ['right boundary', '![img](/tmp/image.png "preview"){width=240 float=left}'.length]
+    ['right boundary', '![img](/tmp/image.png "preview")'.length]
   ])('shows image syntax when the cursor is inside the %s', (_name, cursor) => {
     const doc = '![img](/tmp/image.png "preview"){width=240 float=left} text';
     const view = createMarkdownView(doc, EditorSelection.cursor(cursor as number));
@@ -487,7 +440,7 @@ describe('image field plugin', () => {
     expect(collectImageSyntaxHiddenDecorations(view)).toEqual([
       {
         from: 0,
-        to: imageSyntax.length + imageAttributes.length,
+        to: imageSyntax.length,
         kind: 'image-syntax-hidden',
         inclusive: false
       }
@@ -500,34 +453,6 @@ describe('image field plugin', () => {
         side: -1,
         block: true,
         lineBreaks: 0
-      }
-    ]);
-
-    view.destroy();
-    view.dom.remove();
-  });
-
-  it('updates hidden image syntax ranges after editing image attributes', () => {
-    const imageSyntax = '![img](/tmp/image.png)';
-    const oldAttributes = '{width=100}';
-    const doc = `${imageSyntax}${oldAttributes}other text`;
-    const view = createMarkdownView(doc, EditorSelection.cursor(doc.length));
-
-    view.dispatch({
-      changes: {
-        from: imageSyntax.length + oldAttributes.indexOf('100'),
-        to: imageSyntax.length + oldAttributes.indexOf('100') + '100'.length,
-        insert: '240 float=right'
-      },
-      selection: { anchor: view.state.doc.length + ' float=right'.length }
-    });
-
-    expect(collectImageSyntaxHiddenDecorations(view)).toEqual([
-      {
-        from: 0,
-        to: imageSyntax.length + '{width=240 float=right}'.length,
-        kind: 'image-syntax-hidden',
-        inclusive: false
       }
     ]);
 

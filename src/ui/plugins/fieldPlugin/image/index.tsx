@@ -9,7 +9,7 @@ import {
   ViewUpdate,
   WidgetType
 } from '@codemirror/view';
-import type { SyntaxNode, SyntaxNodeRef } from '@lezer/common';
+import type { SyntaxNodeRef } from '@lezer/common';
 import { nwImage } from 'src/ui/mix-components/image';
 
 const theme = EditorView.baseTheme({
@@ -34,14 +34,6 @@ const theme = EditorView.baseTheme({
       pointerEvents: 'none'
     }
   },
-  '.cm-image-container.cm-image-float-left': {
-    float: 'left',
-    marginInlineEnd: '12px'
-  },
-  '.cm-image-container.cm-image-float-right': {
-    float: 'right',
-    marginInlineStart: '12px'
-  },
   '.cm-image-widget': {
     width: '100%',
     height: 'auto',
@@ -51,20 +43,12 @@ const theme = EditorView.baseTheme({
   }
 });
 
-export const IMAGE_FLOAT_VALUES = ['left', 'right', 'none'] as const;
-
-export type ImageFloat = (typeof IMAGE_FLOAT_VALUES)[number];
-
 export interface ImageWidgetParams {
   url: string;
-  width?: string;
-  float: ImageFloat;
 }
 
 type ImageHeightCache = {
   measuredHeight?: number;
-  naturalWidth?: number;
-  naturalHeight?: number;
 };
 
 const IMAGE_WIDGET_VERTICAL_PADDING = 4;
@@ -73,25 +57,8 @@ const imageHeightCache = new Map<string, ImageHeightCache>();
 const IMAGE_WIDGET_DECORATION_KIND = 'image-widget';
 const IMAGE_SYNTAX_HIDDEN_DECORATION_KIND = 'image-syntax-hidden';
 
-function getImageHeightCacheKey({ url, width, float }: ImageWidgetParams) {
-  return [url, width ?? '', float].join('\u0000');
-}
-
-function getImageWidthPx(width: string | undefined): number | undefined {
-  const match = width?.match(/^(\d+(?:\.\d+)?)px$/);
-  return match ? Number(match[1]) : undefined;
-}
-
-function updateCachedImageSize(cacheKey: string, imgWidget: HTMLImageElement) {
-  if (!imgWidget.naturalWidth || !imgWidget.naturalHeight) {
-    return;
-  }
-
-  imageHeightCache.set(cacheKey, {
-    ...imageHeightCache.get(cacheKey),
-    naturalWidth: imgWidget.naturalWidth,
-    naturalHeight: imgWidget.naturalHeight
-  });
+function getImageHeightCacheKey({ url }: ImageWidgetParams) {
+  return url;
 }
 
 function updateCachedImageHeight(cacheKey: string, height: number) {
@@ -105,14 +72,9 @@ function updateCachedImageHeight(cacheKey: string, height: number) {
   });
 }
 
-function estimateImageHeight(width: string | undefined, cache: ImageHeightCache | undefined) {
+function estimateImageHeight(cache: ImageHeightCache | undefined) {
   if (cache?.measuredHeight) {
     return cache.measuredHeight;
-  }
-
-  const widthPx = getImageWidthPx(width);
-  if (widthPx && cache?.naturalWidth && cache.naturalHeight) {
-    return Math.ceil((cache.naturalHeight * widthPx) / cache.naturalWidth + IMAGE_WIDGET_VERTICAL_PADDING);
   }
 
   return DEFAULT_IMAGE_WIDGET_ESTIMATED_HEIGHT;
@@ -120,22 +82,17 @@ function estimateImageHeight(width: string | undefined, cache: ImageHeightCache 
 
 class ImageWidget extends WidgetType {
   readonly url: string;
-  readonly width?: string;
-  readonly float: ImageFloat;
   private readonly cacheKey: string;
   private readonly preloadImage: HTMLImageElement;
   private scheduleMeasure?: () => void;
 
-  constructor({ url, width, float }: ImageWidgetParams) {
+  constructor({ url }: ImageWidgetParams) {
     super();
 
     this.url = url;
-    this.width = width;
-    this.float = float;
-    this.cacheKey = getImageHeightCacheKey({ url, width, float });
+    this.cacheKey = getImageHeightCacheKey({ url });
     this.preloadImage = new Image();
     this.preloadImage.onload = () => {
-      updateCachedImageSize(this.cacheKey, this.preloadImage);
       this.scheduleMeasure?.();
     };
     this.preloadImage.onerror = () => {
@@ -145,11 +102,11 @@ class ImageWidget extends WidgetType {
   }
 
   eq(imageWidget: ImageWidget) {
-    return imageWidget.url === this.url && imageWidget.width === this.width && imageWidget.float === this.float;
+    return imageWidget.url === this.url;
   }
 
   toDOM(view: EditorView) {
-    const container = document.createElement(this.float === 'none' ? 'div' : 'span');
+    const container = document.createElement('div');
     const imgWidget = new Image();
     const requestImageMeasure = () => {
       view.requestMeasure({
@@ -162,10 +119,7 @@ class ImageWidget extends WidgetType {
     this.scheduleMeasure = requestImageMeasure;
     imgWidget.src = `atom://${this.url}`;
     imgWidget.className = 'cm-image-widget';
-    imgWidget.onload = () => {
-      updateCachedImageSize(this.cacheKey, imgWidget);
-      requestImageMeasure();
-    };
+    imgWidget.onload = () => requestImageMeasure();
     imgWidget.onerror = () => requestImageMeasure();
     imgWidget.onclick = () => {
       nwImage.preview(imgWidget.src);
@@ -173,14 +127,8 @@ class ImageWidget extends WidgetType {
 
     container.appendChild(imgWidget);
     container.setAttribute('data-id', 'next-writer-image-container');
-    container.className = ['cm-image-container', this.float !== 'none' ? `cm-image-float-${this.float}` : '']
-      .filter(Boolean)
-      .join(' ');
-    if (this.width) {
-      container.style.width = this.width;
-    }
+    container.className = 'cm-image-container';
     if (imgWidget.complete) {
-      updateCachedImageSize(this.cacheKey, imgWidget);
       requestImageMeasure();
     }
     return container;
@@ -191,7 +139,7 @@ class ImageWidget extends WidgetType {
   }
 
   get estimatedHeight(): number {
-    return estimateImageHeight(this.width, imageHeightCache.get(this.cacheKey));
+    return estimateImageHeight(imageHeightCache.get(this.cacheKey));
   }
 }
 
@@ -199,7 +147,7 @@ export const imageDecoration = (param: ImageWidgetParams) =>
   Decoration.widget({
     widget: new ImageWidget(param),
     side: -1,
-    block: param.float === 'none',
+    block: true,
     imageDecorationKind: IMAGE_WIDGET_DECORATION_KIND
   });
 
@@ -209,86 +157,13 @@ export const imageSyntaxHiddenDecoration = () =>
     imageDecorationKind: IMAGE_SYNTAX_HIDDEN_DECORATION_KIND
   });
 
-const WIDTH_REGX = /^(\d+(?:\.\d+)?)(px|%)?$/;
-
 type RangeImg = {
   from: number;
   to: number;
   syntaxTo: number;
   widgetFrom: number;
   url: string;
-  width?: string;
-  float: ImageFloat;
 };
-
-export function normalizeImageWidth(width: string | undefined): string | undefined {
-  const match = width?.trim().match(WIDTH_REGX);
-  if (!match) {
-    return;
-  }
-
-  const value = Number(match[1]);
-  if (!Number.isFinite(value) || value <= 0) {
-    return;
-  }
-
-  const unit = match[2] ?? 'px';
-  if (unit === '%') {
-    return `${Math.min(value, 100)}%`;
-  }
-
-  return `${value}px`;
-}
-
-export function normalizeImageFloat(float: string | undefined): ImageFloat {
-  const value = float?.trim().toLowerCase();
-  return IMAGE_FLOAT_VALUES.includes(value as ImageFloat) ? (value as ImageFloat) : 'none';
-}
-
-export function trimAttributeValue(value: string): string {
-  const trimmed = value.trim();
-  if ((trimmed.startsWith('"') && trimmed.endsWith('"')) || (trimmed.startsWith("'") && trimmed.endsWith("'"))) {
-    return trimmed.slice(1, -1);
-  }
-
-  return trimmed;
-}
-
-function getImageAttributeNode(imageNode: SyntaxNodeRef): SyntaxNode | undefined {
-  const attributeNode = imageNode.node.nextSibling;
-  return attributeNode?.name === 'ImageAttributes' && attributeNode.from === imageNode.to ? attributeNode : undefined;
-}
-
-function getImageSyntaxTo(imageNode: SyntaxNodeRef, attributeNode: SyntaxNode | undefined) {
-  return attributeNode?.to ?? imageNode.to;
-}
-
-function readAttributeValue(state: EditorState, valueNode: SyntaxNode): string {
-  return trimAttributeValue(state.doc.sliceString(valueNode.from, valueNode.to));
-}
-
-export function parseImageAttributes(state: EditorState, attributeNode: SyntaxNode | undefined) {
-  const params: Pick<ImageWidgetParams, 'width' | 'float'> = { float: 'none' };
-  if (!attributeNode) {
-    return params;
-  }
-
-  for (let child = attributeNode.firstChild; child; child = child.nextSibling) {
-    if (child.name !== 'ImageAttributeName' || child.nextSibling?.name !== 'ImageAttributeValue') {
-      continue;
-    }
-
-    const key = state.doc.sliceString(child.from, child.to).toLowerCase();
-    const value = readAttributeValue(state, child.nextSibling);
-    if (key === 'width') {
-      params.width = normalizeImageWidth(value);
-    } else if (key === 'float') {
-      params.float = normalizeImageFloat(value);
-    }
-  }
-
-  return params;
-}
 
 function getImageUrl(state: EditorState, imageNode: SyntaxNodeRef): string | undefined {
   const urlNode = imageNode.node.getChild('URL');
@@ -324,16 +199,12 @@ const getImageList = (state: EditorState, from: number, to: number, ensureTotal?
       if (node.name === 'Image') {
         const url = getImageUrl(state, node);
         if (url) {
-          const attributeNode = getImageAttributeNode(node);
-          const attributes = parseImageAttributes(state, attributeNode);
-          const syntaxTo = getImageSyntaxTo(node, attributeNode);
           rangeImgList.push({
             from: node.from,
             to: node.to,
-            syntaxTo,
+            syntaxTo: node.to,
             widgetFrom: node.from,
-            url,
-            ...attributes
+            url
           });
         }
       }
@@ -346,7 +217,7 @@ const getImageList = (state: EditorState, from: number, to: number, ensureTotal?
 export { getImageList };
 
 function getImageDecorationRanges(img: RangeImg) {
-  return [imageDecoration({ url: img.url, width: img.width, float: img.float }).range(img.widgetFrom)];
+  return [imageDecoration({ url: img.url }).range(img.widgetFrom)];
 }
 
 function isImageDecorationKind(value: Decoration, kind: string) {
