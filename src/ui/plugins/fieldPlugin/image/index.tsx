@@ -14,6 +14,7 @@ import { nwImage } from 'src/ui/mix-components/image';
 
 const theme = EditorView.baseTheme({
   '.cm-image-container': {
+    display: 'inline-flex',
     boxSizing: 'border-box',
     paddingBlock: '2px',
     position: 'relative',
@@ -29,7 +30,7 @@ const theme = EditorView.baseTheme({
       height: 'calc(100% - 4px)',
       opacity: 0,
       background: 'rgba(0, 0, 0, 0.5)',
-      borderRadius: '2px',
+      borderRadius: '4px',
       transition: 'opacity 0.3s',
       pointerEvents: 'none'
     }
@@ -39,7 +40,7 @@ const theme = EditorView.baseTheme({
     height: 'auto',
     display: 'block',
     cursor: 'pointer',
-    borderRadius: '2px'
+    borderRadius: '4px'
   }
 });
 
@@ -146,8 +147,7 @@ class ImageWidget extends WidgetType {
 export const imageDecoration = (param: ImageWidgetParams) =>
   Decoration.widget({
     widget: new ImageWidget(param),
-    side: -1,
-    block: true,
+    side: 1,
     imageDecorationKind: IMAGE_WIDGET_DECORATION_KIND
   });
 
@@ -203,7 +203,7 @@ const getImageList = (state: EditorState, from: number, to: number, ensureTotal?
             from: node.from,
             to: node.to,
             syntaxTo: node.to,
-            widgetFrom: node.from,
+            widgetFrom: node.to,
             url
           });
         }

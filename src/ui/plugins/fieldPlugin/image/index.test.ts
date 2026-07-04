@@ -134,7 +134,7 @@ describe('image field plugin', () => {
         from: 0,
         to: imageSyntax.length,
         syntaxTo: imageSyntax.length,
-        widgetFrom: 0,
+        widgetFrom: imageSyntax.length,
         url: '/tmp/image.png'
       }
     ]);
@@ -150,7 +150,7 @@ describe('image field plugin', () => {
         from: 0,
         to: imageSyntax.length,
         syntaxTo: imageSyntax.length,
-        widgetFrom: 0,
+        widgetFrom: imageSyntax.length,
         url: '/tmp/image.png'
       }
     ]);
@@ -178,11 +178,12 @@ describe('image field plugin', () => {
     expect(imageDecoration({ url: '/tmp/image.png' }).spec.block).toBe(true);
   });
 
-  it('anchors image widgets before the markdown image syntax', () => {
-    const state = createMarkdownState('![img](/tmp/image.png){width=240 float=left}\ntext');
+  it('anchors image widgets after the markdown image syntax', () => {
+    const imageSyntax = '![img](/tmp/image.png)';
+    const state = createMarkdownState(`${imageSyntax}{width=240 float=left}\ntext`);
 
-    expect(getImageList(state, 0, state.doc.length, true)[0]).toMatchObject({ widgetFrom: 0 });
-    expect(imageDecoration({ url: '/tmp/image.png' }).spec.side).toBe(-1);
+    expect(getImageList(state, 0, state.doc.length, true)[0]).toMatchObject({ widgetFrom: imageSyntax.length });
+    expect(imageDecoration({ url: '/tmp/image.png' }).spec.side).toBe(1);
   });
 
   it('does not add a visual line break decoration when text follows image syntax on the same line', () => {
@@ -195,16 +196,16 @@ describe('image field plugin', () => {
         from: 0,
         to: imageSyntax.length,
         syntaxTo: imageSyntax.length,
-        widgetFrom: 0,
+        widgetFrom: imageSyntax.length,
         url: '/tmp/image.png'
       }
     ]);
     expect(collectImageFieldDecorations(state)).toEqual([
       {
-        from: 0,
-        to: 0,
+        from: imageSyntax.length,
+        to: imageSyntax.length,
         kind: 'image-widget',
-        side: -1,
+        side: 1,
         block: true,
         lineBreaks: 0
       }
@@ -220,10 +221,10 @@ describe('image field plugin', () => {
     });
     expect(collectImageFieldDecorations(state)).toEqual([
       {
-        from: 0,
-        to: 0,
+        from: imageSyntax.length,
+        to: imageSyntax.length,
         kind: 'image-widget',
-        side: -1,
+        side: 1,
         block: true,
         lineBreaks: 0
       }
@@ -285,7 +286,7 @@ describe('image field plugin', () => {
         from: 0,
         to: oldImageSyntax.length,
         syntaxTo: oldImageSyntax.length,
-        widgetFrom: 0,
+        widgetFrom: oldImageSyntax.length,
         url: '/tmp/image.png'
       }
     ]);
@@ -294,7 +295,7 @@ describe('image field plugin', () => {
         from: 0,
         to: newImageSyntax.length,
         syntaxTo: newImageSyntax.length,
-        widgetFrom: 0,
+        widgetFrom: newImageSyntax.length,
         url: '/tmp/updated.png'
       }
     ]);
@@ -303,6 +304,7 @@ describe('image field plugin', () => {
   it('keeps adjacent image widgets when one image updates', () => {
     const firstImage = '![a](a.png)';
     const secondImage = '![b](b.png)';
+    const updatedSecondImage = '![b](updated.png)';
     const state = createMarkdownState(`${firstImage}${secondImage}tail`, [imageField]);
     const transaction = state.update({
       changes: {
@@ -314,18 +316,18 @@ describe('image field plugin', () => {
 
     expect(collectImageFieldDecorations(transaction.state)).toEqual([
       {
-        from: 0,
-        to: 0,
+        from: firstImage.length,
+        to: firstImage.length,
         kind: 'image-widget',
-        side: -1,
+        side: 1,
         block: true,
         lineBreaks: 0
       },
       {
-        from: firstImage.length,
-        to: firstImage.length,
+        from: firstImage.length + updatedSecondImage.length,
+        to: firstImage.length + updatedSecondImage.length,
         kind: 'image-widget',
-        side: -1,
+        side: 1,
         block: true,
         lineBreaks: 0
       }
@@ -447,10 +449,10 @@ describe('image field plugin', () => {
     ]);
     expect(collectImageFieldDecorations(view.state)).toEqual([
       {
-        from: 0,
-        to: 0,
+        from: imageSyntax.length,
+        to: imageSyntax.length,
         kind: 'image-widget',
-        side: -1,
+        side: 1,
         block: true,
         lineBreaks: 0
       }
