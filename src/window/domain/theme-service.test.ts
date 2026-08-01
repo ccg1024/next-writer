@@ -5,7 +5,7 @@ import nodeFs from 'fs';
 import nodeOs from 'os';
 import nodePath from 'path';
 import { CONFIG_JSON_NAME } from 'src/config/env';
-import { DEFAULT_THEME_ID, THEME_DIR_NAME } from 'src/theme/theme-contract';
+import { CLAUDE_THEME_ID, DEFAULT_THEME_ID, THEME_DIR_NAME } from 'src/theme/theme-contract';
 import FileSystem from '../infrastructure/file-system';
 import AppPathStore from '../state/app-path-store';
 import RenderConfigStore from '../state/render-config-store';
@@ -38,7 +38,10 @@ describe('ThemeService', () => {
     await expect(nodeFs.promises.stat(nodePath.join(configDir, THEME_DIR_NAME))).resolves.toBeDefined();
     const state = await themeService.getThemeState();
 
-    expect(state.themes).toEqual([{ id: DEFAULT_THEME_ID, name: 'Default Light', mode: 'light' }]);
+    expect(state.themes).toEqual([
+      { id: DEFAULT_THEME_ID, name: 'Default Light', mode: 'light' },
+      { id: CLAUDE_THEME_ID, name: 'Claude', mode: 'light' }
+    ]);
     expect(state.activeTheme.id).toBe(DEFAULT_THEME_ID);
   });
 
@@ -63,7 +66,7 @@ describe('ThemeService', () => {
 
     const state = await themeService.getThemeState('solarized-dark');
 
-    expect(state.themes.map(theme => theme.id)).toEqual([DEFAULT_THEME_ID, 'solarized-dark']);
+    expect(state.themes.map(theme => theme.id)).toEqual([DEFAULT_THEME_ID, CLAUDE_THEME_ID, 'solarized-dark']);
     expect(state.activeTheme).toMatchObject({
       id: 'solarized-dark',
       name: 'Solarized Dark',

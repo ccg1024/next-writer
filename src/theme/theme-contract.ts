@@ -1,4 +1,5 @@
 export const DEFAULT_THEME_ID = 'default-light';
+export const CLAUDE_THEME_ID = 'claude-theme';
 export const THEME_DIR_NAME = 'themes';
 export const THEME_SCHEMA_VERSION = 1;
 
@@ -95,6 +96,41 @@ export const DEFAULT_LIGHT_THEME: ResolvedTheme = {
     'nw-theme-code-mark': '#a0aec0',
     'nw-theme-code-info': '#000000',
     'ne-theme-table-delimiter': '#a0aec0'
+  }
+};
+
+export const CLAUDE_THEME: ResolvedTheme = {
+  id: CLAUDE_THEME_ID,
+  name: 'Claude',
+  mode: 'light',
+  tokens: {
+    'nw-app-bg': '#faf9f5',
+    'nw-panel-bg': '#faf9f5',
+    'nw-sidebar-bg': '#efe9de',
+    'nw-border-color': '#e6dfd8',
+    'nw-text-primary': '#141413',
+    'nw-text-secondary': '#6c6a64',
+    'nw-hover-bg': '#f5f0e8',
+    'nw-selected-bg': '#e8e0d2',
+    'nw-danger-color': '#c64545',
+    'nw-editor-bg': '#faf9f5',
+    'nw-editor-text': '#3d3d3a',
+    'nw-editor-selection-bg': 'rgba(204, 120, 92, 0.18)',
+    'nw-theme-head-content': '#141413',
+    'nw-theme-quote-content': '#6c6a64',
+    'nw-theme-emphasis-content': '#a9583e',
+    'nw-theme-strong-content': '#cc785c',
+    'nw-theme-list-content': '#3d3d3a',
+    'nw-theme-url-content': '#a9583e',
+    'nw-theme-link-content': '#a9583e',
+    'nw-theme-inline-code-content': '#a9583e',
+    'nw-theme-head-mark': '#cc785c',
+    'nw-theme-quote-mark': '#cc785c',
+    'nw-theme-list-mark': '#8e8b82',
+    'nw-theme-link-mark': '#cc785c',
+    'nw-theme-code-mark': '#8e8b82',
+    'nw-theme-code-info': '#6c6a64',
+    'ne-theme-table-delimiter': '#8e8b82'
   }
 };
 

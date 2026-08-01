@@ -3,6 +3,7 @@ import { inject, injectable } from 'inversify';
 import { CONFIG_JSON_NAME } from 'src/config/env';
 import {
   DEFAULT_LIGHT_THEME,
+  CLAUDE_THEME,
   DEFAULT_THEME_ID,
   ResolvedTheme,
   THEME_DIR_NAME,
@@ -75,6 +76,7 @@ class ThemeService implements IThemeService {
 
     const themeById = new Map<string, ResolvedTheme>();
     themeById.set(DEFAULT_LIGHT_THEME.id, DEFAULT_LIGHT_THEME);
+    themeById.set(CLAUDE_THEME.id, CLAUDE_THEME);
 
     const entries = await this.fileSystem.readDir(this.getThemeDir());
     const themeFiles = entries
