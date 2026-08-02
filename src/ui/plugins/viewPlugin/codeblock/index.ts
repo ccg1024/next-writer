@@ -6,7 +6,8 @@ import { filterableReplaceDeco, replaceDecorationFilter } from '../../global/uti
 
 const theme = EditorView.baseTheme({
   '.cm-content > .cm-code-block': {
-    backgroundColor: 'var(--nw-hover-bg)',
+    // Keep this layer translucent so CodeMirror's selection layer remains visible underneath it.
+    backgroundColor: 'var(--nw-editor-code-bg)',
     fontFamily: 'var(--nw-editor-code-font-family)',
     position: 'relative',
     marginInline: '16px',
@@ -19,7 +20,7 @@ const theme = EditorView.baseTheme({
       width: '16px',
       zIndex: -1,
       transform: 'translateX(-100%)',
-      backgroundColor: 'var(--nw-hover-bg)'
+      backgroundColor: 'var(--nw-editor-code-bg)'
     },
     '&::after': {
       content: '""',
@@ -30,7 +31,7 @@ const theme = EditorView.baseTheme({
       width: '16px',
       zIndex: -1,
       transform: 'translateX(100%)',
-      backgroundColor: 'var(--nw-hover-bg)'
+      backgroundColor: 'var(--nw-editor-code-bg)'
     }
   }
 });

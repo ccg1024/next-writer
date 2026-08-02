@@ -61,6 +61,7 @@
   --nw-selected-bg: rgba(0, 0, 0, 0.06);
   --nw-danger-color: #ff4d4f;
   --nw-editor-bg: #ffffff;
+  --nw-editor-code-bg: rgba(0, 0, 0, 0.04);
   --nw-editor-text: #000000;
   --nw-editor-selection-bg: rgba(217, 217, 217, 0.5);
 }

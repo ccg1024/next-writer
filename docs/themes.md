@@ -25,6 +25,7 @@ Example `solarized-dark.json`:
     "nw-selected-bg": "rgba(38, 139, 210, 0.22)",
     "nw-danger-color": "#dc322f",
     "nw-editor-bg": "#002b36",
+    "nw-editor-code-bg": "rgba(238, 232, 213, 0.08)",
     "nw-editor-text": "#eee8d5",
     "nw-editor-selection-bg": "rgba(38, 139, 210, 0.28)",
     "nw-theme-head-content": "#268bd2",
