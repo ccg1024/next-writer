@@ -30,7 +30,8 @@ const TYPES = {
   IDocumentSessionService: Symbol.for('IDocumentSessionService'),
   IMenuActionService: Symbol.for('IMenuActionService'),
   IThemeService: Symbol.for('IThemeService'),
-  ISenderValidator: Symbol.for('ISenderValidator')
+  ISenderValidator: Symbol.for('ISenderValidator'),
+  ISaveScheduler: Symbol.for('ISaveScheduler')
 };
 
 export { TYPES };

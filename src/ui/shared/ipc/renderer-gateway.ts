@@ -1,5 +1,6 @@
 import {
   ApplyThemeRequest,
+  FlushDocumentRequest,
   GetDocumentSessionRequest,
   ReadFileRequest,
   UpdateCacheRequest,
@@ -51,6 +52,10 @@ async function updateDocumentSession(data: UpdateDocumentSessionRequest) {
   return window.ipc.updateDocumentSession(data);
 }
 
+async function flushDocument(data: FlushDocumentRequest) {
+  return window.ipc.flushDocument(data);
+}
+
 const rendererGateway = {
   readConfig,
   listThemes,
@@ -61,7 +66,8 @@ const rendererGateway = {
   queryRuntimeConfig,
   updateCache,
   getDocumentSession,
-  updateDocumentSession
+  updateDocumentSession,
+  flushDocument
 };
 
 export default rendererGateway;

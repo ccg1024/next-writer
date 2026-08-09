@@ -1,14 +1,7 @@
 import { EditorView } from '@codemirror/view';
+import { RuntimeConfigResponse } from '_types';
 
-export type RuntimeRecord = {
-  menuStatus: {
-    librarySidebar: boolean;
-    detailSidebar: boolean;
-    tocSidebar: boolean;
-    typewriterMode: boolean;
-    actionSidebar: boolean;
-  };
-};
+export type RuntimeRecord = RuntimeConfigResponse;
 
 class Store {
   private editor: EditorView;

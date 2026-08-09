@@ -2,6 +2,7 @@ import { DocumentSession } from '_types';
 
 interface IDocumentSessionService {
   get(id: string): DocumentSession | null;
+  getAll(): DocumentSession[];
   load(id: string, path: string, content: string, diskModifiedTime?: number): DocumentSession;
   updatePath(id: string, path: string): DocumentSession;
   updateContent(id: string, content: string, revision?: number): DocumentSession;

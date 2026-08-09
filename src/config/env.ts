@@ -23,6 +23,9 @@ export const ROOT_LIBRARY_ID = '__root__';
 // The maximum length of the file description
 export const MAX_FILE_DESCRIPTION_LENGTH = 100;
 
+export const DEFAULT_AUTO_SAVE_DELAY_MS = 1000;
+export const WINDOW_CLOSE_FLUSH_TIMEOUT_MS = 3000;
+
 // Default config
 export const NW_CONFIG = {
   themeId: 'default-light',
@@ -33,5 +36,9 @@ export const NW_CONFIG = {
   uiFont: "'Rounded Mplus 1c'",
   focusMode: false,
   typewriter: false,
-  hideMarks: false
+  hideMarks: false,
+  autoSave: {
+    enabled: true,
+    delayMs: DEFAULT_AUTO_SAVE_DELAY_MS
+  }
 };

@@ -29,10 +29,11 @@ export interface IPC {
   readFile: (data: ReadFileRequest) => Promise<Response<ReadFileResponse>>;
   updateLib: (data: UpdateLibRequest) => Promise<Response<UpdateLibResponse>>;
   writeFile: (data: WriteFileRequest) => Promise<Response<RootLibraryTree>>;
-  queryRuntimeConfig: () => Promise<Response<{ menuStatus: MainProcessMenuStatus }>>;
+  queryRuntimeConfig: () => Promise<Response<RuntimeConfigResponse>>;
   updateCache: (data: UpdateCacheRequest) => Promise<Response<{ success: boolean }>>;
   getDocumentSession: (data: GetDocumentSessionRequest) => Promise<Response<GetDocumentSessionResponse>>;
   updateDocumentSession: (data: UpdateDocumentSessionRequest) => Promise<Response<UpdateDocumentSessionResponse>>;
+  flushDocument: (data: FlushDocumentRequest) => Promise<Response<FlushDocumentResponse>>;
   rendererListener: (cb: RendererListenerCallback) => () => void;
 }
 
@@ -146,6 +147,14 @@ export type MainProcessMenuStatus = {
   actionSidebar: boolean; // The Drawer component sidebar which contain delete, rename, etc option for a library or a library's file
 };
 
+export type RuntimeConfigResponse = {
+  menuStatus: MainProcessMenuStatus;
+  autoSave: {
+    enabled: boolean;
+    delayMs: number;
+  };
+};
+
 // ============================================================
 // Just for Ipc communication -- start
 // ============================================================
@@ -182,6 +191,15 @@ export type WriteFileRequest = {
   id: string;
   content: string;
   revision?: number;
+};
+
+export type FlushDocumentRequest = {
+  id: string;
+};
+
+export type FlushDocumentResponse = {
+  session: DocumentSession;
+  libTree: RootLibraryTree;
 };
 
 export type UpdateLibRequest =

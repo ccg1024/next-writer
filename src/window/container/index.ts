@@ -45,6 +45,8 @@ import IDocumentService from '../interface/document-service';
 import DocumentService from '../domain/document-service';
 import IDocumentSessionService from '../interface/document-session-service';
 import DocumentSessionService from '../domain/document-session-service';
+import ISaveScheduler from '../interface/save-scheduler';
+import SaveScheduler from '../domain/save-scheduler';
 import IMenuActionService from '../interface/menu-action-service';
 import MenuActionService from '../menu/menu-action-service';
 import IThemeService from '../interface/theme-service';
@@ -55,6 +57,7 @@ import IIpcHandler from '../interface/ipc-handler';
 import {
   ApplyThemeHandler,
   GetDocumentSessionHandler,
+  FlushDocumentHandler,
   ListThemesHandler,
   ReadConfigHandler,
   ReadFileHandler,
@@ -96,6 +99,7 @@ container.bind<IWorkspaceService>(TYPES.IWorkspaceService).to(WorkspaceService).
 container.bind<ILibraryService>(TYPES.ILibraryService).to(LibraryService).inSingletonScope();
 container.bind<IDocumentService>(TYPES.IDocumentService).to(DocumentService).inSingletonScope();
 container.bind<IDocumentSessionService>(TYPES.IDocumentSessionService).to(DocumentSessionService).inSingletonScope();
+container.bind<ISaveScheduler>(TYPES.ISaveScheduler).to(SaveScheduler).inSingletonScope();
 container.bind<IMenuActionService>(TYPES.IMenuActionService).to(MenuActionService).inSingletonScope();
 container.bind<IThemeService>(TYPES.IThemeService).to(ThemeService).inSingletonScope();
 container.bind<ISenderValidator>(TYPES.ISenderValidator).to(SenderValidator).inSingletonScope();
@@ -110,5 +114,6 @@ container.bind<IIpcHandler>(TYPES.IIpcHandler).to(RuntimeHandler).inSingletonSco
 container.bind<IIpcHandler>(TYPES.IIpcHandler).to(UpdateCacheHandler).inSingletonScope();
 container.bind<IIpcHandler>(TYPES.IIpcHandler).to(GetDocumentSessionHandler).inSingletonScope();
 container.bind<IIpcHandler>(TYPES.IIpcHandler).to(UpdateDocumentSessionHandler).inSingletonScope();
+container.bind<IIpcHandler>(TYPES.IIpcHandler).to(FlushDocumentHandler).inSingletonScope();
 
 export { container };

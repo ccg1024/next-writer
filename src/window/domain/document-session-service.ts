@@ -38,6 +38,10 @@ class DocumentSessionService implements IDocumentSessionService {
     return this.sessions.get(id) ?? null;
   }
 
+  getAll(): DocumentSession[] {
+    return Array.from(this.sessions.values());
+  }
+
   load(id: string, path: string, content: string, diskModifiedTime?: number): DocumentSession {
     const existing = this.sessions.get(id);
     if (existing) {

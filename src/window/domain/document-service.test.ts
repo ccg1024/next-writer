@@ -12,6 +12,8 @@ import IDocumentCacheService from '../interface/document-cache-service';
 import ILibraryTreeStore from '../interface/library-tree-store';
 import DocumentService from './document-service';
 import DocumentSessionService from './document-session-service';
+import SaveScheduler from './save-scheduler';
+import RenderConfigStore from '../state/render-config-store';
 
 class MemoryCache implements IDocumentCacheService {
   private cache: Record<string, CacheContent> = {};
@@ -57,6 +59,9 @@ describe('DocumentService cache revisions', () => {
   let libraryTree: RootLibraryTree;
   let cache: MemoryCache;
   let service: DocumentService;
+  let renderConfigStore: RenderConfigStore;
+  let saveScheduler: SaveScheduler;
+  let fileSystem: FileSystem;
 
   beforeEach(async () => {
     rootDir = await nodeFs.promises.mkdtemp(nodePath.join(nodeOs.tmpdir(), 'next-writer-document-'));
@@ -76,17 +81,65 @@ describe('DocumentService cache revisions', () => {
       ]
     };
     cache = new MemoryCache();
+    renderConfigStore = new RenderConfigStore();
+    renderConfigStore.setConfig({ autoSave: { enabled: false, delayMs: 1000 } });
+    saveScheduler = new SaveScheduler();
+    fileSystem = new FileSystem();
     service = new DocumentService(
-      new FileSystem(),
+      fileSystem,
       createAppPathStore(),
       createLibraryTreeStore(),
       cache,
-      new DocumentSessionService()
+      new DocumentSessionService(),
+      renderConfigStore,
+      saveScheduler
     );
   });
 
   afterEach(async () => {
+    saveScheduler.destroy();
     await nodeFs.promises.rm(rootDir, { recursive: true, force: true });
+  });
+
+  it('automatically saves the newest session content after the configured delay', async () => {
+    jest.useFakeTimers();
+    renderConfigStore.setConfig({ autoSave: { enabled: true, delayMs: 100 } });
+    try {
+      await service.updateSession({ id: 'note-id', content: 'automatically saved', revision: 1 });
+      await expect(nodeFs.promises.readFile(nodePath.join(rootDir, 'note.md'), 'utf8')).resolves.toBe('saved');
+
+      await jest.advanceTimersByTimeAsync(100);
+      await saveScheduler.flush('note-id');
+
+      await expect(nodeFs.promises.readFile(nodePath.join(rootDir, 'note.md'), 'utf8')).resolves.toBe(
+        'automatically saved'
+      );
+      await expect(service.getSession({ id: 'note-id' })).resolves.toMatchObject({
+        status: 'saved',
+        localRevision: 1,
+        savedRevision: 1
+      });
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it('keeps the newest content dirty when a save fails', async () => {
+    await service.updateSession({ id: 'note-id', content: 'unsaved draft', revision: 1 });
+    jest.spyOn(fileSystem, 'writeFile').mockRejectedValueOnce(new Error('disk unavailable'));
+
+    await expect(service.writeFile({ id: 'note-id', content: 'unsaved draft', revision: 1 })).rejects.toThrow(
+      '保存文件失败'
+    );
+
+    await expect(service.getSession({ id: 'note-id' })).resolves.toMatchObject({
+      content: 'unsaved draft',
+      savedContent: 'saved',
+      status: 'save-error',
+      localRevision: 1,
+      savedRevision: 0
+    });
+    expect(cache.hasModified()).toBe(true);
   });
 
   it('ignores stale dirty cache updates that arrive after a save', async () => {

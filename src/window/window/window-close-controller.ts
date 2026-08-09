@@ -18,6 +18,12 @@ class WindowCloseController implements IWindowCloseController {
       }
 
       event.preventDefault();
+      if (await this.windowCloseService.flushPendingChanges()) {
+        win.removeAllListeners();
+        win.close();
+        onCleanup();
+        return;
+      }
       const shouldClose = await this.windowCloseService.shouldCloseWindow(win);
 
       if (!shouldClose) {

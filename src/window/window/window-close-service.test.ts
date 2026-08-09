@@ -4,6 +4,7 @@ import 'reflect-metadata';
 import type { BrowserWindow } from 'electron';
 import { dialog } from 'electron';
 import IDocumentCacheService from '../interface/document-cache-service';
+import IDocumentService from '../interface/document-service';
 import WindowCloseService from './window-close-service';
 
 jest.mock('electron', () => ({
@@ -15,15 +16,28 @@ jest.mock('electron', () => ({
 describe('WindowCloseService', () => {
   let cache: jest.Mocked<Pick<IDocumentCacheService, 'hasModified'>>;
   let service: WindowCloseService;
+  let documentService: jest.Mocked<Pick<IDocumentService, 'flushAll'>>;
   let win: BrowserWindow;
 
   beforeEach(() => {
     cache = {
       hasModified: jest.fn()
     };
-    service = new WindowCloseService(cache as unknown as IDocumentCacheService);
+    documentService = { flushAll: jest.fn() };
+    service = new WindowCloseService(
+      cache as unknown as IDocumentCacheService,
+      documentService as unknown as IDocumentService
+    );
     win = {} as BrowserWindow;
     jest.clearAllMocks();
+  });
+
+  it('flushes pending changes with the close timeout', async () => {
+    documentService.flushAll.mockResolvedValue(true);
+
+    await expect(service.flushPendingChanges()).resolves.toBe(true);
+
+    expect(documentService.flushAll).toHaveBeenCalledWith(3000);
   });
 
   it('allows closing without prompting when there are no unsaved changes', async () => {

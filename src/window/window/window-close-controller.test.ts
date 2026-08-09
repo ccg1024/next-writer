@@ -21,6 +21,7 @@ describe('WindowCloseController', () => {
   beforeEach(() => {
     closeService = {
       hasUnsavedChanges: jest.fn(),
+      flushPendingChanges: jest.fn(),
       shouldCloseWindow: jest.fn()
     };
     win = {
@@ -51,6 +52,7 @@ describe('WindowCloseController', () => {
   it('prevents close and keeps state when unsaved changes are cancelled', async () => {
     const event = { preventDefault: jest.fn() };
     closeService.hasUnsavedChanges.mockReturnValue(true);
+    closeService.flushPendingChanges.mockResolvedValue(false);
     closeService.shouldCloseWindow.mockResolvedValue(false);
 
     await closeHandler(event);
@@ -60,9 +62,23 @@ describe('WindowCloseController', () => {
     expect(onCleanup).not.toHaveBeenCalled();
   });
 
+  it('waits for pending changes and closes without prompting when flush succeeds', async () => {
+    const event = { preventDefault: jest.fn() };
+    closeService.hasUnsavedChanges.mockReturnValue(true);
+    closeService.flushPendingChanges.mockResolvedValue(true);
+
+    await closeHandler(event);
+
+    expect(event.preventDefault).toHaveBeenCalled();
+    expect(closeService.shouldCloseWindow).not.toHaveBeenCalled();
+    expect(win.close).toHaveBeenCalled();
+    expect(onCleanup).toHaveBeenCalled();
+  });
+
   it('prevents the original close event and closes explicitly after confirmation', async () => {
     const event = { preventDefault: jest.fn() };
     closeService.hasUnsavedChanges.mockReturnValue(true);
+    closeService.flushPendingChanges.mockResolvedValue(false);
     closeService.shouldCloseWindow.mockResolvedValue(true);
 
     await closeHandler(event);

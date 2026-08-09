@@ -48,6 +48,8 @@ export function validateIpcRequest(value: unknown): IpcRequestValidation {
       return validateUpdateCache(data, channel);
     case IPC_CHANNEL.GET_DOCUMENT_SESSION:
       return validateGetDocumentSession(data, channel);
+    case IPC_CHANNEL.FLUSH_DOCUMENT:
+      return validateGetDocumentSession(data, channel);
     case IPC_CHANNEL.UPDATE_DOCUMENT_SESSION:
       return validateUpdateDocumentSession(data, channel);
     default:

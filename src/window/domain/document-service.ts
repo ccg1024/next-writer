@@ -1,5 +1,5 @@
 import { inject, injectable } from 'inversify';
-import { MAX_FILE_DESCRIPTION_LENGTH } from 'src/config/env';
+import { DEFAULT_AUTO_SAVE_DELAY_MS, MAX_FILE_DESCRIPTION_LENGTH } from 'src/config/env';
 import {
   DocumentSession,
   GetDocumentSessionRequest,
@@ -16,6 +16,8 @@ import IFileSystem from '../interface/file-system';
 import ILibraryTreeStore from '../interface/library-tree-store';
 import IDocumentService from '../interface/document-service';
 import IDocumentSessionService from '../interface/document-session-service';
+import IRenderConfigStore from '../interface/render-config-store';
+import ISaveScheduler from '../interface/save-scheduler';
 import { isLibraryTreeNode, persistLibTree, resolveLibraryNodePath } from '../utils/lib-tree-utils';
 import { TYPES } from '../types';
 
@@ -29,7 +31,9 @@ class DocumentService implements IDocumentService {
     @inject(TYPES.IAppPathStore) private appPathStore: IAppPathStore,
     @inject(TYPES.ILibraryTreeStore) private libraryTreeStore: ILibraryTreeStore,
     @inject(TYPES.IDocumentCacheService) private cache: IDocumentCacheService,
-    @inject(TYPES.IDocumentSessionService) private sessions: IDocumentSessionService
+    @inject(TYPES.IDocumentSessionService) private sessions: IDocumentSessionService,
+    @inject(TYPES.IRenderConfigStore) private renderConfigStore: IRenderConfigStore,
+    @inject(TYPES.ISaveScheduler) private saveScheduler: ISaveScheduler
   ) {}
 
   async readFile(data: ReadFileRequest): Promise<ReadFileResponse> {
@@ -41,6 +45,40 @@ class DocumentService implements IDocumentService {
   }
 
   async writeFile(data: WriteFileRequest): Promise<RootLibraryTree> {
+    let result = this.libraryTreeStore.getTree();
+    await this.saveScheduler.enqueue(data.id, async () => {
+      result = await this.persistDocument(data);
+    });
+    return result;
+  }
+
+  async flushDocument(id: string): Promise<{ session: DocumentSession; libTree: RootLibraryTree }> {
+    const session = await this.getSession({ id });
+    let libTree = this.libraryTreeStore.getTree();
+    if (session.content !== session.savedContent) {
+      await this.saveScheduler.enqueue(id, async () => {
+        libTree = await this.persistCurrentSession(id);
+      });
+    } else {
+      await this.saveScheduler.flush(id);
+    }
+    return { session: await this.getSession({ id }), libTree };
+  }
+
+  async flushAll(timeoutMs: number): Promise<boolean> {
+    this.sessions.getAll().forEach(session => {
+      if (session.content !== session.savedContent) {
+        this.saveScheduler.schedule(session.id, 0, () => this.persistCurrentSession(session.id).then(() => undefined));
+      }
+    });
+    try {
+      return (await this.saveScheduler.flushAll(timeoutMs)) && !this.cache.hasModified();
+    } catch {
+      return false;
+    }
+  }
+
+  private async persistDocument(data: WriteFileRequest): Promise<RootLibraryTree> {
     const { id, content, revision } = data ?? {};
     const rootDir = this.appPathStore.getRootDir();
 
@@ -89,6 +127,7 @@ class DocumentService implements IDocumentService {
 
     const nextSession = this.sessions.updateContent(id, content, revision);
     this.syncCache(nextSession);
+    this.scheduleAutoSave(nextSession);
 
     return { success: true };
   }
@@ -109,7 +148,32 @@ class DocumentService implements IDocumentService {
 
     const nextSession = this.sessions.updateContent(id, content, revision);
     this.syncCache(nextSession);
+    this.scheduleAutoSave(nextSession);
     return nextSession;
+  }
+
+  private persistCurrentSession(id: string): Promise<RootLibraryTree> {
+    const session = this.sessions.get(id);
+    if (!session || session.content === session.savedContent) {
+      return Promise.resolve(this.libraryTreeStore.getTree());
+    }
+    return this.persistDocument({ id, content: session.content, revision: session.localRevision });
+  }
+
+  private scheduleAutoSave(session: DocumentSession): void {
+    const config = this.renderConfigStore.getConfig().autoSave;
+    const enabled = typeof config !== 'object' || config === null || config.enabled !== false;
+    if (!enabled) {
+      return;
+    }
+    const configuredDelay = typeof config === 'object' && config !== null ? config.delayMs : undefined;
+    const delayMs =
+      typeof configuredDelay === 'number' && Number.isFinite(configuredDelay) && configuredDelay >= 0
+        ? configuredDelay
+        : DEFAULT_AUTO_SAVE_DELAY_MS;
+    this.saveScheduler.schedule(session.id, delayMs, () =>
+      this.persistCurrentSession(session.id).then(() => undefined)
+    );
   }
 
   private async ensureSession(id: string, path: string): Promise<DocumentSession> {

@@ -47,6 +47,9 @@ describe('validateIpcRequest', () => {
     expect(validateIpcRequest({ type: IPC_CHANNEL.GET_DOCUMENT_SESSION, data: { id: 'note-id' } })).toMatchObject({
       valid: true
     });
+    expect(validateIpcRequest({ type: IPC_CHANNEL.FLUSH_DOCUMENT, data: { id: 'note-id' } })).toMatchObject({
+      valid: true
+    });
     expect(
       validateIpcRequest({
         type: IPC_CHANNEL.UPDATE_DOCUMENT_SESSION,

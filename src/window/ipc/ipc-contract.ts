@@ -1,12 +1,14 @@
 import type {
-  MainProcessMenuStatus,
   ApplyThemeRequest,
   DocumentSession,
+  FlushDocumentRequest,
+  FlushDocumentResponse,
   GetDocumentSessionRequest,
   ReadConfigResponse,
   ReadFileRequest,
   ReadFileResponse,
   RootLibraryTree,
+  RuntimeConfigResponse,
   ThemeStateResponse,
   UpdateCacheRequest,
   UpdateDocumentSessionRequest,
@@ -30,14 +32,11 @@ export const IPC_CHANNEL = {
   RUNTIME: 'runtime',
   UPDATE_CACHE: 'update-cache',
   GET_DOCUMENT_SESSION: 'get-document-session',
-  UPDATE_DOCUMENT_SESSION: 'update-document-session'
+  UPDATE_DOCUMENT_SESSION: 'update-document-session',
+  FLUSH_DOCUMENT: 'flush-document'
 } as const;
 
 export type IpcChannel = (typeof IPC_CHANNEL)[keyof typeof IPC_CHANNEL];
-
-export type RuntimeConfigResponse = {
-  menuStatus: MainProcessMenuStatus;
-};
 
 type IpcRequestMap = {
   [IPC_CHANNEL.READ_CONFIG]: undefined;
@@ -50,6 +49,7 @@ type IpcRequestMap = {
   [IPC_CHANNEL.UPDATE_CACHE]: UpdateCacheRequest;
   [IPC_CHANNEL.GET_DOCUMENT_SESSION]: GetDocumentSessionRequest;
   [IPC_CHANNEL.UPDATE_DOCUMENT_SESSION]: UpdateDocumentSessionRequest;
+  [IPC_CHANNEL.FLUSH_DOCUMENT]: FlushDocumentRequest;
 };
 
 type IpcResponseMap = {
@@ -63,6 +63,7 @@ type IpcResponseMap = {
   [IPC_CHANNEL.UPDATE_CACHE]: { success: boolean };
   [IPC_CHANNEL.GET_DOCUMENT_SESSION]: DocumentSession;
   [IPC_CHANNEL.UPDATE_DOCUMENT_SESSION]: DocumentSession;
+  [IPC_CHANNEL.FLUSH_DOCUMENT]: FlushDocumentResponse;
 };
 
 export type IpcRequestData<C extends IpcChannel> = IpcRequestMap[C];

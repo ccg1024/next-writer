@@ -34,6 +34,9 @@ const Main: FC = () => {
   const [session, setSession] = useState<DocumentSession | null>(null);
   const sessionRef = useRef<DocumentSession | null>(null);
   const sessionRevisionsRef = useRef(new Map<string, number>());
+  const sessionUpdatesRef = useRef(new Map<string, Promise<unknown>>());
+  const autoSaveStatusTimersRef = useRef(new Map<string, ReturnType<typeof setTimeout>>());
+  const loadedNoteIdRef = useRef<string | undefined>(undefined);
   const activeNoteIdRef = useRef<string | undefined>(undefined);
   activeNoteIdRef.current = currentNote?.id;
 
@@ -53,7 +56,7 @@ const Main: FC = () => {
       // 每篇笔记独立维护单调修订号，保证快速切换笔记或 IPC 乱序时不会回退会话。
       const revision = Math.max(sessionRevisionsRef.current.get(id) ?? 0, sessionRef.current?.localRevision ?? 0) + 1;
       sessionRevisionsRef.current.set(id, revision);
-      return rendererGateway.updateDocumentSession({ id, content, revision }).then(res => {
+      const request = rendererGateway.updateDocumentSession({ id, content, revision }).then(res => {
         const currentSession = sessionRef.current;
         if (res.status === 0 && res.data) {
           sessionRevisionsRef.current.set(
@@ -71,10 +74,45 @@ const Main: FC = () => {
           setSession(res.data);
           patchCurrentNote({ isChange: isDocumentSessionModified(res.data) });
         }
+        const autoSave = runtimeConfig?.autoSave;
+        if (res.status === 0 && autoSave?.enabled) {
+          const currentTimer = autoSaveStatusTimersRef.current.get(id);
+          if (currentTimer) {
+            clearTimeout(currentTimer);
+          }
+          const statusTimer = setTimeout(async () => {
+            const response = await rendererGateway.flushDocument({ id });
+            if (response.status === 0 && activeNoteIdRef.current === id) {
+              sessionRef.current = response.data.session;
+              setSession(response.data.session);
+              patchCurrentNote({ isChange: isDocumentSessionModified(response.data.session) });
+              setLibraryTree(response.data.libTree);
+            } else if (response.status !== 0 && activeNoteIdRef.current === id) {
+              const sessionResponse = await rendererGateway.getDocumentSession({ id });
+              if (sessionResponse.status === 0) {
+                sessionRef.current = sessionResponse.data;
+                setSession(sessionResponse.data);
+                patchCurrentNote({ isChange: isDocumentSessionModified(sessionResponse.data) });
+              }
+            }
+            if (autoSaveStatusTimersRef.current.get(id) === statusTimer) {
+              autoSaveStatusTimersRef.current.delete(id);
+            }
+          }, autoSave.delayMs + 100);
+          autoSaveStatusTimersRef.current.set(id, statusTimer);
+        }
         return res;
       });
+      sessionUpdatesRef.current.set(id, request);
+      const clearPendingRequest = () => {
+        if (sessionUpdatesRef.current.get(id) === request) {
+          sessionUpdatesRef.current.delete(id);
+        }
+      };
+      void request.then(clearPendingRequest, clearPendingRequest);
+      return request;
     },
-    [patchCurrentNote]
+    [patchCurrentNote, runtimeConfig?.autoSave, setLibraryTree]
   );
 
   const onEditorDocChange = useCallback(
@@ -169,6 +207,24 @@ const Main: FC = () => {
   // 切换笔记时废弃上一次异步结果，防止慢请求把新编辑器替换成旧笔记内容。
   useEffect(() => {
     if (isTrulyEmpty(currentNote?.id)) {
+      const previousId = loadedNoteIdRef.current;
+      if (previousId) {
+        const statusTimer = autoSaveStatusTimersRef.current.get(previousId);
+        if (statusTimer) {
+          clearTimeout(statusTimer);
+          autoSaveStatusTimersRef.current.delete(previousId);
+        }
+        void (async () => {
+          await sessionUpdatesRef.current.get(previousId);
+          const response = await rendererGateway.flushDocument({ id: previousId });
+          if (response.status === 0) {
+            setLibraryTree(response.data.libTree);
+          } else {
+            message.error(response.message || '切换文档前保存失败');
+          }
+        })();
+        loadedNoteIdRef.current = undefined;
+      }
       sessionRef.current = null;
       setSession(null);
       setInitialEditorState(null);
@@ -180,6 +236,24 @@ const Main: FC = () => {
     setInitialEditorState(null);
     let shouldUpdate = true;
     const readNote = async () => {
+      const previousId = loadedNoteIdRef.current;
+      if (previousId && previousId !== currentNote.id) {
+        const statusTimer = autoSaveStatusTimersRef.current.get(previousId);
+        if (statusTimer) {
+          clearTimeout(statusTimer);
+          autoSaveStatusTimersRef.current.delete(previousId);
+        }
+        await sessionUpdatesRef.current.get(previousId);
+        const flushResponse = await rendererGateway.flushDocument({ id: previousId });
+        if (flushResponse.status === 0) {
+          setLibraryTree(flushResponse.data.libTree);
+        } else {
+          message.error(flushResponse.message || '切换文档前保存失败');
+        }
+      }
+      if (!shouldUpdate) {
+        return;
+      }
       const { status, data } = await rendererGateway.getDocumentSession({ id: currentNote.id });
       if (shouldUpdate && status === 0) {
         sessionRevisionsRef.current.set(
@@ -190,6 +264,7 @@ const Main: FC = () => {
         setSession(data);
         patchCurrentNote({ isChange: isDocumentSessionModified(data) });
         setInitialEditorState({ initDoc: data.content });
+        loadedNoteIdRef.current = data.id;
       }
     };
 
@@ -197,7 +272,15 @@ const Main: FC = () => {
     return () => {
       shouldUpdate = false;
     };
-  }, [currentNote?.id, patchCurrentNote]);
+  }, [currentNote?.id, message, patchCurrentNote, setLibraryTree]);
+
+  useEffect(
+    () => () => {
+      autoSaveStatusTimersRef.current.forEach(timer => clearTimeout(timer));
+      autoSaveStatusTimersRef.current.clear();
+    },
+    []
+  );
 
   useEffect(() => {
     if (!editor) {
