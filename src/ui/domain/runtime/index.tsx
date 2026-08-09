@@ -30,6 +30,7 @@ const initialRuntimeState: RuntimeState = {
   tocVisible: false
 };
 
+/** 合并主进程持久化的菜单状态与渲染进程临时布局状态。 */
 function runtimeReducer(state: RuntimeState, action: RuntimeAction): RuntimeState {
   switch (action.type) {
     case 'set-runtime-config':

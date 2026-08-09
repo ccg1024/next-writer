@@ -39,6 +39,7 @@ function editorReducer(state: EditorState, action: EditorAction): EditorState {
   }
 }
 
+/** 提供当前 CodeMirror 实例及由语法树派生的大纲，隔离编辑器实现与布局组件。 */
 export function EditorProvider({ children }: React.PropsWithChildren) {
   const [state, dispatch] = useReducer(editorReducer, initialEditorState);
 
@@ -53,6 +54,7 @@ export function EditorProvider({ children }: React.PropsWithChildren) {
     }
 
     const field = view.state.field(outlintField);
+    // 渲染层级按文档实际出现的标题级别压缩，例如 H2/H4 显示为相邻两级。
     const tiers: number[] = [];
     field.forEach(f => {
       if (!tiers.includes(f.level)) {

@@ -19,6 +19,9 @@ import {
 import { TYPES } from '../types';
 
 @injectable()
+/**
+ * 文库领域服务，将新增、删除、重命名等树操作同步到真实文件系统，并持久化最终树结构。
+ */
 class LibraryService implements ILibraryService {
   constructor(
     @inject(TYPES.IFileSystem) private fileSystem: IFileSystem,
@@ -45,6 +48,7 @@ class LibraryService implements ILibraryService {
   async updateLibrary(data: UpdateLibRequest): Promise<RootLibraryTree> {
     const rootDir = this.appPathStore.getRootDir();
 
+    // 所有文件操作都在树仓库的串行更新中执行，避免并发请求基于同一个旧树写回。
     return this.libraryTreeStore.updateTree(async libTree => {
       switch (data?.operate) {
         case 'add': {
@@ -147,6 +151,7 @@ class LibraryService implements ILibraryService {
   }
 
   private async traverseDirectory(dir: string, workInProcess: LibraryTree | RootLibraryTree): Promise<void> {
+    // 同步时只把根目录下的文件夹作为文库；文件笔记必须归属于具体文库目录。
     const files = await this.fileSystem.readDir(dir);
     const sortedFiles = files.sort((a, b) => {
       if (a.isDirectory() && b.isFile()) return -1;

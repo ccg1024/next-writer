@@ -6,6 +6,9 @@ import IWindowRegistry from '../interface/window-registry';
 import { TYPES } from '../types';
 
 @injectable()
+/**
+ * 跟踪各文档是否存在未保存修改，并将汇总结果映射到 macOS 窗口的“已编辑”状态。
+ */
 class DocumentCacheService implements IDocumentCacheService {
   private __cache: Cache;
 

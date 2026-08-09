@@ -9,6 +9,9 @@ import IWindowSessionCoordinator from '../interface/window-session-coordinator';
 import { TYPES } from '../types';
 
 @injectable()
+/**
+ * 主进程应用入口，按顺序装配全局错误处理、协议、IPC 与首个窗口，并接管 Electron 应用生命周期。
+ */
 class Application implements IApplication {
   constructor(
     @inject(TYPES.IWindowSessionCoordinator) private windowSessionCoordinator: IWindowSessionCoordinator,

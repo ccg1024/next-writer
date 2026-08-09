@@ -5,6 +5,10 @@ export type RendererTreeOperation = 'append' | 'remove' | 'update';
 
 type TransientState = Pick<RendererLibraryTree, 'description' | 'isChange'>;
 
+/**
+ * 将主进程返回的持久化树转换为渲染树，并保留尚未落盘的描述与编辑标记。
+ * 转换过程中会重建 parent 引用，使组件可从任意节点向上导航。
+ */
 export function refreshRendererTree(
   root: RendererRootLibraryTree,
   previousRoot?: RendererRootLibraryTree
@@ -22,6 +26,7 @@ export function updateRendererTree(
     return root;
   }
 
+  // 始终返回一棵新树，确保 React 能通过引用变化触发依赖该节点的组件更新。
   return applyRendererRootOperation(root, target, operation);
 }
 

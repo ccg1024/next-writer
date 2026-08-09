@@ -20,6 +20,9 @@ const { Title } = Typography;
 
 const MAX_DESCRIPTION_LENGTH = 100 as const;
 
+/**
+ * 当前笔记编辑区，负责 CodeMirror 生命周期、文档会话修订同步、保存命令和标题重命名。
+ */
 const Main: FC = () => {
   const { message } = App.useApp();
   const { currentNote } = useLibraryState();
@@ -34,7 +37,7 @@ const Main: FC = () => {
   const activeNoteIdRef = useRef<string | undefined>(undefined);
   activeNoteIdRef.current = currentNote?.id;
 
-  // 处理自定义编辑器事件
+  // 描述只用于侧栏预览，延迟更新可以避免每次按键都克隆整棵渲染树。
   const debounceDescriptionUpdate = useMemo(
     () =>
       debounceFn((note: NonNullable<typeof currentNote>, description: string) =>
@@ -47,6 +50,7 @@ const Main: FC = () => {
 
   const updateDocumentSession = useCallback(
     (id: string, content: string) => {
+      // 每篇笔记独立维护单调修订号，保证快速切换笔记或 IPC 乱序时不会回退会话。
       const revision = Math.max(sessionRevisionsRef.current.get(id) ?? 0, sessionRef.current?.localRevision ?? 0) + 1;
       sessionRevisionsRef.current.set(id, revision);
       return rendererGateway.updateDocumentSession({ id, content, revision }).then(res => {
@@ -117,6 +121,7 @@ const Main: FC = () => {
 
     const content = editor.state.doc.toString();
     const noteId = currentNote.id;
+    // 先显示 saving，再以主进程返回的权威会话校正文档状态。
     if (sessionRef.current) {
       const savingSession = { ...sessionRef.current, status: 'saving' as const };
       sessionRef.current = savingSession;
@@ -157,14 +162,11 @@ const Main: FC = () => {
     setTypewriterMode(Boolean(action.payload));
   });
 
-  // ============================================================
-  // Effect
-  // ============================================================
   useEffect(() => {
     setTypewriterMode(runtimeConfig?.menuStatus?.typewriterMode ?? false);
   }, [runtimeConfig?.menuStatus?.typewriterMode]);
 
-  // Effect 1: Read file content when note changes
+  // 切换笔记时废弃上一次异步结果，防止慢请求把新编辑器替换成旧笔记内容。
   useEffect(() => {
     if (isTrulyEmpty(currentNote?.id)) {
       sessionRef.current = null;
@@ -206,7 +208,7 @@ const Main: FC = () => {
 
     setEditorView(editor);
     syncOutlineFromView(editor);
-    // 通知其他模块编辑器变更
+    // 大纲等非父子模块通过共享状态和事件总线感知当前 EditorView。
     messagePublish.pub('editorChanged', editor);
 
     return () => {
@@ -215,9 +217,6 @@ const Main: FC = () => {
     };
   }, [editor, setEditorView, syncOutlineFromView]);
 
-  // ============================================================
-  // Render
-  // ============================================================
   if (isTrulyEmpty(currentNote?.id)) {
     return (
       <div className="main-wrapper">

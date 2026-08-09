@@ -27,6 +27,7 @@ type ThemeRegistry = {
 };
 
 @injectable()
+/** 加载内置及用户主题，校验主题清单，并持久化当前主题选择。 */
 class ThemeService implements IThemeService {
   private invalidThemeErrors: string[] = [];
 
@@ -71,6 +72,7 @@ class ThemeService implements IThemeService {
   }
 
   private async loadThemeRegistry(): Promise<ThemeRegistry> {
+    // 单个用户主题无效时记录错误并跳过，不能阻断内置主题和应用启动。
     await this.initThemes();
     this.invalidThemeErrors = [];
 
@@ -165,6 +167,7 @@ class ThemeService implements IThemeService {
 }
 
 function filterThemeTokens(tokens: Record<string, unknown>): Record<string, string> {
+  // 主题值最终进入 CSS 变量，只接受已知 token 和不含动态资源/注入片段的短字符串。
   const safeTokens: Record<string, string> = {};
 
   Object.keys(tokens).forEach(key => {

@@ -8,6 +8,9 @@ import {
   WriteFileRequest
 } from '_types';
 
+/**
+ * 渲染进程访问主进程能力的唯一网关；页面组件不直接依赖 preload 暴露的 window.ipc。
+ */
 async function readConfig() {
   return window.ipc.readConfig();
 }

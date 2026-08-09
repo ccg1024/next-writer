@@ -20,6 +20,7 @@ type LibraryListProps = {
   onSelectLibrary: (lib: RendererLibraryTree) => void;
 };
 
+/** 展示顶层文库，并把新增、重命名、删除操作提交给文库领域层。 */
 export function LibraryList(props: LibraryListProps) {
   const { libraryTree, visible, renameRef, onSelectLibrary } = props;
   const { setLibraryTree, createLibrary, renameLibrary, deleteLibrary } = useLibraryActions();

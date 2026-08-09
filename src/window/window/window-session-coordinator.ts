@@ -15,6 +15,9 @@ import { TYPES } from '../types';
 declare const MAIN_WINDOW_WEBPACK_ENTRY: string;
 
 @injectable()
+/**
+ * 管理单个主窗口会话：创建窗口前初始化工作区与菜单，关闭后释放跨窗口缓存和文档会话。
+ */
 class WindowSessionCoordinator implements IWindowSessionCoordinator {
   private win: BrowserWindow | null = null;
 

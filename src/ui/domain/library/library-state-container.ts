@@ -12,6 +12,9 @@ export type LibraryNodeProducer =
   | ((preLib: RendererLibraryTree, preNote: RendererLibraryTree) => RendererLibraryTree);
 export type LibraryNodePatch = Partial<RendererLibraryBase>;
 
+/**
+ * 文库状态的不可变变换器；每次修改树后重新绑定当前选中节点，避免组件继续持有旧树中的对象。
+ */
 export class LibraryStateContainer {
   private constructor(private readonly state: LibraryState) {}
 

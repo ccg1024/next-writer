@@ -14,6 +14,9 @@ type IpcRequestValidation = ValidationSuccess | ValidationFailure;
 
 const ALLOWED_CHANNELS = new Set<string>(IPC_CHANNELS);
 
+/**
+ * 在 preload 和主进程边界共同执行的白名单校验；成功时还会裁剪多余字段，避免任意对象进入领域层。
+ */
 export function validateIpcRequest(value: unknown): IpcRequestValidation {
   if (!isRecord(value)) {
     return invalid('Invalid IPC request.');

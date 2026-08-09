@@ -3,6 +3,7 @@ import { useEditorActions, useEditorState } from 'src/ui/domain/editor';
 import { useRuntimeLayout } from 'src/ui/domain/runtime';
 import './index.less';
 
+/** 将编辑器语法字段生成的标题列表渲染为可跳转大纲。 */
 const Outline = () => {
   const { headList } = useEditorState();
   const { scrollToLine } = useEditorActions();

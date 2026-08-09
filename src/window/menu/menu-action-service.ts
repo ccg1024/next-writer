@@ -7,6 +7,7 @@ import IMenuStateStore from '../interface/menu-state-store';
 import { TYPES } from '../types';
 
 @injectable()
+/** 将原生菜单动作转换为领域调用或发送给渲染进程的类型化命令。 */
 class MenuActionService implements IMenuActionService {
   constructor(
     @inject(TYPES.IMenuStateStore) private menuStateStore: IMenuStateStore,

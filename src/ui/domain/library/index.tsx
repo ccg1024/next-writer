@@ -51,6 +51,9 @@ const initialLibraryState: LibraryState = {
 const LibraryStateContext = createContext<LibraryState | null>(null);
 const LibraryActionsContext = createContext<LibraryActions | null>(null);
 
+/**
+ * 文库状态入口。纯树变换交给 LibraryStateContainer，涉及磁盘的操作通过 rendererGateway 交给主进程。
+ */
 export function libraryReducer(state: LibraryState, action: LibraryAction): LibraryState {
   const container = LibraryStateContainer.of(state);
 

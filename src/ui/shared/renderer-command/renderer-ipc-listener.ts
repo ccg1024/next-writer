@@ -5,9 +5,7 @@ export interface RendererIpcActionCallback {
   type: RendererListenerAction['type'];
 }
 
-/**
- * The Renderer process monitors module, receives the communication from Main process, and triggers callbacks events of the related components.
- */
+/** 接收主进程菜单命令，并按 action.type 分发给通过 Hook 注册的渲染组件。 */
 class RendererIpcListener {
   private callbacks: RendererIpcActionCallback[];
   private removeListener: CallableFunction;

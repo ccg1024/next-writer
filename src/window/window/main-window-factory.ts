@@ -23,6 +23,7 @@ const DEFAULT_WINDOW: BrowserWindowConstructorOptions = {
 };
 
 @injectable()
+/** 创建采用隔离 preload 的主窗口，并集中安装导航、弹窗和 webview 安全限制。 */
 class MainWindowFactory implements IMainWindowFactory {
   create(): BrowserWindow {
     const win = new BrowserWindow(DEFAULT_WINDOW);

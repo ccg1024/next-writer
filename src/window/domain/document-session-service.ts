@@ -13,6 +13,7 @@ const VALID_TRANSITIONS: Record<DocumentSessionStatus, DocumentSessionStatus[]> 
   conflict: ['dirty', 'saving']
 };
 
+/** 校验并执行文档状态机迁移，阻止保存流程进入不可能的状态。 */
 export function transitionDocumentSession(session: DocumentSession, status: DocumentSessionStatus): DocumentSession {
   if (session.status === status) {
     return session;
@@ -26,6 +27,10 @@ export function transitionDocumentSession(session: DocumentSession, status: Docu
 }
 
 @injectable()
+/**
+ * 内存中的文档会话仓库，以单调递增修订号管理编辑、保存及失败状态。
+ * 服务返回新对象，调用方可以可靠地按引用或修订号判断状态是否更新。
+ */
 class DocumentSessionService implements IDocumentSessionService {
   private readonly sessions = new Map<string, DocumentSession>();
 
@@ -91,6 +96,7 @@ class DocumentSessionService implements IDocumentSessionService {
   completeSave(id: string, content: string, revision: number, diskModifiedTime?: number): DocumentSession {
     const session = this.require(id);
     if (revision < session.localRevision) {
+      // 保存期间又发生了编辑：仅更新已落盘快照，保留较新的本地内容和未完成状态。
       const next: DocumentSession = {
         ...session,
         savedContent: content,
@@ -122,6 +128,7 @@ class DocumentSessionService implements IDocumentSessionService {
   failSave(id: string, error: string, revision: number): DocumentSession {
     const session = this.require(id);
     if (revision < session.localRevision) {
+      // 旧保存请求失败不能把较新的编辑错误地标记为该修订的最终失败。
       const nextStatus = session.status === 'saving' ? 'saving' : 'save-error';
       const next = transitionDocumentSession({ ...session, lastError: error }, nextStatus);
       this.sessions.set(id, next);

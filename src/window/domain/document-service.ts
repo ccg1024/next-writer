@@ -20,6 +20,9 @@ import { isLibraryTreeNode, persistLibTree, resolveLibraryNodePath } from '../ut
 import { TYPES } from '../types';
 
 @injectable()
+/**
+ * 文档领域服务，协调磁盘文件、文档会话、编辑缓存和文库树元数据，保证它们使用同一份内容与修订号。
+ */
 class DocumentService implements IDocumentService {
   constructor(
     @inject(TYPES.IFileSystem) private fileSystem: IFileSystem,
@@ -45,6 +48,7 @@ class DocumentService implements IDocumentService {
       const pathInfo = this.resolveFileNode(id, libTree);
       const session = await this.ensureSession(id, pathInfo.fullPath);
       const requestedRevision = revision === undefined ? undefined : this.normalizeRevision(revision);
+      // 异步 IPC 可能乱序到达；旧修订不能覆盖更新内容，同修订但内容不同也视为冲突请求。
       if (
         requestedRevision !== undefined &&
         (requestedRevision < session.localRevision ||
@@ -122,6 +126,7 @@ class DocumentService implements IDocumentService {
   }
 
   private syncCache(session: DocumentSession): void {
+    // 窗口关闭保护仍读取旧缓存结构，因此会话变更后需要同步一份兼容状态。
     const cacheContent = {
       isChange: session.content !== session.savedContent,
       content: session.content,

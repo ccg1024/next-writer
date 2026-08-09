@@ -20,6 +20,7 @@ type HomeProps = {
   initialConfigData?: ReadConfigResponse | null;
 };
 
+/** 组合渲染进程的运行时、文库和编辑器状态域。 */
 const Home = ({ initialConfigData }: HomeProps) => {
   return (
     <RuntimeProvider>
@@ -37,18 +38,15 @@ const HomeContent = ({ initialConfigData }: HomeProps) => {
   const { setLibraryTree } = useLibraryActions();
   const { setRuntimeConfig } = useRuntimeLayout();
 
-  // ============================================================
-  // Effects
-  // ============================================================
+  /** 将主进程配置同时投影到 React 状态、文库树与编辑器 CSS 变量。 */
   useLayoutEffect(() => {
     const applyConfig = (data: ReadConfigResponse) => {
       const { config, libTree } = data;
       setRenderConfig(config);
 
-      // Generating information
       setLibraryTree(libTree as RendererRootLibraryTree);
 
-      // change css variable
+      // 字体配置使用 CSS 变量下发，避免编辑器扩展因配置变化而整体重建。
       const r = document.querySelector('body');
       const c = config ?? {};
       if (c.codeFont) {
@@ -87,7 +85,7 @@ const HomeContent = ({ initialConfigData }: HomeProps) => {
     });
   }, [setRuntimeConfig]);
 
-  // Start listen ipc event
+  // 页面存活期间统一接收菜单等主进程命令，各组件通过 useRendererCommand 订阅。
   useEffect(() => {
     rendererIpcListener.start();
 
@@ -116,6 +114,7 @@ function FontMeasure() {
   const ref = useRef<HTMLSpanElement>(null);
   useLayoutEffect(() => {
     if (ref.current) {
+      // CodeMirror 装饰插件无法直接依赖 React 上下文，缓存计算后的实际字体供其读取。
       PluginGlobal.set('font', window.getComputedStyle(ref.current).font);
     }
   }, []);

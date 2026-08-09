@@ -10,6 +10,7 @@ import { ForwardRenameHandler, ForwardRenameModal } from './rename-modal';
 
 import './index.less';
 
+/** 组合文库列表、笔记列表和共享重命名弹窗，并响应主进程的侧栏显隐命令。 */
 const LibrarySidebar: FC = () => {
   const { libraryTree, currentLib, currentNote } = useLibraryState();
   const { setCurrentLib, setCurrentNote } = useLibraryActions();

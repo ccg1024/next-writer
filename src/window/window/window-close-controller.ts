@@ -5,6 +5,7 @@ import IWindowCloseService from '../interface/window-close-service';
 import { TYPES } from '../types';
 
 @injectable()
+/** 将窗口 close 事件接入未保存检查，并确保确认关闭后只执行一次资源清理。 */
 class WindowCloseController implements IWindowCloseController {
   constructor(@inject(TYPES.IWindowCloseService) private windowCloseService: IWindowCloseService) {}
 

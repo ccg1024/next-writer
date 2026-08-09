@@ -8,6 +8,9 @@ import { validateIpcRequest } from './request-validator';
 import { TYPES } from '../types';
 
 @injectable()
+/**
+ * 主进程唯一 IPC 入口：先校验请求结构与发送方，再按类型分派 handler，并统一封装响应和异常。
+ */
 class IpcRouter implements IIpcRouter {
   private handlers: Map<IpcChannel, IIpcHandler>;
 

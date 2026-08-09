@@ -8,6 +8,7 @@ import { validateIpcRequest } from 'src/window/ipc/request-validator';
 type CallbackFunction = (...args: unknown[]) => void;
 
 function post(param: unknown) {
+  // 即使调用来自受信任的渲染页面，也先按与主进程相同的契约裁剪和校验请求。
   const validation = validateIpcRequest(param);
 
   if (validation.valid === false) {
@@ -17,7 +18,7 @@ function post(param: unknown) {
   return ipcRenderer.invoke(IPC_SERVER_NAME, validation.request);
 }
 
-// Expose protected methods that allow the renderer process to use
+// 仅暴露按业务命名的最小能力，不向渲染进程泄露通用 ipcRenderer。
 contextBridge.exposeInMainWorld('ipc', {
   readConfig() {
     return post({ type: IPC_CHANNEL.READ_CONFIG });
@@ -59,9 +60,7 @@ contextBridge.exposeInMainWorld('ipc', {
     return post({ type: IPC_CHANNEL.UPDATE_DOCUMENT_SESSION, data });
   },
 
-  /**
-   * Main to renderer, bidirectional channel
-   */
+  /** 订阅主进程发出的菜单命令，并返回精确移除当前监听器的清理函数。 */
   rendererListener: (cb: CallbackFunction) => {
     const listener = (_event: IpcRendererEvent, action: unknown) => cb(action);
     ipcRenderer.on('next-ipc-client', listener);

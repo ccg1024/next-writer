@@ -66,7 +66,8 @@ import {
 } from '../ipc/handlers';
 
 /**
- * Inversify js container for next writer application
+ * 主进程依赖注入容器。领域服务只依赖 interface 中的抽象，由此处统一决定实现和生命周期。
+ * IPC handler 使用同一标识进行多重绑定，Application 启动时会将它们逐一注册到路由器。
  */
 const container = new Container();
 

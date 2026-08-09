@@ -12,6 +12,9 @@ import { normalizeLibraryTree, persistLibTree } from '../utils/lib-tree-utils';
 import { TYPES } from '../types';
 
 @injectable()
+/**
+ * 工作区启动编排器，创建应用目录、加载配置与主题，并恢复或迁移磁盘上的文库索引。
+ */
 class WorkspaceService implements IWorkspaceService {
   constructor(
     @inject(TYPES.IFileSystem) private fileSystem: IFileSystem,
@@ -64,6 +67,7 @@ class WorkspaceService implements IWorkspaceService {
       buffer = await this.fileSystem.readFile(recordPath, { encoding: 'utf8' });
     }
 
+    // 旧版索引可能包含运行时 parent/relativePath 字段或缺少稳定 id，在载入边界统一清洗。
     const migration = normalizeLibraryTree(JSON.parse(buffer));
     this.libraryTreeStore.setTree(migration.tree);
 

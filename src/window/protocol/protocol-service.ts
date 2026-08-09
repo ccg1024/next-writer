@@ -10,6 +10,9 @@ import { TYPES } from '../types';
 const IMAGE_EXTENSIONS = new Set(['.apng', '.avif', '.bmp', '.gif', '.ico', '.jpeg', '.jpg', '.png', '.svg', '.webp']);
 
 @injectable()
+/**
+ * 注册编辑器资源协议：atom 提供工作区图片，static 提供打包资源，并对协议路径执行边界检查。
+ */
 class ProtocolService implements IProtocolService {
   private handled = false;
 
@@ -67,6 +70,7 @@ class ProtocolService implements IProtocolService {
     try {
       return this.pathResolver.resolveWithinRoot(rootDir, targetPath);
     } catch (error) {
+      // Markdown 允许引用工作区外的本地图片；非图片资源仍严格限制在文库根目录内。
       if (this.isImagePath(targetPath)) {
         return nodePath.resolve(targetPath);
       }

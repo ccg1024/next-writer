@@ -44,9 +44,8 @@ interface Props {
   typewriterMode?: boolean;
 }
 /**
- * Return a ref object which to contain the codemirror edito, and a codemirror view instance
- *
- * @author crazycodegame
+ * 创建并销毁 CodeMirror 编辑器，组合基础扩展与业务插件，同时支持运行时切换打字机模式。
+ * 返回容器 ref 和当前 EditorView，容器或初始文档变化时会重建实例。
  */
 const useCodemirror = <T extends Element>(props: Props): [React.MutableRefObject<T | null>, EditorView] => {
   const { initialEditorState, onEditorChange, onEditorDocChange, typewriterMode = false } = props;
@@ -54,14 +53,13 @@ const useCodemirror = <T extends Element>(props: Props): [React.MutableRefObject
   const containerRef = useRef<T>(null);
   const callbackRef = useRef<CallbackRef>({ onChange: void 0, onDocChange: void 0 });
 
-  // Make sure the editor usees the latest callback function
+  // 更新回调引用而不重建 EditorView，确保监听器始终调用最新的 React 闭包。
   useMemo(() => {
     callbackRef.current.onChange = onEditorChange;
     callbackRef.current.onDocChange = onEditorDocChange;
   }, [onEditorChange, onEditorDocChange]);
 
   useEffect(() => {
-    // Can not touch dom container
     if (!containerRef.current) {
       setEditorView(null);
       return;
@@ -77,13 +75,10 @@ const useCodemirror = <T extends Element>(props: Props): [React.MutableRefObject
       parent: containerRef.current
     });
 
-    // It's unclear why there is a deviation?
-    // Ensure the editor scrolls to the top after creating a new view
+    // 新笔记沿用同一 DOM 容器，显式把新建视图定位到文档顶部。
     view.dispatch({ effects: EditorView.scrollIntoView(0) });
 
-    // ============================================================
-    // Register global event of codemirror
-    // ============================================================
+    // 记录跨插件共享的鼠标选择状态，并在 mouseup 后触发一次规范化选区更新。
     function mousedown() {
       PluginGlobal.set('didMousePress', true);
     }
@@ -242,6 +237,7 @@ class TypewriterModePlugin implements PluginValue {
   }
 
   private scheduleCursorYUpdate(view?: EditorView): void {
+    // 光标、滚动和几何变化可能在同一帧连续发生，只保留最后一次 DOM 测量。
     if (this.animationFrame !== null) {
       cancelAnimationFrame(this.animationFrame);
     }
@@ -281,6 +277,7 @@ const typewriterModeExtension: Extension = [
 ];
 
 function scrollCursorToTypewriterCenter(view: EditorView): void {
+  // 等待 CodeMirror 完成本轮布局后再滚动，避免使用变化前的光标坐标。
   requestAnimationFrame(() => {
     if (!view.dom.isConnected) {
       return;
@@ -510,12 +507,7 @@ interface IMountUpdateListener {
   onDocChange?: (update: ViewUpdate) => void;
   onChange?: (update: ViewUpdate) => void;
 }
-/**
- * Mount codemirror editor update callback function
- *
- * @param onDocChange Document change callback function syntax sugar, the latest Editview instance is passed as parameter
- * @param onChange Change callback funciton. Any codemirror editor update will trigger this callback. This ViewUpdate instance is passed in as parameter
- */
+/** 将 CodeMirror 更新拆分为“文档变更”和“任意视图变更”两类回调。 */
 function mountUpdateListener(config?: IMountUpdateListener) {
   return EditorView.updateListener.of(update => {
     if (update.docChanged) {

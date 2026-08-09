@@ -22,6 +22,7 @@ type NoteListProps = {
   onSelectNote: (note: RendererLibraryTree) => void;
 };
 
+/** 展示当前文库的笔记及操作入口，选中结果由上层同步到编辑器。 */
 export function NoteList(props: NoteListProps) {
   const { currentLib, currentNote, detailVisible, libraryVisible, renameRef, onSelectNote } = props;
   const { setLibraryTree, createNote } = useLibraryActions();

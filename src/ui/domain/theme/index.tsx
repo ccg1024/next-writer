@@ -20,6 +20,7 @@ type AppThemeProviderProps = PropsWithChildren<{
   themes?: ThemeListItem[];
 }>;
 
+/** 管理主题切换，并将同一主题同时映射到原生 CSS 变量和 Ant Design token。 */
 export function AppThemeProvider({ config, activeTheme, themes, children }: AppThemeProviderProps) {
   const [currentTheme, setCurrentTheme] = useState(activeTheme ?? DEFAULT_LIGHT_THEME);
   const [themeList, setThemeList] = useState(themes ?? []);
