@@ -4,6 +4,7 @@ import 'reflect-metadata';
 import type { BrowserWindow } from 'electron';
 import IAppMenu from '../interface/app-menu';
 import IDocumentCacheService from '../interface/document-cache-service';
+import IDocumentSessionService from '../interface/document-session-service';
 import IMainWindowFactory from '../interface/main-window-factory';
 import IMenuStateStore from '../interface/menu-state-store';
 import IWindowCloseController from '../interface/window-close-controller';
@@ -13,6 +14,7 @@ import WindowSessionCoordinator from './window-session-coordinator';
 
 describe('WindowSessionCoordinator', () => {
   let cache: jest.Mocked<Pick<IDocumentCacheService, 'init' | 'destroy'>>;
+  let documentSessions: jest.Mocked<Pick<IDocumentSessionService, 'destroy'>>;
   let menuStateStore: jest.Mocked<Pick<IMenuStateStore, 'reset'>>;
   let menu: jest.Mocked<Pick<IAppMenu, 'createMenu'>>;
   let windowFactory: jest.Mocked<IMainWindowFactory>;
@@ -32,6 +34,9 @@ describe('WindowSessionCoordinator', () => {
       'app://index.html';
     cache = {
       init: jest.fn(),
+      destroy: jest.fn()
+    };
+    documentSessions = {
       destroy: jest.fn()
     };
     menuStateStore = {
@@ -70,7 +75,8 @@ describe('WindowSessionCoordinator', () => {
       windowFactory,
       windowCloseController,
       windowRegistry as unknown as IWindowRegistry,
-      workspaceService
+      workspaceService,
+      documentSessions as unknown as IDocumentSessionService
     );
   });
 
@@ -93,6 +99,7 @@ describe('WindowSessionCoordinator', () => {
     cleanup();
 
     expect(cache.destroy).toHaveBeenCalled();
+    expect(documentSessions.destroy).toHaveBeenCalled();
     expect(windowRegistry.clearCurrentWindow).toHaveBeenCalledWith(win);
   });
 

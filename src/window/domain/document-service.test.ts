@@ -11,6 +11,7 @@ import IAppPathStore from '../interface/app-path-store';
 import IDocumentCacheService from '../interface/document-cache-service';
 import ILibraryTreeStore from '../interface/library-tree-store';
 import DocumentService from './document-service';
+import DocumentSessionService from './document-session-service';
 
 class MemoryCache implements IDocumentCacheService {
   private cache: Record<string, CacheContent> = {};
@@ -75,7 +76,13 @@ describe('DocumentService cache revisions', () => {
       ]
     };
     cache = new MemoryCache();
-    service = new DocumentService(new FileSystem(), createAppPathStore(), createLibraryTreeStore(), cache);
+    service = new DocumentService(
+      new FileSystem(),
+      createAppPathStore(),
+      createLibraryTreeStore(),
+      cache,
+      new DocumentSessionService()
+    );
   });
 
   afterEach(async () => {
@@ -124,6 +131,60 @@ describe('DocumentService cache revisions', () => {
     });
     await expect(nodeFs.promises.readFile(newPath, { encoding: 'utf8' })).resolves.toBe('renamed cleanly');
     expect(cache.hasModified()).toBe(false);
+    await expect(service.getSession({ id: 'note-id' })).resolves.toMatchObject({ path: newPath });
+  });
+
+  it('keeps independently opened document sessions isolated during rapid switching', async () => {
+    await nodeFs.promises.writeFile(nodePath.join(rootDir, 'other.md'), 'other saved', { encoding: 'utf8' });
+    libraryTree.children.push({
+      id: 'other-id',
+      name: 'other',
+      type: 'file',
+      birthTime: '',
+      modifiedTime: '',
+      children: []
+    });
+
+    await expect(service.getSession({ id: 'note-id' })).resolves.toMatchObject({
+      content: 'saved',
+      status: 'ready',
+      localRevision: 0
+    });
+    await expect(service.getSession({ id: 'other-id' })).resolves.toMatchObject({
+      content: 'other saved',
+      status: 'ready',
+      localRevision: 0
+    });
+    await expect(service.getSession({ id: 'note-id' })).resolves.toMatchObject({
+      content: 'saved',
+      status: 'ready',
+      localRevision: 0
+    });
+
+    expect(cache.hasModified()).toBe(false);
+  });
+
+  it('rejects an out-of-order renderer update with an older revision', async () => {
+    await service.updateSession({ id: 'note-id', content: 'newest draft', revision: 2 });
+    await service.updateSession({ id: 'note-id', content: 'older draft', revision: 1 });
+
+    await expect(service.getSession({ id: 'note-id' })).resolves.toMatchObject({
+      content: 'newest draft',
+      status: 'dirty',
+      localRevision: 2
+    });
+    expect(cache.getCache('note-id')).toMatchObject({ content: 'newest draft', isChange: true, revision: 2 });
+  });
+
+  it('rejects conflicting content that reuses the current revision', async () => {
+    await service.updateSession({ id: 'note-id', content: 'newest draft', revision: 1 });
+    await service.updateSession({ id: 'note-id', content: 'conflicting draft', revision: 1 });
+
+    await expect(service.getSession({ id: 'note-id' })).resolves.toMatchObject({
+      content: 'newest draft',
+      status: 'dirty',
+      localRevision: 1
+    });
   });
 
   it('saves an opened note after its parent folder is renamed', async () => {

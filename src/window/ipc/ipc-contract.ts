@@ -1,12 +1,15 @@
 import type {
   MainProcessMenuStatus,
   ApplyThemeRequest,
+  DocumentSession,
+  GetDocumentSessionRequest,
   ReadConfigResponse,
   ReadFileRequest,
   ReadFileResponse,
   RootLibraryTree,
   ThemeStateResponse,
   UpdateCacheRequest,
+  UpdateDocumentSessionRequest,
   UpdateLibRequest,
   UpdateLibResponse,
   WriteFileRequest
@@ -25,7 +28,9 @@ export const IPC_CHANNEL = {
   /** @deprecated Use WRITE_FILE instead. */
   WIRTE_FILE: 'write-file',
   RUNTIME: 'runtime',
-  UPDATE_CACHE: 'update-cache'
+  UPDATE_CACHE: 'update-cache',
+  GET_DOCUMENT_SESSION: 'get-document-session',
+  UPDATE_DOCUMENT_SESSION: 'update-document-session'
 } as const;
 
 export type IpcChannel = (typeof IPC_CHANNEL)[keyof typeof IPC_CHANNEL];
@@ -43,6 +48,8 @@ type IpcRequestMap = {
   [IPC_CHANNEL.WRITE_FILE]: WriteFileRequest;
   [IPC_CHANNEL.RUNTIME]: undefined;
   [IPC_CHANNEL.UPDATE_CACHE]: UpdateCacheRequest;
+  [IPC_CHANNEL.GET_DOCUMENT_SESSION]: GetDocumentSessionRequest;
+  [IPC_CHANNEL.UPDATE_DOCUMENT_SESSION]: UpdateDocumentSessionRequest;
 };
 
 type IpcResponseMap = {
@@ -54,6 +61,8 @@ type IpcResponseMap = {
   [IPC_CHANNEL.WRITE_FILE]: RootLibraryTree;
   [IPC_CHANNEL.RUNTIME]: RuntimeConfigResponse;
   [IPC_CHANNEL.UPDATE_CACHE]: { success: boolean };
+  [IPC_CHANNEL.GET_DOCUMENT_SESSION]: DocumentSession;
+  [IPC_CHANNEL.UPDATE_DOCUMENT_SESSION]: DocumentSession;
 };
 
 export type IpcRequestData<C extends IpcChannel> = IpcRequestMap[C];

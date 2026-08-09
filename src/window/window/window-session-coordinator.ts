@@ -3,6 +3,7 @@ import { inject, injectable } from 'inversify';
 import { IS_DEV } from 'src/config/env';
 import IAppMenu from '../interface/app-menu';
 import IDocumentCacheService from '../interface/document-cache-service';
+import IDocumentSessionService from '../interface/document-session-service';
 import IMenuStateStore from '../interface/menu-state-store';
 import IMainWindowFactory from '../interface/main-window-factory';
 import IWindowCloseController from '../interface/window-close-controller';
@@ -24,7 +25,8 @@ class WindowSessionCoordinator implements IWindowSessionCoordinator {
     @inject(TYPES.IMainWindowFactory) private windowFactory: IMainWindowFactory,
     @inject(TYPES.IWindowCloseController) private windowCloseController: IWindowCloseController,
     @inject(TYPES.IWindowRegistry) private windowRegistry: IWindowRegistry,
-    @inject(TYPES.IWorkspaceService) private workspaceService: IWorkspaceService
+    @inject(TYPES.IWorkspaceService) private workspaceService: IWorkspaceService,
+    @inject(TYPES.IDocumentSessionService) private documentSessions: IDocumentSessionService
   ) {
     this.createWindow = this.createWindow.bind(this);
   }
@@ -51,6 +53,7 @@ class WindowSessionCoordinator implements IWindowSessionCoordinator {
 
   destroy(): void {
     this.cache.destroy();
+    this.documentSessions.destroy();
     this.windowRegistry.clearCurrentWindow(this.win);
     this.win = null;
   }

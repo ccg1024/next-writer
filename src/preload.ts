@@ -51,6 +51,14 @@ contextBridge.exposeInMainWorld('ipc', {
     return post({ type: IPC_CHANNEL.UPDATE_CACHE, data });
   },
 
+  getDocumentSession(data: unknown) {
+    return post({ type: IPC_CHANNEL.GET_DOCUMENT_SESSION, data });
+  },
+
+  updateDocumentSession(data: unknown) {
+    return post({ type: IPC_CHANNEL.UPDATE_DOCUMENT_SESSION, data });
+  },
+
   /**
    * Main to renderer, bidirectional channel
    */

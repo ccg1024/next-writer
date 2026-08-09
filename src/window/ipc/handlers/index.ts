@@ -6,3 +6,5 @@ export { default as UpdateLibHandler } from './update-lib-handler';
 export { default as WriteFileHandler } from './write-file-handler';
 export { default as RuntimeHandler } from './runtime-handler';
 export { default as UpdateCacheHandler } from './update-cache-handler';
+export { default as GetDocumentSessionHandler } from './get-document-session-handler';
+export { default as UpdateDocumentSessionHandler } from './update-document-session-handler';

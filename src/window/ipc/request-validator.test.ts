@@ -44,6 +44,15 @@ describe('validateIpcRequest', () => {
         data: { operate: 'del', id: 'folder-id' }
       })
     ).toMatchObject({ valid: true });
+    expect(validateIpcRequest({ type: IPC_CHANNEL.GET_DOCUMENT_SESSION, data: { id: 'note-id' } })).toMatchObject({
+      valid: true
+    });
+    expect(
+      validateIpcRequest({
+        type: IPC_CHANNEL.UPDATE_DOCUMENT_SESSION,
+        data: { id: 'note-id', content: 'draft', revision: 3 }
+      })
+    ).toMatchObject({ valid: true });
   });
 
   it('rejects invalid request envelopes and unknown channels', () => {

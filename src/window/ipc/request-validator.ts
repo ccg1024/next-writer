@@ -43,6 +43,10 @@ export function validateIpcRequest(value: unknown): IpcRequestValidation {
       return validateWriteFile(data, channel);
     case IPC_CHANNEL.UPDATE_CACHE:
       return validateUpdateCache(data, channel);
+    case IPC_CHANNEL.GET_DOCUMENT_SESSION:
+      return validateGetDocumentSession(data, channel);
+    case IPC_CHANNEL.UPDATE_DOCUMENT_SESSION:
+      return validateUpdateDocumentSession(data, channel);
     default:
       return invalid('Invalid IPC channel.');
   }
@@ -114,6 +118,27 @@ function validateUpdateCache(data: unknown, type: IpcChannel): IpcRequestValidat
       revision: data.revision
     }
   } as AnyIpcRequest);
+}
+
+function validateGetDocumentSession(data: unknown, type: IpcChannel): IpcRequestValidation {
+  if (!isRecord(data) || !isNonEmptyString(data.id)) {
+    return invalid('Get document session request requires a non-empty id.');
+  }
+
+  return valid({ type, data: { id: data.id } } as AnyIpcRequest);
+}
+
+function validateUpdateDocumentSession(data: unknown, type: IpcChannel): IpcRequestValidation {
+  if (
+    !isRecord(data) ||
+    !isNonEmptyString(data.id) ||
+    typeof data.content !== 'string' ||
+    !isOptionalFiniteNumber(data.revision)
+  ) {
+    return invalid('Update document session request requires a non-empty id and string content.');
+  }
+
+  return valid({ type, data: { id: data.id, content: data.content, revision: data.revision } } as AnyIpcRequest);
 }
 
 function validateUpdateLib(data: unknown, type: IpcChannel): IpcRequestValidation {

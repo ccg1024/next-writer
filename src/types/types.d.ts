@@ -31,6 +31,8 @@ export interface IPC {
   writeFile: (data: WriteFileRequest) => Promise<Response<RootLibraryTree>>;
   queryRuntimeConfig: () => Promise<Response<{ menuStatus: MainProcessMenuStatus }>>;
   updateCache: (data: UpdateCacheRequest) => Promise<Response<{ success: boolean }>>;
+  getDocumentSession: (data: GetDocumentSessionRequest) => Promise<Response<GetDocumentSessionResponse>>;
+  updateDocumentSession: (data: UpdateDocumentSessionRequest) => Promise<Response<UpdateDocumentSessionResponse>>;
   rendererListener: (cb: RendererListenerCallback) => () => void;
 }
 
@@ -44,6 +46,29 @@ export type CacheContent = {
 };
 export type Cache = {
   [key: string]: CacheContent;
+};
+
+export type DocumentSessionStatus =
+  | 'loading'
+  | 'ready'
+  | 'dirty'
+  | 'saving'
+  | 'saved'
+  | 'save-error'
+  | 'external-change'
+  | 'conflict';
+
+export type DocumentSession = {
+  id: string;
+  path: string;
+  content: string;
+  savedContent: string;
+  status: DocumentSessionStatus;
+  localRevision: number;
+  savedRevision: number;
+  diskModifiedTime?: number;
+  lastSavedAt?: number;
+  lastError?: string;
 };
 
 declare global {
@@ -184,6 +209,20 @@ export type UpdateCacheRequest = {
   isChange: boolean;
   revision?: number;
 };
+
+export type GetDocumentSessionRequest = {
+  id: string;
+};
+
+export type GetDocumentSessionResponse = DocumentSession;
+
+export type UpdateDocumentSessionRequest = {
+  id: string;
+  content: string;
+  revision?: number;
+};
+
+export type UpdateDocumentSessionResponse = DocumentSession;
 // ============================================================
 // end -- just for ipc communication
 // ============================================================

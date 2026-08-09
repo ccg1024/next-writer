@@ -1,6 +1,7 @@
 import React, { FC, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { EditorView, ViewUpdate } from '@codemirror/view';
+import { ViewUpdate } from '@codemirror/view';
 import { App, Typography } from 'antd';
+import { DocumentSession } from '_types';
 import { isTrulyEmpty } from 'src/tools/utils';
 import { VerticalEmpty } from 'src/ui/components/antd/preset/empty';
 import useCodemirror, { InitialEditorState } from 'src/ui/hooks/useCodemirror';
@@ -25,59 +26,59 @@ const Main: FC = () => {
   const { runtimeConfig } = useRuntimeLayout();
   const [initialEditorState, setInitialEditorState] = useState<InitialEditorState>(null);
   const [typewriterMode, setTypewriterMode] = useState(false);
-  const { patchCurrentNote, renameNode, setLibraryTree } = useLibraryActions();
+  const { patchCurrentNote, patchLibraryNode, renameNode, setLibraryTree } = useLibraryActions();
   const { setEditorView, syncOutlineFromView } = useEditorActions();
-  const cacheUpdateTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const cacheRevisionRef = useRef(0);
-  // Track whether current file is already marked as modified
-  const isModifiedRef = useRef<boolean>(false);
-  // Track previous file info for cleanup on switch
-  const prevNoteInfoRef = useRef<{ id?: string }>({});
+  const [session, setSession] = useState<DocumentSession | null>(null);
+  const sessionRef = useRef<DocumentSession | null>(null);
+  const sessionRevisionsRef = useRef(new Map<string, number>());
+  const activeNoteIdRef = useRef<string | undefined>(undefined);
+  activeNoteIdRef.current = currentNote?.id;
 
   // 处理自定义编辑器事件
   const debounceDescriptionUpdate = useMemo(
-    () => debounceFn((description: string) => patchCurrentNote({ description })),
-    [patchCurrentNote]
+    () =>
+      debounceFn((note: NonNullable<typeof currentNote>, description: string) =>
+        patchLibraryNode(note, { description })
+      ),
+    [patchLibraryNode]
   );
 
   const headInProcess = useRef<string>('');
 
-  const nextCacheRevision = useCallback(() => {
-    cacheRevisionRef.current += 1;
-    return cacheRevisionRef.current;
-  }, []);
-
-  const updateFileCache = useCallback(
-    (id: string, content: string, isChange: boolean) =>
-      rendererGateway.updateCache({
-        id,
-        content,
-        isChange,
-        revision: nextCacheRevision()
-      }),
-    [nextCacheRevision]
-  );
-
-  const scheduleCacheUpdate = useCallback(
-    (view: EditorView) => {
-      if (cacheUpdateTimerRef.current) {
-        return;
-      }
-
-      cacheUpdateTimerRef.current = setTimeout(() => {
-        const content = view.state.doc.toString();
-        const id = currentNote?.id;
-        if (id) {
-          updateFileCache(id, content, isModifiedRef.current);
+  const updateDocumentSession = useCallback(
+    (id: string, content: string) => {
+      const revision = Math.max(sessionRevisionsRef.current.get(id) ?? 0, sessionRef.current?.localRevision ?? 0) + 1;
+      sessionRevisionsRef.current.set(id, revision);
+      return rendererGateway.updateDocumentSession({ id, content, revision }).then(res => {
+        const currentSession = sessionRef.current;
+        if (res.status === 0 && res.data) {
+          sessionRevisionsRef.current.set(
+            id,
+            Math.max(sessionRevisionsRef.current.get(id) ?? 0, res.data.localRevision)
+          );
         }
-        cacheUpdateTimerRef.current = null;
-      }, 1000);
+        if (
+          res.status === 0 &&
+          res.data &&
+          activeNoteIdRef.current === id &&
+          (!currentSession || currentSession.id !== id || res.data.localRevision >= currentSession.localRevision)
+        ) {
+          sessionRef.current = res.data;
+          setSession(res.data);
+          patchCurrentNote({ isChange: isDocumentSessionModified(res.data) });
+        }
+        return res;
+      });
     },
-    [currentNote?.id, updateFileCache]
+    [patchCurrentNote]
   );
 
   const onEditorDocChange = useCallback(
     (update: ViewUpdate) => {
+      if (!currentNote?.id || sessionRef.current?.id !== currentNote.id) {
+        return;
+      }
+
       update.transactions.forEach(tr => {
         if (tr.changes) {
           tr.changes.iterChanges(fromA => {
@@ -87,37 +88,20 @@ const Main: FC = () => {
               const doc =
                 fullDoc.length > MAX_DESCRIPTION_LENGTH ? fullDoc.substring(0, MAX_DESCRIPTION_LENGTH) : fullDoc;
               // Must using debounce function
-              debounceDescriptionUpdate(doc);
+              debounceDescriptionUpdate(currentNote, doc);
             }
           });
         }
       });
 
-      // Immediate state update: only if transitioning to modified
-      if (!isModifiedRef.current && currentNote?.id) {
-        isModifiedRef.current = true;
-
-        // Update UI state immediately (no delay)
-        patchCurrentNote({ isChange: true });
-
-        // Update cache state immediately (no delay)
-        updateFileCache(currentNote.id, update.view.state.doc.toString(), true);
-      }
-
-      scheduleCacheUpdate(update.view);
+      patchCurrentNote({ isChange: true });
+      updateDocumentSession(currentNote.id, update.view.state.doc.toString());
 
       // 通知其他模块，文档变更
       syncOutlineFromView(update.view);
       messagePublish.pub('docChanged', update.view);
     },
-    [
-      currentNote?.id,
-      patchCurrentNote,
-      debounceDescriptionUpdate,
-      updateFileCache,
-      scheduleCacheUpdate,
-      syncOutlineFromView
-    ]
+    [currentNote?.id, patchCurrentNote, debounceDescriptionUpdate, updateDocumentSession, syncOutlineFromView]
   );
 
   const [divRef, editor] = useCodemirror<HTMLDivElement>({
@@ -127,42 +111,45 @@ const Main: FC = () => {
   });
 
   const handleWriteFile = useCallback(() => {
-    if (!editor || !currentNote?.id) {
+    if (!editor || !currentNote?.id || sessionRef.current?.id !== currentNote.id) {
       return;
     }
 
     const content = editor.state.doc.toString();
     const noteId = currentNote.id;
-    if (cacheUpdateTimerRef.current) {
-      clearTimeout(cacheUpdateTimerRef.current);
-      cacheUpdateTimerRef.current = null;
+    if (sessionRef.current) {
+      const savingSession = { ...sessionRef.current, status: 'saving' as const };
+      sessionRef.current = savingSession;
+      setSession(savingSession);
     }
-    const saveRevision = nextCacheRevision();
-    const wasModifiedBeforeSave = isModifiedRef.current;
-
     nwSpin.loading(true);
     rendererGateway
-      .writeFile({ id: noteId, content, revision: saveRevision })
+      .writeFile({ id: noteId, content, revision: sessionRevisionsRef.current.get(noteId) })
       .then(res => {
         if (res.status !== 0) {
           message.error(res.message || '保存文件失败');
-          isModifiedRef.current = wasModifiedBeforeSave;
-          patchCurrentNote({ isChange: wasModifiedBeforeSave });
-          if (wasModifiedBeforeSave) {
-            updateFileCache(noteId, content, true);
-          }
-          return;
+          return rendererGateway.getDocumentSession({ id: noteId });
         }
 
-        // Reset modified state immediately
-        isModifiedRef.current = false;
         setLibraryTree(res.data);
-        patchCurrentNote({ isChange: false });
+        return rendererGateway.getDocumentSession({ id: noteId });
+      })
+      .then(sessionResponse => {
+        if (
+          sessionResponse?.status === 0 &&
+          sessionResponse.data &&
+          activeNoteIdRef.current === noteId &&
+          sessionRef.current?.id === noteId
+        ) {
+          sessionRef.current = sessionResponse.data;
+          setSession(sessionResponse.data);
+          patchCurrentNote({ isChange: isDocumentSessionModified(sessionResponse.data) });
+        }
       })
       .finally(() => {
         nwSpin.loading(false);
       });
-  }, [currentNote, editor, message, nextCacheRevision, patchCurrentNote, setLibraryTree, updateFileCache]);
+  }, [currentNote, editor, message, patchCurrentNote, setLibraryTree]);
 
   useRendererCommand('write-file', handleWriteFile);
 
@@ -180,13 +167,26 @@ const Main: FC = () => {
   // Effect 1: Read file content when note changes
   useEffect(() => {
     if (isTrulyEmpty(currentNote?.id)) {
+      sessionRef.current = null;
+      setSession(null);
+      setInitialEditorState(null);
       return;
     }
 
+    sessionRef.current = null;
+    setSession(null);
+    setInitialEditorState(null);
     let shouldUpdate = true;
     const readNote = async () => {
-      const { status, data } = await rendererGateway.readFile({ id: currentNote.id });
+      const { status, data } = await rendererGateway.getDocumentSession({ id: currentNote.id });
       if (shouldUpdate && status === 0) {
+        sessionRevisionsRef.current.set(
+          data.id,
+          Math.max(sessionRevisionsRef.current.get(data.id) ?? 0, data.localRevision)
+        );
+        sessionRef.current = data;
+        setSession(data);
+        patchCurrentNote({ isChange: isDocumentSessionModified(data) });
         setInitialEditorState({ initDoc: data.content });
       }
     };
@@ -195,33 +195,7 @@ const Main: FC = () => {
     return () => {
       shouldUpdate = false;
     };
-  }, [currentNote?.id]);
-
-  // Effect 2: Flush cache before editor unmounts (file switch or component unmount)
-  useEffect(() => {
-    if (isTrulyEmpty(currentNote?.id) || !editor) {
-      return;
-    }
-
-    // Initialize cache info when editor mounts or note switches
-    isModifiedRef.current = currentNote.isChange ?? false;
-    prevNoteInfoRef.current = {
-      id: currentNote.id
-    };
-
-    return () => {
-      // Before unmounting, flush pending timer and update cache
-      if (cacheUpdateTimerRef.current) {
-        clearTimeout(cacheUpdateTimerRef.current);
-        cacheUpdateTimerRef.current = null;
-      }
-
-      // Always update cache with latest content when switching files
-      if (prevNoteInfoRef.current.id) {
-        updateFileCache(prevNoteInfoRef.current.id, editor.state.doc.toString(), isModifiedRef.current);
-      }
-    };
-  }, [editor, updateFileCache]);
+  }, [currentNote?.id, patchCurrentNote]);
 
   useEffect(() => {
     if (!editor) {
@@ -291,11 +265,44 @@ const Main: FC = () => {
         >
           {currentNote.name}
         </Title>
+        <span className={`document-session-status document-session-status-${session?.status ?? 'loading'}`}>
+          {getSessionStatusLabel(session?.status)}
+        </span>
+        {session?.status === 'save-error' && <span className="document-session-error">{session.lastError}</span>}
       </div>
       {/* put codemirror here */}
-      <div ref={divRef} className="next-writer-editor-wrapper"></div>
+      <div
+        ref={divRef}
+        className="next-writer-editor-wrapper"
+        style={session?.id === currentNote.id ? undefined : { display: 'none' }}
+      ></div>
     </div>
   );
 };
+
+function getSessionStatusLabel(status?: DocumentSession['status']): string {
+  switch (status) {
+    case 'ready':
+      return '就绪';
+    case 'dirty':
+      return '未保存';
+    case 'saving':
+      return '保存中';
+    case 'saved':
+      return '已保存';
+    case 'save-error':
+      return '保存失败';
+    case 'external-change':
+      return '文件已变更';
+    case 'conflict':
+      return '存在冲突';
+    default:
+      return '加载中';
+  }
+}
+
+function isDocumentSessionModified(session: DocumentSession): boolean {
+  return session.content !== session.savedContent;
+}
 
 export default React.memo(Main);

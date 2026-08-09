@@ -43,6 +43,8 @@ import ILibraryService from '../interface/library-service';
 import LibraryService from '../domain/library-service';
 import IDocumentService from '../interface/document-service';
 import DocumentService from '../domain/document-service';
+import IDocumentSessionService from '../interface/document-session-service';
+import DocumentSessionService from '../domain/document-session-service';
 import IMenuActionService from '../interface/menu-action-service';
 import MenuActionService from '../menu/menu-action-service';
 import IThemeService from '../interface/theme-service';
@@ -52,11 +54,13 @@ import SenderValidator from '../ipc/sender-validator';
 import IIpcHandler from '../interface/ipc-handler';
 import {
   ApplyThemeHandler,
+  GetDocumentSessionHandler,
   ListThemesHandler,
   ReadConfigHandler,
   ReadFileHandler,
   RuntimeHandler,
   UpdateCacheHandler,
+  UpdateDocumentSessionHandler,
   UpdateLibHandler,
   WriteFileHandler
 } from '../ipc/handlers';
@@ -90,6 +94,7 @@ container.bind<IConfigService>(TYPES.IConfigService).to(ConfigService).inSinglet
 container.bind<IWorkspaceService>(TYPES.IWorkspaceService).to(WorkspaceService).inSingletonScope();
 container.bind<ILibraryService>(TYPES.ILibraryService).to(LibraryService).inSingletonScope();
 container.bind<IDocumentService>(TYPES.IDocumentService).to(DocumentService).inSingletonScope();
+container.bind<IDocumentSessionService>(TYPES.IDocumentSessionService).to(DocumentSessionService).inSingletonScope();
 container.bind<IMenuActionService>(TYPES.IMenuActionService).to(MenuActionService).inSingletonScope();
 container.bind<IThemeService>(TYPES.IThemeService).to(ThemeService).inSingletonScope();
 container.bind<ISenderValidator>(TYPES.ISenderValidator).to(SenderValidator).inSingletonScope();
@@ -102,5 +107,7 @@ container.bind<IIpcHandler>(TYPES.IIpcHandler).to(UpdateLibHandler).inSingletonS
 container.bind<IIpcHandler>(TYPES.IIpcHandler).to(WriteFileHandler).inSingletonScope();
 container.bind<IIpcHandler>(TYPES.IIpcHandler).to(RuntimeHandler).inSingletonScope();
 container.bind<IIpcHandler>(TYPES.IIpcHandler).to(UpdateCacheHandler).inSingletonScope();
+container.bind<IIpcHandler>(TYPES.IIpcHandler).to(GetDocumentSessionHandler).inSingletonScope();
+container.bind<IIpcHandler>(TYPES.IIpcHandler).to(UpdateDocumentSessionHandler).inSingletonScope();
 
 export { container };

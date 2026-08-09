@@ -1,4 +1,12 @@
-import { ApplyThemeRequest, ReadFileRequest, UpdateCacheRequest, UpdateLibRequest, WriteFileRequest } from '_types';
+import {
+  ApplyThemeRequest,
+  GetDocumentSessionRequest,
+  ReadFileRequest,
+  UpdateCacheRequest,
+  UpdateDocumentSessionRequest,
+  UpdateLibRequest,
+  WriteFileRequest
+} from '_types';
 
 async function readConfig() {
   return window.ipc.readConfig();
@@ -32,6 +40,14 @@ async function updateCache(data: UpdateCacheRequest) {
   return window.ipc.updateCache(data);
 }
 
+async function getDocumentSession(data: GetDocumentSessionRequest) {
+  return window.ipc.getDocumentSession(data);
+}
+
+async function updateDocumentSession(data: UpdateDocumentSessionRequest) {
+  return window.ipc.updateDocumentSession(data);
+}
+
 const rendererGateway = {
   readConfig,
   listThemes,
@@ -40,7 +56,9 @@ const rendererGateway = {
   updateLib,
   writeFile,
   queryRuntimeConfig,
-  updateCache
+  updateCache,
+  getDocumentSession,
+  updateDocumentSession
 };
 
 export default rendererGateway;
