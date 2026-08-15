@@ -4,7 +4,11 @@ import {
   ReadFileRequest,
   ReadFileResponse,
   RecoveryDraft,
+  ResolveDocumentConflictRequest,
+  ResolveDocumentConflictResponse,
   RootLibraryTree,
+  SaveDocumentCopyRequest,
+  SaveDocumentCopyResponse,
   UpdateCacheRequest,
   UpdateDocumentSessionRequest,
   WriteFileRequest
@@ -21,6 +25,10 @@ interface IDocumentService {
   getRecoveryDraft(id: string): Promise<RecoveryDraft | null>;
   recoverDraft(id: string): Promise<DocumentSession>;
   discardRecoveryDraft(id: string, createdAt: number, revision: number): Promise<{ success: boolean }>;
+  handleExternalChange(path: string): Promise<void>;
+  resolveDocumentConflict(data: ResolveDocumentConflictRequest): Promise<ResolveDocumentConflictResponse>;
+  saveDocumentCopy(data: SaveDocumentCopyRequest): Promise<SaveDocumentCopyResponse>;
+  refreshSessionPaths(libTree: RootLibraryTree): void;
   removeDocument(id: string): void;
 }
 

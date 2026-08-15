@@ -11,6 +11,7 @@ import IAppPathStore from '../interface/app-path-store';
 import IDocumentCacheService from '../interface/document-cache-service';
 import ILibraryTreeStore from '../interface/library-tree-store';
 import IRecoveryDraftService from '../interface/recovery-draft-service';
+import IWindowRegistry from '../interface/window-registry';
 import DocumentService from './document-service';
 import DocumentSessionService from './document-session-service';
 import SaveScheduler from './save-scheduler';
@@ -96,7 +97,8 @@ describe('DocumentService cache revisions', () => {
       new DocumentSessionService(),
       renderConfigStore,
       saveScheduler,
-      recoveryDrafts
+      recoveryDrafts,
+      { getCurrentWindow: jest.fn().mockReturnValue(null) } as unknown as IWindowRegistry
     );
   });
 
@@ -327,6 +329,133 @@ describe('DocumentService cache revisions', () => {
       content: 'saved after folder rename',
       revision: 2
     });
+  });
+
+  it('reloads a clean session after an external file change', async () => {
+    await service.getSession({ id: 'note-id' });
+    const path = nodePath.join(rootDir, 'note.md');
+    await nodeFs.promises.writeFile(path, 'external content');
+
+    await service.handleExternalChange(path);
+
+    await expect(service.getSession({ id: 'note-id' })).resolves.toMatchObject({
+      content: 'external content',
+      savedContent: 'external content',
+      status: 'saved',
+      localRevision: 1
+    });
+  });
+
+  it('blocks ordinary saves when a dirty document changes on disk', async () => {
+    const path = nodePath.join(rootDir, 'note.md');
+    await service.updateSession({ id: 'note-id', content: 'local draft', revision: 1 });
+    await nodeFs.promises.writeFile(path, 'external content');
+    await service.handleExternalChange(path);
+
+    await expect(service.writeFile({ id: 'note-id', content: 'local draft', revision: 1 })).rejects.toThrow(
+      '保存已暂停'
+    );
+    await expect(nodeFs.promises.readFile(path, 'utf8')).resolves.toBe('external content');
+    await expect(service.getSession({ id: 'note-id' })).resolves.toMatchObject({
+      content: 'local draft',
+      diskContent: 'external content',
+      status: 'conflict'
+    });
+  });
+
+  it('detects a changed disk baseline before a watcher event is handled', async () => {
+    const path = nodePath.join(rootDir, 'note.md');
+    await service.updateSession({ id: 'note-id', content: 'local draft', revision: 1 });
+    await nodeFs.promises.writeFile(path, 'external content');
+
+    await expect(service.writeFile({ id: 'note-id', content: 'local draft', revision: 1 })).rejects.toThrow(
+      '保存已暂停'
+    );
+    await expect(nodeFs.promises.readFile(path, 'utf8')).resolves.toBe('external content');
+    await expect(service.getSession({ id: 'note-id' })).resolves.toMatchObject({ status: 'conflict' });
+  });
+
+  it('replaces local content only after explicitly choosing the disk version', async () => {
+    const path = nodePath.join(rootDir, 'note.md');
+    await service.updateSession({ id: 'note-id', content: 'local draft', revision: 1 });
+    await nodeFs.promises.writeFile(path, 'external content');
+    await service.handleExternalChange(path);
+
+    const result = await service.resolveDocumentConflict({ id: 'note-id', resolution: 'use-disk' });
+
+    expect(result.session).toMatchObject({
+      content: 'external content',
+      savedContent: 'external content',
+      diskContent: undefined,
+      status: 'saved'
+    });
+  });
+
+  it('recreates a deleted document only after explicitly keeping local content', async () => {
+    const path = nodePath.join(rootDir, 'note.md');
+    await service.updateSession({ id: 'note-id', content: 'local draft', revision: 1 });
+    await nodeFs.promises.rm(path);
+    await service.handleExternalChange(path);
+
+    await expect(service.flushDocument('note-id')).rejects.toThrow('保存已暂停');
+    await expect(nodeFs.promises.stat(path)).rejects.toThrow();
+
+    const result = await service.resolveDocumentConflict({ id: 'note-id', resolution: 'keep-local' });
+
+    expect(result.session).toMatchObject({ content: 'local draft', savedContent: 'local draft', status: 'saved' });
+    await expect(nodeFs.promises.readFile(path, 'utf8')).resolves.toBe('local draft');
+  });
+
+  it('keeps opened document content when its parent folder is moved externally', async () => {
+    const folderPath = nodePath.join(rootDir, 'drafts');
+    const movedFolderPath = nodePath.join(rootDir, 'archive');
+    await nodeFs.promises.mkdir(folderPath);
+    await nodeFs.promises.writeFile(nodePath.join(folderPath, 'nested.md'), 'nested saved');
+    libraryTree.children = [
+      {
+        id: 'folder-id',
+        name: 'drafts',
+        type: 'folder',
+        birthTime: '',
+        modifiedTime: '',
+        children: [
+          {
+            id: 'nested-id',
+            name: 'nested',
+            type: 'file',
+            birthTime: '',
+            modifiedTime: '',
+            children: []
+          }
+        ]
+      }
+    ];
+    await service.updateSession({ id: 'nested-id', content: 'nested local draft', revision: 1 });
+
+    await nodeFs.promises.rename(folderPath, movedFolderPath);
+    await service.handleExternalChange(folderPath);
+
+    await expect(service.getSession({ id: 'nested-id' })).resolves.toMatchObject({
+      content: 'nested local draft',
+      status: 'unavailable'
+    });
+  });
+
+  it('saves a unique sibling copy without changing the conflicted source', async () => {
+    const path = nodePath.join(rootDir, 'note.md');
+    await service.updateSession({ id: 'note-id', content: 'local draft', revision: 1 });
+    await nodeFs.promises.writeFile(path, 'external content');
+    await service.handleExternalChange(path);
+
+    const result = await service.saveDocumentCopy({ id: 'note-id', content: 'latest local draft', revision: 2 });
+
+    const copy = result.libTree.children.find(child => child.id === result.copyId);
+    expect(copy).toMatchObject({ name: 'note (local copy)', type: 'file' });
+    await expect(nodeFs.promises.readFile(nodePath.join(rootDir, 'note (local copy).md'), 'utf8')).resolves.toBe(
+      'latest local draft'
+    );
+    await expect(nodeFs.promises.readFile(path, 'utf8')).resolves.toBe('external content');
+    await expect(service.getSession({ id: 'note-id' })).resolves.toMatchObject({ status: 'conflict' });
   });
 
   function createAppPathStore(): IAppPathStore {

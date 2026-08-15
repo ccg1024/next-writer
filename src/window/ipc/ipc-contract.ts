@@ -11,7 +11,11 @@ import type {
   ReadFileRequest,
   ReadFileResponse,
   RecoverDraftRequest,
+  ResolveDocumentConflictRequest,
+  ResolveDocumentConflictResponse,
   RootLibraryTree,
+  SaveDocumentCopyRequest,
+  SaveDocumentCopyResponse,
   RuntimeConfigResponse,
   ThemeStateResponse,
   UpdateCacheRequest,
@@ -40,7 +44,9 @@ export const IPC_CHANNEL = {
   FLUSH_DOCUMENT: 'flush-document',
   GET_RECOVERY_DRAFT: 'get-recovery-draft',
   RECOVER_DRAFT: 'recover-draft',
-  DISCARD_RECOVERY_DRAFT: 'discard-recovery-draft'
+  DISCARD_RECOVERY_DRAFT: 'discard-recovery-draft',
+  RESOLVE_DOCUMENT_CONFLICT: 'resolve-document-conflict',
+  SAVE_DOCUMENT_COPY: 'save-document-copy'
 } as const;
 
 export type IpcChannel = (typeof IPC_CHANNEL)[keyof typeof IPC_CHANNEL];
@@ -60,6 +66,8 @@ type IpcRequestMap = {
   [IPC_CHANNEL.GET_RECOVERY_DRAFT]: GetRecoveryDraftRequest;
   [IPC_CHANNEL.RECOVER_DRAFT]: RecoverDraftRequest;
   [IPC_CHANNEL.DISCARD_RECOVERY_DRAFT]: DiscardRecoveryDraftRequest;
+  [IPC_CHANNEL.RESOLVE_DOCUMENT_CONFLICT]: ResolveDocumentConflictRequest;
+  [IPC_CHANNEL.SAVE_DOCUMENT_COPY]: SaveDocumentCopyRequest;
 };
 
 type IpcResponseMap = {
@@ -77,6 +85,8 @@ type IpcResponseMap = {
   [IPC_CHANNEL.GET_RECOVERY_DRAFT]: GetRecoveryDraftResponse;
   [IPC_CHANNEL.RECOVER_DRAFT]: DocumentSession;
   [IPC_CHANNEL.DISCARD_RECOVERY_DRAFT]: { success: boolean };
+  [IPC_CHANNEL.RESOLVE_DOCUMENT_CONFLICT]: ResolveDocumentConflictResponse;
+  [IPC_CHANNEL.SAVE_DOCUMENT_COPY]: SaveDocumentCopyResponse;
 };
 
 export type IpcRequestData<C extends IpcChannel> = IpcRequestMap[C];

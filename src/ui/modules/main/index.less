@@ -33,6 +33,9 @@
     }
 
     .document-session-status-save-error,
+    .document-session-status-external-change,
+    .document-session-status-conflict,
+    .document-session-status-unavailable,
     .document-session-error {
       color: #cf1322;
     }
@@ -50,7 +53,8 @@
     }
   }
 
-  .recovery-draft-notice {
+  .recovery-draft-notice,
+  .external-change-notice {
     width: 100%;
     max-width: 680px;
     margin: -8px auto 12px;
@@ -60,9 +64,15 @@
     color: var(--nw-text-primary);
     background: #fffbe6;
   }
+
+  .external-change-notice {
+    border-color: #ffccc7;
+    background: #fff2f0;
+  }
 }
 
-.recovery-draft-diff {
+.recovery-draft-diff,
+.document-content-diff {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;

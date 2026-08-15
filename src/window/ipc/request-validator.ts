@@ -55,6 +55,10 @@ export function validateIpcRequest(value: unknown): IpcRequestValidation {
       return validateDiscardRecoveryDraft(data, channel);
     case IPC_CHANNEL.UPDATE_DOCUMENT_SESSION:
       return validateUpdateDocumentSession(data, channel);
+    case IPC_CHANNEL.RESOLVE_DOCUMENT_CONFLICT:
+      return validateResolveDocumentConflict(data, channel);
+    case IPC_CHANNEL.SAVE_DOCUMENT_COPY:
+      return validateSaveDocumentCopy(data, channel);
     default:
       return invalid('Invalid IPC channel.');
   }
@@ -162,6 +166,30 @@ function validateDiscardRecoveryDraft(data: unknown, type: IpcChannel): IpcReque
   }
 
   return valid({ type, data: { id: data.id, createdAt: data.createdAt, revision: data.revision } } as AnyIpcRequest);
+}
+
+function validateResolveDocumentConflict(data: unknown, type: IpcChannel): IpcRequestValidation {
+  if (
+    !isRecord(data) ||
+    !isNonEmptyString(data.id) ||
+    (data.resolution !== 'use-disk' && data.resolution !== 'keep-local')
+  ) {
+    return invalid('Resolve document conflict request requires id and a valid resolution.');
+  }
+  return valid({ type, data: { id: data.id, resolution: data.resolution } } as AnyIpcRequest);
+}
+
+function validateSaveDocumentCopy(data: unknown, type: IpcChannel): IpcRequestValidation {
+  if (
+    !isRecord(data) ||
+    !isNonEmptyString(data.id) ||
+    typeof data.content !== 'string' ||
+    typeof data.revision !== 'number' ||
+    !Number.isFinite(data.revision)
+  ) {
+    return invalid('Save document copy request requires id, content, and revision.');
+  }
+  return valid({ type, data: { id: data.id, content: data.content, revision: data.revision } } as AnyIpcRequest);
 }
 
 function validateUpdateLib(data: unknown, type: IpcChannel): IpcRequestValidation {

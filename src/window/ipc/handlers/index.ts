@@ -12,3 +12,5 @@ export { default as UpdateDocumentSessionHandler } from './update-document-sessi
 export { default as GetRecoveryDraftHandler } from './get-recovery-draft-handler';
 export { default as RecoverDraftHandler } from './recover-draft-handler';
 export { default as DiscardRecoveryDraftHandler } from './discard-recovery-draft-handler';
+export { default as ResolveDocumentConflictHandler } from './resolve-document-conflict-handler';
+export { default as SaveDocumentCopyHandler } from './save-document-copy-handler';

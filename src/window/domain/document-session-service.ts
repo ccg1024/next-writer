@@ -4,13 +4,14 @@ import IDocumentSessionService from '../interface/document-session-service';
 
 const VALID_TRANSITIONS: Record<DocumentSessionStatus, DocumentSessionStatus[]> = {
   loading: ['ready'],
-  ready: ['dirty', 'saving'],
-  dirty: ['dirty', 'saving', 'saved', 'save-error'],
-  saving: ['saved', 'dirty', 'save-error'],
-  saved: ['dirty', 'saving'],
-  'save-error': ['dirty', 'saving', 'saved'],
-  'external-change': ['dirty', 'conflict'],
-  conflict: ['dirty', 'saving']
+  ready: ['dirty', 'saving', 'external-change', 'conflict', 'unavailable'],
+  dirty: ['dirty', 'saving', 'saved', 'save-error', 'conflict', 'unavailable'],
+  saving: ['saved', 'dirty', 'save-error', 'conflict', 'unavailable'],
+  saved: ['dirty', 'saving', 'external-change', 'conflict', 'unavailable'],
+  'save-error': ['dirty', 'saving', 'saved', 'conflict', 'unavailable'],
+  'external-change': ['dirty', 'saved', 'conflict', 'unavailable'],
+  conflict: ['dirty', 'saving', 'saved', 'external-change', 'unavailable'],
+  unavailable: ['dirty', 'saving', 'saved', 'conflict']
 };
 
 /** 校验并执行文档状态机迁移，阻止保存流程进入不可能的状态。 */
@@ -80,7 +81,12 @@ class DocumentSessionService implements IDocumentSessionService {
     }
 
     const nextRevision = this.nextRevision(session.localRevision, revision);
-    const nextStatus = content === session.savedContent ? 'saved' : 'dirty';
+    const nextStatus =
+      session.status === 'conflict' || session.status === 'unavailable'
+        ? session.status
+        : content === session.savedContent
+          ? 'saved'
+          : 'dirty';
     const next = transitionDocumentSession({ ...session, content, localRevision: nextRevision }, nextStatus);
     this.sessions.set(id, next);
     return next;
@@ -140,6 +146,73 @@ class DocumentSessionService implements IDocumentSessionService {
     }
 
     const next = transitionDocumentSession({ ...session, localRevision: revision, lastError: error }, 'save-error');
+    this.sessions.set(id, next);
+    return next;
+  }
+
+  applyExternalContent(id: string, content: string, diskModifiedTime: number): DocumentSession {
+    const session = this.require(id);
+    const revision = session.localRevision + 1;
+    const externallyChanged = transitionDocumentSession(session, 'external-change');
+    const next = transitionDocumentSession(
+      {
+        ...externallyChanged,
+        content,
+        savedContent: content,
+        localRevision: revision,
+        savedRevision: revision,
+        diskModifiedTime,
+        diskContent: undefined,
+        lastError: undefined
+      },
+      'saved'
+    );
+    this.sessions.set(id, next);
+    return next;
+  }
+
+  markConflict(id: string, diskContent: string, diskModifiedTime: number): DocumentSession {
+    const session = this.require(id);
+    const next = transitionDocumentSession(
+      { ...session, diskContent, diskModifiedTime, lastError: '文件已被外部修改' },
+      'conflict'
+    );
+    this.sessions.set(id, next);
+    return next;
+  }
+
+  markUnavailable(id: string): DocumentSession {
+    const session = this.require(id);
+    const next = transitionDocumentSession(
+      { ...session, diskContent: undefined, diskModifiedTime: undefined, lastError: '文件已被删除或移动' },
+      'unavailable'
+    );
+    this.sessions.set(id, next);
+    return next;
+  }
+
+  resolveWithDisk(id: string): DocumentSession {
+    const session = this.require(id);
+    if (session.status !== 'conflict' || session.diskContent === undefined) {
+      throw new Error('文档没有可用的磁盘冲突版本');
+    }
+    return this.applyExternalContent(id, session.diskContent, session.diskModifiedTime ?? Date.now());
+  }
+
+  prepareLocalResolution(id: string): DocumentSession {
+    const session = this.require(id);
+    if (session.status !== 'conflict' && session.status !== 'unavailable') {
+      throw new Error('文档不处于冲突或不可用状态');
+    }
+    const next = transitionDocumentSession(
+      {
+        ...session,
+        savedContent: session.diskContent ?? session.savedContent,
+        diskContent: undefined,
+        lastError: undefined
+      },
+      'dirty'
+    );
     this.sessions.set(id, next);
     return next;
   }

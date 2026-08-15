@@ -11,6 +11,7 @@ export type NormalObject = Record<
 // -----------------------------------------------
 const RENDERER_LISTENER_ACTIONS = [
   'write-file',
+  'external-document-change',
   'toggle-toc',
   'toggle-lib',
   'toggle-lib-detail',
@@ -37,6 +38,10 @@ export interface IPC {
   getRecoveryDraft: (data: GetRecoveryDraftRequest) => Promise<Response<GetRecoveryDraftResponse>>;
   recoverDraft: (data: RecoverDraftRequest) => Promise<Response<RecoverDraftResponse>>;
   discardRecoveryDraft: (data: DiscardRecoveryDraftRequest) => Promise<Response<{ success: boolean }>>;
+  resolveDocumentConflict: (
+    data: ResolveDocumentConflictRequest
+  ) => Promise<Response<ResolveDocumentConflictResponse>>;
+  saveDocumentCopy: (data: SaveDocumentCopyRequest) => Promise<Response<SaveDocumentCopyResponse>>;
   rendererListener: (cb: RendererListenerCallback) => () => void;
 }
 
@@ -60,7 +65,8 @@ export type DocumentSessionStatus =
   | 'saved'
   | 'save-error'
   | 'external-change'
-  | 'conflict';
+  | 'conflict'
+  | 'unavailable';
 
 export type DocumentSession = {
   id: string;
@@ -71,6 +77,7 @@ export type DocumentSession = {
   localRevision: number;
   savedRevision: number;
   diskModifiedTime?: number;
+  diskContent?: string;
   lastSavedAt?: number;
   lastError?: string;
 };
@@ -273,6 +280,32 @@ export type DiscardRecoveryDraftRequest = {
   id: string;
   createdAt: number;
   revision: number;
+};
+
+export type ExternalDocumentChangeEvent = {
+  kind: 'reloaded' | 'conflict' | 'deleted';
+  session: DocumentSession;
+};
+
+export type ResolveDocumentConflictRequest = {
+  id: string;
+  resolution: 'use-disk' | 'keep-local';
+};
+
+export type ResolveDocumentConflictResponse = {
+  session: DocumentSession;
+  libTree: RootLibraryTree;
+};
+
+export type SaveDocumentCopyRequest = {
+  id: string;
+  content: string;
+  revision: number;
+};
+
+export type SaveDocumentCopyResponse = {
+  copyId: string;
+  libTree: RootLibraryTree;
 };
 // ============================================================
 // end -- just for ipc communication

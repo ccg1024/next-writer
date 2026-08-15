@@ -6,6 +6,8 @@ import {
   GetRecoveryDraftRequest,
   ReadFileRequest,
   RecoverDraftRequest,
+  ResolveDocumentConflictRequest,
+  SaveDocumentCopyRequest,
   UpdateCacheRequest,
   UpdateDocumentSessionRequest,
   UpdateLibRequest,
@@ -71,6 +73,14 @@ async function discardRecoveryDraft(data: DiscardRecoveryDraftRequest) {
   return window.ipc.discardRecoveryDraft(data);
 }
 
+async function resolveDocumentConflict(data: ResolveDocumentConflictRequest) {
+  return window.ipc.resolveDocumentConflict(data);
+}
+
+async function saveDocumentCopy(data: SaveDocumentCopyRequest) {
+  return window.ipc.saveDocumentCopy(data);
+}
+
 const rendererGateway = {
   readConfig,
   listThemes,
@@ -85,7 +95,9 @@ const rendererGateway = {
   flushDocument,
   getRecoveryDraft,
   recoverDraft,
-  discardRecoveryDraft
+  discardRecoveryDraft,
+  resolveDocumentConflict,
+  saveDocumentCopy
 };
 
 export default rendererGateway;

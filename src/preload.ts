@@ -76,6 +76,14 @@ contextBridge.exposeInMainWorld('ipc', {
     return post({ type: IPC_CHANNEL.DISCARD_RECOVERY_DRAFT, data });
   },
 
+  resolveDocumentConflict(data: unknown) {
+    return post({ type: IPC_CHANNEL.RESOLVE_DOCUMENT_CONFLICT, data });
+  },
+
+  saveDocumentCopy(data: unknown) {
+    return post({ type: IPC_CHANNEL.SAVE_DOCUMENT_COPY, data });
+  },
+
   /** 订阅主进程发出的菜单命令，并返回精确移除当前监听器的清理函数。 */
   rendererListener: (cb: CallbackFunction) => {
     const listener = (_event: IpcRendererEvent, action: unknown) => cb(action);

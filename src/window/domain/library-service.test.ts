@@ -17,7 +17,7 @@ describe('LibraryService ID based operations', () => {
   let rootDir: string;
   let libraryTree: RootLibraryTree;
   let service: LibraryService;
-  let documentService: jest.Mocked<Pick<IDocumentService, 'flushAll' | 'removeDocument'>>;
+  let documentService: jest.Mocked<Pick<IDocumentService, 'flushAll' | 'removeDocument' | 'refreshSessionPaths'>>;
 
   beforeEach(async () => {
     rootDir = await nodeFs.promises.mkdtemp(nodePath.join(nodeOs.tmpdir(), 'next-writer-library-'));
@@ -26,7 +26,11 @@ describe('LibraryService ID based operations', () => {
       children: []
     };
     const appPathStore = createAppPathStore();
-    documentService = { flushAll: jest.fn().mockResolvedValue(true), removeDocument: jest.fn() };
+    documentService = {
+      flushAll: jest.fn().mockResolvedValue(true),
+      removeDocument: jest.fn(),
+      refreshSessionPaths: jest.fn()
+    };
     service = new LibraryService(
       new FileSystem(),
       appPathStore,

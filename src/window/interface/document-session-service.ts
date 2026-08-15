@@ -9,6 +9,11 @@ interface IDocumentSessionService {
   beginSave(id: string, revision?: number): DocumentSession;
   completeSave(id: string, content: string, revision: number, diskModifiedTime?: number): DocumentSession;
   failSave(id: string, error: string, revision: number): DocumentSession;
+  applyExternalContent(id: string, content: string, diskModifiedTime: number): DocumentSession;
+  markConflict(id: string, diskContent: string, diskModifiedTime: number): DocumentSession;
+  markUnavailable(id: string): DocumentSession;
+  resolveWithDisk(id: string): DocumentSession;
+  prepareLocalResolution(id: string): DocumentSession;
   remove(id: string): void;
   destroy(): void;
 }

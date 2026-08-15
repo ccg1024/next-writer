@@ -1,12 +1,19 @@
+import nodePath from 'path';
 import { inject, injectable } from 'inversify';
 import { DEFAULT_AUTO_SAVE_DELAY_MS, MAX_FILE_DESCRIPTION_LENGTH } from 'src/config/env';
 import {
   DocumentSession,
+  ExternalDocumentChangeEvent,
   GetDocumentSessionRequest,
   ReadFileRequest,
   ReadFileResponse,
   RecoveryDraft,
+  RendererListenerAction,
+  ResolveDocumentConflictRequest,
+  ResolveDocumentConflictResponse,
   RootLibraryTree,
+  SaveDocumentCopyRequest,
+  SaveDocumentCopyResponse,
   UpdateCacheRequest,
   UpdateDocumentSessionRequest,
   WriteFileRequest
@@ -20,7 +27,13 @@ import IDocumentSessionService from '../interface/document-session-service';
 import IRenderConfigStore from '../interface/render-config-store';
 import IRecoveryDraftService from '../interface/recovery-draft-service';
 import ISaveScheduler from '../interface/save-scheduler';
-import { isLibraryTreeNode, persistLibTree, resolveLibraryNodePath } from '../utils/lib-tree-utils';
+import IWindowRegistry from '../interface/window-registry';
+import {
+  createLibraryNodeId,
+  isLibraryTreeNode,
+  persistLibTree,
+  resolveLibraryNodePath
+} from '../utils/lib-tree-utils';
 import { TYPES } from '../types';
 
 @injectable()
@@ -28,6 +41,8 @@ import { TYPES } from '../types';
  * 文档领域服务，协调磁盘文件、文档会话、编辑缓存和文库树元数据，保证它们使用同一份内容与修订号。
  */
 class DocumentService implements IDocumentService {
+  private readonly writesInProgress = new Map<string, string>();
+
   constructor(
     @inject(TYPES.IFileSystem) private fileSystem: IFileSystem,
     @inject(TYPES.IAppPathStore) private appPathStore: IAppPathStore,
@@ -36,7 +51,8 @@ class DocumentService implements IDocumentService {
     @inject(TYPES.IDocumentSessionService) private sessions: IDocumentSessionService,
     @inject(TYPES.IRenderConfigStore) private renderConfigStore: IRenderConfigStore,
     @inject(TYPES.ISaveScheduler) private saveScheduler: ISaveScheduler,
-    @inject(TYPES.IRecoveryDraftService) private recoveryDrafts: IRecoveryDraftService
+    @inject(TYPES.IRecoveryDraftService) private recoveryDrafts: IRecoveryDraftService,
+    @inject(TYPES.IWindowRegistry) private windowRegistry: IWindowRegistry
   ) {}
 
   async readFile(data: ReadFileRequest): Promise<ReadFileResponse> {
@@ -57,6 +73,9 @@ class DocumentService implements IDocumentService {
 
   async flushDocument(id: string): Promise<{ session: DocumentSession; libTree: RootLibraryTree }> {
     const session = await this.getSession({ id });
+    if (session.status === 'conflict' || session.status === 'unavailable') {
+      throw new Error('文档存在外部变更，保存已暂停');
+    }
     let libTree = this.libraryTreeStore.getTree();
     if (session.content !== session.savedContent) {
       await this.saveScheduler.enqueue(id, async () => {
@@ -87,18 +106,29 @@ class DocumentService implements IDocumentService {
     await Promise.all(
       this.sessions
         .getAll()
-        .filter(session => session.content !== session.savedContent)
+        .filter(
+          session =>
+            session.content !== session.savedContent ||
+            session.status === 'conflict' ||
+            session.status === 'unavailable'
+        )
         .map(session => this.recoveryDrafts.save(session, 'close-timeout').catch(() => undefined))
     );
   }
 
-  private async persistDocument(data: WriteFileRequest): Promise<RootLibraryTree> {
+  private async persistDocument(
+    data: WriteFileRequest,
+    expectedDisk?: { content?: string; missing?: boolean }
+  ): Promise<RootLibraryTree> {
     const { id, content, revision } = data ?? {};
     const rootDir = this.appPathStore.getRootDir();
 
     return this.libraryTreeStore.updateTree(async libTree => {
       const pathInfo = this.resolveFileNode(id, libTree);
       const session = await this.ensureSession(id, pathInfo.fullPath);
+      if (!expectedDisk && (session.status === 'conflict' || session.status === 'unavailable')) {
+        throw new Error('文档存在外部变更，保存已暂停');
+      }
       const requestedRevision = revision === undefined ? undefined : this.normalizeRevision(revision);
       // 异步 IPC 可能乱序到达；旧修订不能覆盖更新内容，同修订但内容不同也视为冲突请求。
       if (
@@ -113,6 +143,8 @@ class DocumentService implements IDocumentService {
         content === session.content ? session : this.sessions.updateContent(id, content, requestedRevision);
       const savingSession = this.sessions.beginSave(id, contentSession.localRevision);
       try {
+        await this.assertDiskBaseline(savingSession, pathInfo.fullPath, expectedDisk);
+        this.writesInProgress.set(nodePath.resolve(pathInfo.fullPath), content);
         await this.fileSystem.writeFile(pathInfo.fullPath, content);
 
         const newStat = await this.fileSystem.stat(pathInfo.fullPath);
@@ -126,11 +158,16 @@ class DocumentService implements IDocumentService {
         pathInfo.node.modifiedTime = newStat.mtime.toLocaleString();
         pathInfo.node.description = content.substring(0, MAX_FILE_DESCRIPTION_LENGTH);
       } catch (error) {
+        if (this.sessions.get(id)?.status === 'conflict' || this.sessions.get(id)?.status === 'unavailable') {
+          throw error;
+        }
         const message = error instanceof Error ? error.message : '保存文件失败';
         const failedSession = this.sessions.failSave(id, message, savingSession.localRevision);
         this.syncCache(failedSession);
         await this.recoveryDrafts.save(failedSession, 'save-failure').catch(() => undefined);
         throw new Error('保存文件失败');
+      } finally {
+        this.writesInProgress.delete(nodePath.resolve(pathInfo.fullPath));
       }
 
       await persistLibTree(libTree, rootDir, this.fileSystem);
@@ -199,6 +236,130 @@ class DocumentService implements IDocumentService {
     return { success: await this.recoveryDrafts.discard(id, { createdAt, revision }) };
   }
 
+  async handleExternalChange(path: string): Promise<void> {
+    const normalizedPath = nodePath.resolve(path);
+    const affectedSessions = this.sessions.getAll().filter(item => {
+      const sessionPath = nodePath.resolve(item.path);
+      return sessionPath === normalizedPath || sessionPath.startsWith(`${normalizedPath}${nodePath.sep}`);
+    });
+
+    for (const session of affectedSessions) {
+      await this.handleExternalSessionChange(session, nodePath.resolve(session.path));
+    }
+  }
+
+  private async handleExternalSessionChange(session: DocumentSession, path: string): Promise<void> {
+    if (!(await this.fileSystem.exists(path))) {
+      const unavailable = this.sessions.markUnavailable(session.id);
+      this.saveScheduler.cancel(session.id);
+      this.syncCache(unavailable);
+      this.recoveryDrafts.scheduleSnapshot(unavailable);
+      this.emitExternalChange({ kind: 'deleted', session: unavailable });
+      return;
+    }
+
+    const [diskContent, stat] = await Promise.all([
+      this.fileSystem.readFile(path, { encoding: 'utf8' }),
+      this.fileSystem.stat(path)
+    ]);
+    if (this.writesInProgress.get(path) === diskContent || diskContent === session.savedContent) {
+      return;
+    }
+
+    if (session.content === session.savedContent) {
+      const reloaded = this.sessions.applyExternalContent(session.id, diskContent, stat.mtimeMs);
+      this.syncCache(reloaded);
+      this.emitExternalChange({ kind: 'reloaded', session: reloaded });
+      return;
+    }
+
+    const conflicted = this.sessions.markConflict(session.id, diskContent, stat.mtimeMs);
+    this.saveScheduler.cancel(session.id);
+    this.syncCache(conflicted);
+    this.recoveryDrafts.scheduleSnapshot(conflicted);
+    this.emitExternalChange({ kind: 'conflict', session: conflicted });
+  }
+
+  async resolveDocumentConflict(data: ResolveDocumentConflictRequest): Promise<ResolveDocumentConflictResponse> {
+    const current = await this.getSession({ id: data.id });
+    if (data.resolution === 'use-disk') {
+      const session = this.sessions.resolveWithDisk(data.id);
+      this.syncCache(session);
+      void this.recoveryDrafts.discard(data.id).catch(() => undefined);
+      return { session, libTree: this.libraryTreeStore.getTree() };
+    }
+
+    const expectedDisk = {
+      content: current.diskContent,
+      missing: current.status === 'unavailable'
+    };
+    const local = this.sessions.prepareLocalResolution(data.id);
+    this.syncCache(local);
+    let result = this.libraryTreeStore.getTree();
+    await this.saveScheduler.enqueue(data.id, () =>
+      this.persistDocument({ id: data.id, content: local.content, revision: local.localRevision }, expectedDisk).then(
+        tree => {
+          result = tree;
+        }
+      )
+    );
+    return { session: await this.getSession({ id: data.id }), libTree: result };
+  }
+
+  async saveDocumentCopy(data: SaveDocumentCopyRequest): Promise<SaveDocumentCopyResponse> {
+    const current = await this.getSession({ id: data.id });
+    if (data.revision < current.localRevision) {
+      throw new Error('副本内容修订已过期');
+    }
+    const session =
+      data.content === current.content ? current : this.sessions.updateContent(data.id, data.content, data.revision);
+    this.syncCache(session);
+    this.recoveryDrafts.scheduleSnapshot(session);
+
+    let copyId = '';
+    const libTree = await this.libraryTreeStore.updateTree(async tree => {
+      const source = this.resolveFileNode(data.id, tree);
+      if (!source.parent) {
+        throw new Error('无法确定副本目录');
+      }
+      let suffix = 1;
+      let name = `${source.node.name} (local copy)`;
+      while (source.parent.children.some(child => child.type === 'file' && child.name === name)) {
+        suffix += 1;
+        name = `${source.node.name} (local copy ${suffix})`;
+      }
+      const copyPath = nodePath.join(nodePath.dirname(source.fullPath), `${name}.md`);
+      await this.fileSystem.writeFile(copyPath, session.content);
+      const stat = await this.fileSystem.stat(copyPath);
+      copyId = createLibraryNodeId();
+      source.parent.children.push({
+        id: copyId,
+        name,
+        type: 'file',
+        birthTime: stat.birthtime.toLocaleString(),
+        modifiedTime: stat.mtime.toLocaleString(),
+        description: session.content.substring(0, MAX_FILE_DESCRIPTION_LENGTH),
+        children: []
+      });
+      await persistLibTree(tree, this.appPathStore.getRootDir(), this.fileSystem);
+      return tree;
+    });
+    return { copyId, libTree };
+  }
+
+  refreshSessionPaths(libTree: RootLibraryTree): void {
+    this.sessions.getAll().forEach(session => {
+      try {
+        this.sessions.updatePath(
+          session.id,
+          resolveLibraryNodePath(libTree, session.id, this.appPathStore.getRootDir()).fullPath
+        );
+      } catch {
+        // 已从树中删除的会话由 LibraryService.removeDocument 负责清理。
+      }
+    });
+  }
+
   removeDocument(id: string): void {
     this.saveScheduler.cancel(id);
     this.sessions.remove(id);
@@ -208,6 +369,9 @@ class DocumentService implements IDocumentService {
 
   private persistCurrentSession(id: string): Promise<RootLibraryTree> {
     const session = this.sessions.get(id);
+    if (session?.status === 'conflict' || session?.status === 'unavailable') {
+      return Promise.reject(new Error('文档存在外部变更，保存已暂停'));
+    }
     if (!session || session.content === session.savedContent) {
       return Promise.resolve(this.libraryTreeStore.getTree());
     }
@@ -231,6 +395,11 @@ class DocumentService implements IDocumentService {
   }
 
   private scheduleSessionPersistence(session: DocumentSession): void {
+    if (session.status === 'conflict' || session.status === 'unavailable') {
+      this.saveScheduler.cancel(session.id);
+      this.recoveryDrafts.scheduleSnapshot(session);
+      return;
+    }
     if (session.content === session.savedContent) {
       this.saveScheduler.cancel(session.id);
       void this.recoveryDrafts.discard(session.id).catch(() => undefined);
@@ -256,7 +425,8 @@ class DocumentService implements IDocumentService {
   private syncCache(session: DocumentSession): void {
     // 窗口关闭保护仍读取旧缓存结构，因此会话变更后需要同步一份兼容状态。
     const cacheContent = {
-      isChange: session.content !== session.savedContent,
+      isChange:
+        session.content !== session.savedContent || session.status === 'conflict' || session.status === 'unavailable',
       content: session.content,
       revision: session.localRevision
     };
@@ -290,6 +460,45 @@ class DocumentService implements IDocumentService {
     }
 
     return this.normalizeRevision(revision) <= session.localRevision;
+  }
+
+  private async assertDiskBaseline(
+    session: DocumentSession,
+    path: string,
+    expectedDisk?: { content?: string; missing?: boolean }
+  ): Promise<void> {
+    const exists = await this.fileSystem.exists(path);
+    if (!exists) {
+      if (expectedDisk?.missing) {
+        return;
+      }
+      const unavailable = this.sessions.markUnavailable(session.id);
+      this.saveScheduler.cancel(session.id);
+      this.syncCache(unavailable);
+      this.recoveryDrafts.scheduleSnapshot(unavailable);
+      this.emitExternalChange({ kind: 'deleted', session: unavailable });
+      throw new Error('文件已被删除或移动，保存已暂停');
+    }
+
+    const diskContent = await this.fileSystem.readFile(path, { encoding: 'utf8' });
+    const baseline = expectedDisk?.content ?? session.savedContent;
+    if (diskContent === baseline) {
+      return;
+    }
+    const stat = await this.fileSystem.stat(path);
+    const conflicted = this.sessions.markConflict(session.id, diskContent, stat.mtimeMs);
+    this.saveScheduler.cancel(session.id);
+    this.syncCache(conflicted);
+    this.recoveryDrafts.scheduleSnapshot(conflicted);
+    this.emitExternalChange({ kind: 'conflict', session: conflicted });
+    throw new Error('文件已被外部修改，保存已暂停');
+  }
+
+  private emitExternalChange(event: ExternalDocumentChangeEvent): void {
+    this.windowRegistry.getCurrentWindow()?.webContents.send('next-ipc-client', {
+      type: 'external-document-change',
+      payload: event
+    } as RendererListenerAction<ExternalDocumentChangeEvent>);
   }
 }
 

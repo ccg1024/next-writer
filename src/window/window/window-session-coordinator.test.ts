@@ -11,6 +11,9 @@ import IRecoveryDraftService from '../interface/recovery-draft-service';
 import IWindowCloseController from '../interface/window-close-controller';
 import IWindowRegistry from '../interface/window-registry';
 import IWorkspaceService from '../interface/workspace-service';
+import IWorkspaceFileWatcher from '../interface/workspace-file-watcher';
+import IAppPathStore from '../interface/app-path-store';
+import IDocumentService from '../interface/document-service';
 import WindowSessionCoordinator from './window-session-coordinator';
 
 describe('WindowSessionCoordinator', () => {
@@ -23,6 +26,7 @@ describe('WindowSessionCoordinator', () => {
   let windowCloseController: jest.Mocked<IWindowCloseController>;
   let windowRegistry: jest.Mocked<Pick<IWindowRegistry, 'setCurrentWindow' | 'clearCurrentWindow'>>;
   let workspaceService: jest.Mocked<IWorkspaceService>;
+  let workspaceFileWatcher: jest.Mocked<IWorkspaceFileWatcher>;
   let coordinator: WindowSessionCoordinator;
   let cleanup: () => void;
   let win: BrowserWindow & {
@@ -74,6 +78,7 @@ describe('WindowSessionCoordinator', () => {
       initialize: jest.fn().mockResolvedValue(undefined),
       destroy: jest.fn()
     };
+    workspaceFileWatcher = { start: jest.fn(), stop: jest.fn() };
     coordinator = new WindowSessionCoordinator(
       cache as unknown as IDocumentCacheService,
       menuStateStore as unknown as IMenuStateStore,
@@ -83,7 +88,10 @@ describe('WindowSessionCoordinator', () => {
       windowRegistry as unknown as IWindowRegistry,
       workspaceService,
       documentSessions as unknown as IDocumentSessionService,
-      recoveryDrafts as unknown as IRecoveryDraftService
+      recoveryDrafts as unknown as IRecoveryDraftService,
+      workspaceFileWatcher,
+      { getRootDir: jest.fn().mockReturnValue('/workspace') } as unknown as IAppPathStore,
+      { handleExternalChange: jest.fn().mockResolvedValue(undefined) } as unknown as IDocumentService
     );
   });
 
@@ -99,6 +107,7 @@ describe('WindowSessionCoordinator', () => {
     expect(menuStateStore.reset).toHaveBeenCalled();
     expect(windowCloseController.mount).toHaveBeenCalledWith(win, expect.any(Function));
     expect(win.loadURL).toHaveBeenCalled();
+    expect(workspaceFileWatcher.start).toHaveBeenCalledWith('/workspace', expect.any(Function));
   });
 
   it('cleans up the current window session', async () => {
@@ -109,6 +118,7 @@ describe('WindowSessionCoordinator', () => {
     expect(cache.destroy).toHaveBeenCalled();
     expect(documentSessions.destroy).toHaveBeenCalled();
     expect(recoveryDrafts.destroy).toHaveBeenCalled();
+    expect(workspaceFileWatcher.stop).toHaveBeenCalled();
     expect(windowRegistry.clearCurrentWindow).toHaveBeenCalledWith(win);
   });
 

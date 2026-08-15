@@ -114,6 +114,20 @@ describe('DocumentSessionService', () => {
     });
   });
 
+  it('keeps an unresolved conflict while local editing continues', () => {
+    service.load('note', path, 'saved', 10);
+    service.updateContent('note', 'local draft', 1);
+    service.markConflict('note', 'external content', 20);
+
+    expect(service.updateContent('note', 'newer local draft', 2)).toMatchObject({
+      content: 'newer local draft',
+      savedContent: 'saved',
+      diskContent: 'external content',
+      status: 'conflict',
+      localRevision: 2
+    });
+  });
+
   it('rejects invalid state transitions', () => {
     const session = service.load('note', path, 'saved');
 

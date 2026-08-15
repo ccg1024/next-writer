@@ -2,7 +2,9 @@ import type { BrowserWindow } from 'electron';
 import { inject, injectable } from 'inversify';
 import { IS_DEV } from 'src/config/env';
 import IAppMenu from '../interface/app-menu';
+import IAppPathStore from '../interface/app-path-store';
 import IDocumentCacheService from '../interface/document-cache-service';
+import IDocumentService from '../interface/document-service';
 import IDocumentSessionService from '../interface/document-session-service';
 import IMenuStateStore from '../interface/menu-state-store';
 import IRecoveryDraftService from '../interface/recovery-draft-service';
@@ -11,6 +13,7 @@ import IWindowCloseController from '../interface/window-close-controller';
 import IWindowRegistry from '../interface/window-registry';
 import IWindowSessionCoordinator from '../interface/window-session-coordinator';
 import IWorkspaceService from '../interface/workspace-service';
+import IWorkspaceFileWatcher from '../interface/workspace-file-watcher';
 import { TYPES } from '../types';
 
 declare const MAIN_WINDOW_WEBPACK_ENTRY: string;
@@ -31,7 +34,10 @@ class WindowSessionCoordinator implements IWindowSessionCoordinator {
     @inject(TYPES.IWindowRegistry) private windowRegistry: IWindowRegistry,
     @inject(TYPES.IWorkspaceService) private workspaceService: IWorkspaceService,
     @inject(TYPES.IDocumentSessionService) private documentSessions: IDocumentSessionService,
-    @inject(TYPES.IRecoveryDraftService) private recoveryDrafts: IRecoveryDraftService
+    @inject(TYPES.IRecoveryDraftService) private recoveryDrafts: IRecoveryDraftService,
+    @inject(TYPES.IWorkspaceFileWatcher) private workspaceFileWatcher: IWorkspaceFileWatcher,
+    @inject(TYPES.IAppPathStore) private appPathStore: IAppPathStore,
+    @inject(TYPES.IDocumentService) private documentService: IDocumentService
   ) {
     this.createWindow = this.createWindow.bind(this);
   }
@@ -55,9 +61,13 @@ class WindowSessionCoordinator implements IWindowSessionCoordinator {
 
     this.windowCloseController.mount(this.win, () => this.destroy());
     await this.win.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
+    this.workspaceFileWatcher.start(this.appPathStore.getRootDir(), change => {
+      void this.documentService.handleExternalChange(change.path).catch(() => undefined);
+    });
   }
 
   destroy(): void {
+    this.workspaceFileWatcher.stop();
     this.cache.destroy();
     this.documentSessions.destroy();
     this.recoveryDrafts.destroy();

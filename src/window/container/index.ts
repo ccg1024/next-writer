@@ -2,6 +2,8 @@ import 'reflect-metadata'; // need this for inversify js
 import { Container } from 'inversify';
 import IFileSystem from '../interface/file-system';
 import FileSystem from '../infrastructure/file-system';
+import IWorkspaceFileWatcher from '../interface/workspace-file-watcher';
+import WorkspaceFileWatcher from '../infrastructure/workspace-file-watcher';
 import IAppPathStore from '../interface/app-path-store';
 import AppPathStore from '../state/app-path-store';
 import IRenderConfigStore from '../interface/render-config-store';
@@ -66,6 +68,8 @@ import {
   ReadConfigHandler,
   ReadFileHandler,
   RecoverDraftHandler,
+  ResolveDocumentConflictHandler,
+  SaveDocumentCopyHandler,
   RuntimeHandler,
   UpdateCacheHandler,
   UpdateDocumentSessionHandler,
@@ -106,6 +110,7 @@ container.bind<IDocumentService>(TYPES.IDocumentService).to(DocumentService).inS
 container.bind<IDocumentSessionService>(TYPES.IDocumentSessionService).to(DocumentSessionService).inSingletonScope();
 container.bind<ISaveScheduler>(TYPES.ISaveScheduler).to(SaveScheduler).inSingletonScope();
 container.bind<IRecoveryDraftService>(TYPES.IRecoveryDraftService).to(RecoveryDraftService).inSingletonScope();
+container.bind<IWorkspaceFileWatcher>(TYPES.IWorkspaceFileWatcher).to(WorkspaceFileWatcher).inSingletonScope();
 container.bind<IMenuActionService>(TYPES.IMenuActionService).to(MenuActionService).inSingletonScope();
 container.bind<IThemeService>(TYPES.IThemeService).to(ThemeService).inSingletonScope();
 container.bind<ISenderValidator>(TYPES.ISenderValidator).to(SenderValidator).inSingletonScope();
@@ -124,5 +129,7 @@ container.bind<IIpcHandler>(TYPES.IIpcHandler).to(FlushDocumentHandler).inSingle
 container.bind<IIpcHandler>(TYPES.IIpcHandler).to(GetRecoveryDraftHandler).inSingletonScope();
 container.bind<IIpcHandler>(TYPES.IIpcHandler).to(RecoverDraftHandler).inSingletonScope();
 container.bind<IIpcHandler>(TYPES.IIpcHandler).to(DiscardRecoveryDraftHandler).inSingletonScope();
+container.bind<IIpcHandler>(TYPES.IIpcHandler).to(ResolveDocumentConflictHandler).inSingletonScope();
+container.bind<IIpcHandler>(TYPES.IIpcHandler).to(SaveDocumentCopyHandler).inSingletonScope();
 
 export { container };

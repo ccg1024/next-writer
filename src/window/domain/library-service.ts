@@ -60,7 +60,7 @@ class LibraryService implements ILibraryService {
     const rootDir = this.appPathStore.getRootDir();
 
     // 所有文件操作都在树仓库的串行更新中执行，避免并发请求基于同一个旧树写回。
-    return this.libraryTreeStore.updateTree(async libTree => {
+    const result = await this.libraryTreeStore.updateTree(async libTree => {
       switch (data?.operate) {
         case 'add': {
           const name = this.validateLibraryName(data.name);
@@ -160,6 +160,8 @@ class LibraryService implements ILibraryService {
       await persistLibTree(libTree, rootDir, this.fileSystem);
       return libTree;
     });
+    this.documentService.refreshSessionPaths(result);
+    return result;
   }
 
   private async traverseDirectory(dir: string, workInProcess: LibraryTree | RootLibraryTree): Promise<void> {

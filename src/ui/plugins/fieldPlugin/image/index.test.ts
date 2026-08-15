@@ -68,7 +68,6 @@ function collectImageFieldDecorations(state: EditorState) {
     to: number;
     kind: string;
     side: number | undefined;
-    block: boolean | undefined;
     lineBreaks: number | undefined;
   }[] = [];
 
@@ -78,7 +77,6 @@ function collectImageFieldDecorations(state: EditorState) {
       to,
       kind: value.spec.imageDecorationKind,
       side: value.spec.side,
-      block: value.spec.block,
       lineBreaks: value.spec.widget?.lineBreaks
     });
   });
@@ -174,8 +172,8 @@ describe('image field plugin', () => {
     });
   });
 
-  it('uses block widgets for images', () => {
-    expect(imageDecoration({ url: '/tmp/image.png' }).spec.block).toBe(true);
+  it('uses inline widgets for images', () => {
+    expect(imageDecoration({ url: '/tmp/image.png' }).spec.block).toBeUndefined();
   });
 
   it('anchors image widgets after the markdown image syntax', () => {
@@ -206,7 +204,6 @@ describe('image field plugin', () => {
         to: imageSyntax.length,
         kind: 'image-widget',
         side: 1,
-        block: true,
         lineBreaks: 0
       }
     ]);
@@ -225,7 +222,6 @@ describe('image field plugin', () => {
         to: imageSyntax.length,
         kind: 'image-widget',
         side: 1,
-        block: true,
         lineBreaks: 0
       }
     ]);
@@ -320,7 +316,6 @@ describe('image field plugin', () => {
         to: firstImage.length,
         kind: 'image-widget',
         side: 1,
-        block: true,
         lineBreaks: 0
       },
       {
@@ -328,7 +323,6 @@ describe('image field plugin', () => {
         to: firstImage.length + updatedSecondImage.length,
         kind: 'image-widget',
         side: 1,
-        block: true,
         lineBreaks: 0
       }
     ]);
@@ -453,7 +447,6 @@ describe('image field plugin', () => {
         to: imageSyntax.length,
         kind: 'image-widget',
         side: 1,
-        block: true,
         lineBreaks: 0
       }
     ]);

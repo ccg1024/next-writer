@@ -68,6 +68,18 @@ describe('validateIpcRequest', () => {
         data: { id: 'note-id', content: 'draft', revision: 3 }
       })
     ).toMatchObject({ valid: true });
+    expect(
+      validateIpcRequest({
+        type: IPC_CHANNEL.RESOLVE_DOCUMENT_CONFLICT,
+        data: { id: 'note-id', resolution: 'keep-local' }
+      })
+    ).toMatchObject({ valid: true });
+    expect(
+      validateIpcRequest({
+        type: IPC_CHANNEL.SAVE_DOCUMENT_COPY,
+        data: { id: 'note-id', content: 'draft', revision: 3 }
+      })
+    ).toMatchObject({ valid: true });
   });
 
   it('rejects invalid request envelopes and unknown channels', () => {
