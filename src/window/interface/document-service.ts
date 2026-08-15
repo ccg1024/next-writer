@@ -3,6 +3,7 @@ import {
   GetDocumentSessionRequest,
   ReadFileRequest,
   ReadFileResponse,
+  RecoveryDraft,
   RootLibraryTree,
   UpdateCacheRequest,
   UpdateDocumentSessionRequest,
@@ -17,6 +18,10 @@ interface IDocumentService {
   updateCache(data: UpdateCacheRequest): Promise<{ success: boolean }>;
   getSession(data: GetDocumentSessionRequest): Promise<DocumentSession>;
   updateSession(data: UpdateDocumentSessionRequest): Promise<DocumentSession>;
+  getRecoveryDraft(id: string): Promise<RecoveryDraft | null>;
+  recoverDraft(id: string): Promise<DocumentSession>;
+  discardRecoveryDraft(id: string, createdAt: number, revision: number): Promise<{ success: boolean }>;
+  removeDocument(id: string): void;
 }
 
 export default IDocumentService;

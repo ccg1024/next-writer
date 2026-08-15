@@ -2,10 +2,16 @@ import type { Stats } from 'fs';
 import nodePath from 'path';
 import { BrowserWindow } from 'electron';
 import { inject, injectable } from 'inversify';
-import { MAX_FILE_DESCRIPTION_LENGTH, ROOT_CONFIG_NAME, ROOT_LIBRARY_ID } from 'src/config/env';
+import {
+  MAX_FILE_DESCRIPTION_LENGTH,
+  ROOT_CONFIG_NAME,
+  ROOT_LIBRARY_ID,
+  WINDOW_CLOSE_FLUSH_TIMEOUT_MS
+} from 'src/config/env';
 import { isTrulyEmpty } from 'src/tools/utils';
 import { LibraryTree, RootLibraryTree, UpdateLibRequest } from '_types';
 import IAppPathStore from '../interface/app-path-store';
+import IDocumentService from '../interface/document-service';
 import IFileSystem from '../interface/file-system';
 import ILibraryTreeStore from '../interface/library-tree-store';
 import ILibraryService from '../interface/library-service';
@@ -27,10 +33,15 @@ class LibraryService implements ILibraryService {
     @inject(TYPES.IFileSystem) private fileSystem: IFileSystem,
     @inject(TYPES.IAppPathStore) private appPathStore: IAppPathStore,
     @inject(TYPES.ILibraryTreeStore) private libraryTreeStore: ILibraryTreeStore,
-    @inject(TYPES.IPathResolver) private pathResolver: IPathResolver
+    @inject(TYPES.IPathResolver) private pathResolver: IPathResolver,
+    @inject(TYPES.IDocumentService) private documentService: IDocumentService
   ) {}
 
   async synchronizeLibrary(win?: BrowserWindow): Promise<void> {
+    if (!(await this.documentService.flushAll(WINDOW_CLOSE_FLUSH_TIMEOUT_MS))) {
+      throw new Error('同步文库前保存失败');
+    }
+
     const root = this.appPathStore.getRootDir();
     const rootLib: RootLibraryTree = { id: ROOT_LIBRARY_ID, children: [] };
 
@@ -96,6 +107,7 @@ class LibraryService implements ILibraryService {
 
           if (targetNode.type === 'file') {
             await this.fileSystem.removeFile(nodeInfo.fullPath);
+            this.documentService.removeDocument(targetNode.id);
           } else {
             if (targetNode.children.length > 0) {
               throw new Error('The folder content is not empty.');

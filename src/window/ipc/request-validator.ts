@@ -47,9 +47,12 @@ export function validateIpcRequest(value: unknown): IpcRequestValidation {
     case IPC_CHANNEL.UPDATE_CACHE:
       return validateUpdateCache(data, channel);
     case IPC_CHANNEL.GET_DOCUMENT_SESSION:
-      return validateGetDocumentSession(data, channel);
     case IPC_CHANNEL.FLUSH_DOCUMENT:
+    case IPC_CHANNEL.GET_RECOVERY_DRAFT:
+    case IPC_CHANNEL.RECOVER_DRAFT:
       return validateGetDocumentSession(data, channel);
+    case IPC_CHANNEL.DISCARD_RECOVERY_DRAFT:
+      return validateDiscardRecoveryDraft(data, channel);
     case IPC_CHANNEL.UPDATE_DOCUMENT_SESSION:
       return validateUpdateDocumentSession(data, channel);
     default:
@@ -144,6 +147,21 @@ function validateUpdateDocumentSession(data: unknown, type: IpcChannel): IpcRequ
   }
 
   return valid({ type, data: { id: data.id, content: data.content, revision: data.revision } } as AnyIpcRequest);
+}
+
+function validateDiscardRecoveryDraft(data: unknown, type: IpcChannel): IpcRequestValidation {
+  if (
+    !isRecord(data) ||
+    !isNonEmptyString(data.id) ||
+    typeof data.createdAt !== 'number' ||
+    !Number.isFinite(data.createdAt) ||
+    typeof data.revision !== 'number' ||
+    !Number.isFinite(data.revision)
+  ) {
+    return invalid('Discard recovery draft request requires id, createdAt, and revision.');
+  }
+
+  return valid({ type, data: { id: data.id, createdAt: data.createdAt, revision: data.revision } } as AnyIpcRequest);
 }
 
 function validateUpdateLib(data: unknown, type: IpcChannel): IpcRequestValidation {

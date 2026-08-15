@@ -61,6 +61,21 @@ class SaveScheduler implements ISaveScheduler {
     await entry.running;
   }
 
+  cancel(id: string): void {
+    const entry = this.entries.get(id);
+    if (!entry) {
+      return;
+    }
+    if (entry.timer) {
+      clearTimeout(entry.timer);
+      entry.timer = undefined;
+    }
+    entry.pending = undefined;
+    if (!entry.running) {
+      this.entries.delete(id);
+    }
+  }
+
   async flushAll(timeoutMs: number): Promise<boolean> {
     const flushPromise = Promise.all(Array.from(this.entries.keys(), id => this.flush(id))).then(() => true);
     let timeout: ReturnType<typeof setTimeout>;

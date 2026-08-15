@@ -7,6 +7,7 @@ import IDocumentCacheService from '../interface/document-cache-service';
 import IDocumentSessionService from '../interface/document-session-service';
 import IMainWindowFactory from '../interface/main-window-factory';
 import IMenuStateStore from '../interface/menu-state-store';
+import IRecoveryDraftService from '../interface/recovery-draft-service';
 import IWindowCloseController from '../interface/window-close-controller';
 import IWindowRegistry from '../interface/window-registry';
 import IWorkspaceService from '../interface/workspace-service';
@@ -17,6 +18,7 @@ describe('WindowSessionCoordinator', () => {
   let documentSessions: jest.Mocked<Pick<IDocumentSessionService, 'destroy'>>;
   let menuStateStore: jest.Mocked<Pick<IMenuStateStore, 'reset'>>;
   let menu: jest.Mocked<Pick<IAppMenu, 'createMenu'>>;
+  let recoveryDrafts: jest.Mocked<Pick<IRecoveryDraftService, 'initialize' | 'destroy'>>;
   let windowFactory: jest.Mocked<IMainWindowFactory>;
   let windowCloseController: jest.Mocked<IWindowCloseController>;
   let windowRegistry: jest.Mocked<Pick<IWindowRegistry, 'setCurrentWindow' | 'clearCurrentWindow'>>;
@@ -68,6 +70,10 @@ describe('WindowSessionCoordinator', () => {
     workspaceService = {
       initWorkspace: jest.fn().mockResolvedValue(undefined)
     };
+    recoveryDrafts = {
+      initialize: jest.fn().mockResolvedValue(undefined),
+      destroy: jest.fn()
+    };
     coordinator = new WindowSessionCoordinator(
       cache as unknown as IDocumentCacheService,
       menuStateStore as unknown as IMenuStateStore,
@@ -76,7 +82,8 @@ describe('WindowSessionCoordinator', () => {
       windowCloseController,
       windowRegistry as unknown as IWindowRegistry,
       workspaceService,
-      documentSessions as unknown as IDocumentSessionService
+      documentSessions as unknown as IDocumentSessionService,
+      recoveryDrafts as unknown as IRecoveryDraftService
     );
   });
 
@@ -87,6 +94,7 @@ describe('WindowSessionCoordinator', () => {
     expect(windowRegistry.setCurrentWindow).toHaveBeenCalledWith(win);
     expect(cache.init).toHaveBeenCalled();
     expect(workspaceService.initWorkspace).toHaveBeenCalled();
+    expect(recoveryDrafts.initialize).toHaveBeenCalled();
     expect(menu.createMenu).toHaveBeenCalled();
     expect(menuStateStore.reset).toHaveBeenCalled();
     expect(windowCloseController.mount).toHaveBeenCalledWith(win, expect.any(Function));
@@ -100,6 +108,7 @@ describe('WindowSessionCoordinator', () => {
 
     expect(cache.destroy).toHaveBeenCalled();
     expect(documentSessions.destroy).toHaveBeenCalled();
+    expect(recoveryDrafts.destroy).toHaveBeenCalled();
     expect(windowRegistry.clearCurrentWindow).toHaveBeenCalledWith(win);
   });
 

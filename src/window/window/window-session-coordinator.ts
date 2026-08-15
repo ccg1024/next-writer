@@ -5,6 +5,7 @@ import IAppMenu from '../interface/app-menu';
 import IDocumentCacheService from '../interface/document-cache-service';
 import IDocumentSessionService from '../interface/document-session-service';
 import IMenuStateStore from '../interface/menu-state-store';
+import IRecoveryDraftService from '../interface/recovery-draft-service';
 import IMainWindowFactory from '../interface/main-window-factory';
 import IWindowCloseController from '../interface/window-close-controller';
 import IWindowRegistry from '../interface/window-registry';
@@ -29,7 +30,8 @@ class WindowSessionCoordinator implements IWindowSessionCoordinator {
     @inject(TYPES.IWindowCloseController) private windowCloseController: IWindowCloseController,
     @inject(TYPES.IWindowRegistry) private windowRegistry: IWindowRegistry,
     @inject(TYPES.IWorkspaceService) private workspaceService: IWorkspaceService,
-    @inject(TYPES.IDocumentSessionService) private documentSessions: IDocumentSessionService
+    @inject(TYPES.IDocumentSessionService) private documentSessions: IDocumentSessionService,
+    @inject(TYPES.IRecoveryDraftService) private recoveryDrafts: IRecoveryDraftService
   ) {
     this.createWindow = this.createWindow.bind(this);
   }
@@ -43,6 +45,7 @@ class WindowSessionCoordinator implements IWindowSessionCoordinator {
     this.windowRegistry.setCurrentWindow(this.win);
     this.cache.init();
     await this.workspaceService.initWorkspace();
+    await this.recoveryDrafts.initialize();
     this.menu.createMenu();
     this.menuStateStore.reset();
 
@@ -57,6 +60,7 @@ class WindowSessionCoordinator implements IWindowSessionCoordinator {
   destroy(): void {
     this.cache.destroy();
     this.documentSessions.destroy();
+    this.recoveryDrafts.destroy();
     this.windowRegistry.clearCurrentWindow(this.win);
     this.win = null;
   }

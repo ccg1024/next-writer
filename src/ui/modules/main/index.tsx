@@ -1,7 +1,7 @@
 import React, { FC, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ViewUpdate } from '@codemirror/view';
-import { App, Typography } from 'antd';
-import { DocumentSession } from '_types';
+import { App, Button, Modal, Typography } from 'antd';
+import { DocumentSession, RecoveryDraft } from '_types';
 import { isTrulyEmpty } from 'src/tools/utils';
 import { VerticalEmpty } from 'src/ui/components/antd/preset/empty';
 import useCodemirror, { InitialEditorState } from 'src/ui/hooks/useCodemirror';
@@ -13,6 +13,7 @@ import rendererGateway from 'src/ui/shared/ipc/renderer-gateway';
 import { useLibraryActions, useLibraryState } from 'src/ui/domain/library';
 import { useEditorActions } from 'src/ui/domain/editor';
 import { useRuntimeLayout } from 'src/ui/domain/runtime';
+import { findRendererNodeById } from 'src/ui/libs/renderer-tree';
 
 import './index.less';
 
@@ -25,13 +26,15 @@ const MAX_DESCRIPTION_LENGTH = 100 as const;
  */
 const Main: FC = () => {
   const { message } = App.useApp();
-  const { currentNote } = useLibraryState();
+  const { currentNote, libraryTree } = useLibraryState();
   const { runtimeConfig } = useRuntimeLayout();
   const [initialEditorState, setInitialEditorState] = useState<InitialEditorState>(null);
   const [typewriterMode, setTypewriterMode] = useState(false);
   const { patchCurrentNote, patchLibraryNode, renameNode, setLibraryTree } = useLibraryActions();
   const { setEditorView, syncOutlineFromView } = useEditorActions();
   const [session, setSession] = useState<DocumentSession | null>(null);
+  const [recoveryDraft, setRecoveryDraft] = useState<RecoveryDraft | null>(null);
+  const [recoveryDiffVisible, setRecoveryDiffVisible] = useState(false);
   const sessionRef = useRef<DocumentSession | null>(null);
   const sessionRevisionsRef = useRef(new Map<string, number>());
   const sessionUpdatesRef = useRef(new Map<string, Promise<unknown>>());
@@ -196,6 +199,54 @@ const Main: FC = () => {
 
   useRendererCommand('write-file', handleWriteFile);
 
+  const handleRecoverDraft = useCallback(async () => {
+    if (!currentNote?.id || !recoveryDraft) {
+      return;
+    }
+    const noteId = currentNote.id;
+    const response = await rendererGateway.recoverDraft({ id: noteId });
+    if (response.status !== 0 || activeNoteIdRef.current !== noteId) {
+      message.error(response.message || '恢复草稿失败');
+      return;
+    }
+
+    sessionRef.current = response.data;
+    sessionRevisionsRef.current.set(noteId, response.data.localRevision);
+    setSession(response.data);
+    setInitialEditorState({ initDoc: response.data.content });
+    patchCurrentNote({ isChange: isDocumentSessionModified(response.data) });
+    setRecoveryDraft(null);
+    setRecoveryDiffVisible(false);
+  }, [currentNote?.id, message, patchCurrentNote, recoveryDraft]);
+
+  const handleDiscardRecoveryDraft = useCallback(async () => {
+    if (!currentNote?.id) {
+      return;
+    }
+    const noteId = currentNote.id;
+    const response = await rendererGateway.discardRecoveryDraft({
+      id: noteId,
+      createdAt: recoveryDraft.createdAt,
+      revision: recoveryDraft.revision
+    });
+    if (response.status !== 0) {
+      message.error(response.message || '忽略草稿失败');
+      return;
+    }
+    if (!response.data.success) {
+      const latest = await rendererGateway.getRecoveryDraft({ id: noteId });
+      if (latest.status === 0 && activeNoteIdRef.current === noteId) {
+        setRecoveryDraft(latest.data);
+      }
+      message.warning('草稿已更新，请重新确认');
+      return;
+    }
+    if (activeNoteIdRef.current === noteId) {
+      setRecoveryDraft(null);
+      setRecoveryDiffVisible(false);
+    }
+  }, [currentNote?.id, message, recoveryDraft]);
+
   useRendererCommand('toggle-typewriter-mode', (_e, action) => {
     setTypewriterMode(Boolean(action.payload));
   });
@@ -214,15 +265,17 @@ const Main: FC = () => {
           clearTimeout(statusTimer);
           autoSaveStatusTimersRef.current.delete(previousId);
         }
-        void (async () => {
-          await sessionUpdatesRef.current.get(previousId);
-          const response = await rendererGateway.flushDocument({ id: previousId });
-          if (response.status === 0) {
-            setLibraryTree(response.data.libTree);
-          } else {
-            message.error(response.message || '切换文档前保存失败');
-          }
-        })();
+        if (findRendererNodeById(libraryTree, previousId)) {
+          void (async () => {
+            await sessionUpdatesRef.current.get(previousId);
+            const response = await rendererGateway.flushDocument({ id: previousId });
+            if (response.status === 0) {
+              setLibraryTree(response.data.libTree);
+            } else {
+              message.error(response.message || '切换文档前保存失败');
+            }
+          })();
+        }
         loadedNoteIdRef.current = undefined;
       }
       sessionRef.current = null;
@@ -233,6 +286,8 @@ const Main: FC = () => {
 
     sessionRef.current = null;
     setSession(null);
+    setRecoveryDraft(null);
+    setRecoveryDiffVisible(false);
     setInitialEditorState(null);
     let shouldUpdate = true;
     const readNote = async () => {
@@ -265,6 +320,10 @@ const Main: FC = () => {
         patchCurrentNote({ isChange: isDocumentSessionModified(data) });
         setInitialEditorState({ initDoc: data.content });
         loadedNoteIdRef.current = data.id;
+        const draftResponse = await rendererGateway.getRecoveryDraft({ id: data.id });
+        if (shouldUpdate && draftResponse.status === 0 && draftResponse.data?.content !== data.savedContent) {
+          setRecoveryDraft(draftResponse.data);
+        }
       }
     };
 
@@ -352,12 +411,44 @@ const Main: FC = () => {
         </span>
         {session?.status === 'save-error' && <span className="document-session-error">{session.lastError}</span>}
       </div>
+      {recoveryDraft && (
+        <div className="recovery-draft-notice">
+          <span>发现 {new Date(recoveryDraft.createdAt).toLocaleString()} 的未保存草稿</span>
+          <Button type="link" size="small" onClick={handleRecoverDraft}>
+            恢复草稿
+          </Button>
+          <Button type="link" size="small" onClick={() => setRecoveryDiffVisible(true)}>
+            查看差异
+          </Button>
+          <Button type="link" size="small" danger onClick={handleDiscardRecoveryDraft}>
+            忽略草稿
+          </Button>
+        </div>
+      )}
       {/* put codemirror here */}
       <div
         ref={divRef}
         className="next-writer-editor-wrapper"
         style={session?.id === currentNote.id ? undefined : { display: 'none' }}
       ></div>
+      <Modal
+        title="草稿与磁盘内容"
+        open={recoveryDiffVisible}
+        footer={null}
+        width={900}
+        onCancel={() => setRecoveryDiffVisible(false)}
+      >
+        <div className="recovery-draft-diff">
+          <section>
+            <strong>磁盘版本</strong>
+            <pre>{session?.savedContent}</pre>
+          </section>
+          <section>
+            <strong>恢复草稿</strong>
+            <pre>{recoveryDraft?.content}</pre>
+          </section>
+        </div>
+      </Modal>
     </div>
   );
 };

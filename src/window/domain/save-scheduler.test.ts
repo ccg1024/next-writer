@@ -74,4 +74,15 @@ describe('SaveScheduler', () => {
     await expect(retried).resolves.toBeUndefined();
     expect(writes).toEqual(['retried']);
   });
+
+  it('cancels a pending delayed save', async () => {
+    const scheduler = new SaveScheduler();
+    const task = jest.fn().mockResolvedValue(undefined);
+    scheduler.schedule('note', 1000, task);
+
+    scheduler.cancel('note');
+    await jest.advanceTimersByTimeAsync(1000);
+
+    expect(task).not.toHaveBeenCalled();
+  });
 });

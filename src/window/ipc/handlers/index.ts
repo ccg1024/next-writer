@@ -9,3 +9,6 @@ export { default as UpdateCacheHandler } from './update-cache-handler';
 export { default as GetDocumentSessionHandler } from './get-document-session-handler';
 export { default as FlushDocumentHandler } from './flush-document-handler';
 export { default as UpdateDocumentSessionHandler } from './update-document-session-handler';
+export { default as GetRecoveryDraftHandler } from './get-recovery-draft-handler';
+export { default as RecoverDraftHandler } from './recover-draft-handler';
+export { default as DiscardRecoveryDraftHandler } from './discard-recovery-draft-handler';

@@ -34,6 +34,9 @@ export interface IPC {
   getDocumentSession: (data: GetDocumentSessionRequest) => Promise<Response<GetDocumentSessionResponse>>;
   updateDocumentSession: (data: UpdateDocumentSessionRequest) => Promise<Response<UpdateDocumentSessionResponse>>;
   flushDocument: (data: FlushDocumentRequest) => Promise<Response<FlushDocumentResponse>>;
+  getRecoveryDraft: (data: GetRecoveryDraftRequest) => Promise<Response<GetRecoveryDraftResponse>>;
+  recoverDraft: (data: RecoverDraftRequest) => Promise<Response<RecoverDraftResponse>>;
+  discardRecoveryDraft: (data: DiscardRecoveryDraftRequest) => Promise<Response<{ success: boolean }>>;
   rendererListener: (cb: RendererListenerCallback) => () => void;
 }
 
@@ -70,6 +73,18 @@ export type DocumentSession = {
   diskModifiedTime?: number;
   lastSavedAt?: number;
   lastError?: string;
+};
+
+export type RecoveryDraftSource = 'periodic-snapshot' | 'save-failure' | 'close-timeout';
+
+export type RecoveryDraft = {
+  version: 1;
+  documentId: string;
+  originalPath: string;
+  content: string;
+  revision: number;
+  createdAt: number;
+  source: RecoveryDraftSource;
 };
 
 declare global {
@@ -241,6 +256,24 @@ export type UpdateDocumentSessionRequest = {
 };
 
 export type UpdateDocumentSessionResponse = DocumentSession;
+
+export type GetRecoveryDraftRequest = {
+  id: string;
+};
+
+export type GetRecoveryDraftResponse = RecoveryDraft | null;
+
+export type RecoverDraftRequest = {
+  id: string;
+};
+
+export type RecoverDraftResponse = DocumentSession;
+
+export type DiscardRecoveryDraftRequest = {
+  id: string;
+  createdAt: number;
+  revision: number;
+};
 // ============================================================
 // end -- just for ipc communication
 // ============================================================

@@ -64,6 +64,18 @@ contextBridge.exposeInMainWorld('ipc', {
     return post({ type: IPC_CHANNEL.FLUSH_DOCUMENT, data });
   },
 
+  getRecoveryDraft(data: unknown) {
+    return post({ type: IPC_CHANNEL.GET_RECOVERY_DRAFT, data });
+  },
+
+  recoverDraft(data: unknown) {
+    return post({ type: IPC_CHANNEL.RECOVER_DRAFT, data });
+  },
+
+  discardRecoveryDraft(data: unknown) {
+    return post({ type: IPC_CHANNEL.DISCARD_RECOVERY_DRAFT, data });
+  },
+
   /** 订阅主进程发出的菜单命令，并返回精确移除当前监听器的清理函数。 */
   rendererListener: (cb: CallbackFunction) => {
     const listener = (_event: IpcRendererEvent, action: unknown) => cb(action);

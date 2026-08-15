@@ -10,6 +10,7 @@ import FileSystem from '../infrastructure/file-system';
 import IAppPathStore from '../interface/app-path-store';
 import IDocumentCacheService from '../interface/document-cache-service';
 import ILibraryTreeStore from '../interface/library-tree-store';
+import IRecoveryDraftService from '../interface/recovery-draft-service';
 import DocumentService from './document-service';
 import DocumentSessionService from './document-session-service';
 import SaveScheduler from './save-scheduler';
@@ -60,6 +61,7 @@ describe('DocumentService cache revisions', () => {
   let cache: MemoryCache;
   let service: DocumentService;
   let renderConfigStore: RenderConfigStore;
+  let recoveryDrafts: jest.Mocked<IRecoveryDraftService>;
   let saveScheduler: SaveScheduler;
   let fileSystem: FileSystem;
 
@@ -85,6 +87,7 @@ describe('DocumentService cache revisions', () => {
     renderConfigStore.setConfig({ autoSave: { enabled: false, delayMs: 1000 } });
     saveScheduler = new SaveScheduler();
     fileSystem = new FileSystem();
+    recoveryDrafts = createRecoveryDraftService();
     service = new DocumentService(
       fileSystem,
       createAppPathStore(),
@@ -92,7 +95,8 @@ describe('DocumentService cache revisions', () => {
       cache,
       new DocumentSessionService(),
       renderConfigStore,
-      saveScheduler
+      saveScheduler,
+      recoveryDrafts
     );
   });
 
@@ -140,6 +144,10 @@ describe('DocumentService cache revisions', () => {
       savedRevision: 0
     });
     expect(cache.hasModified()).toBe(true);
+    expect(recoveryDrafts.save).toHaveBeenCalledWith(
+      expect.objectContaining({ content: 'unsaved draft' }),
+      'save-failure'
+    );
   });
 
   it('ignores stale dirty cache updates that arrive after a save', async () => {
@@ -165,6 +173,10 @@ describe('DocumentService cache revisions', () => {
       revision: 3
     });
     expect(cache.hasModified()).toBe(true);
+    expect(recoveryDrafts.discard).not.toHaveBeenCalled();
+    expect(recoveryDrafts.scheduleSnapshot).toHaveBeenCalledWith(
+      expect.objectContaining({ content: 'newer dirty content' })
+    );
   });
 
   it('keeps cache identity stable after a file is renamed in the library tree', async () => {
@@ -240,6 +252,44 @@ describe('DocumentService cache revisions', () => {
     });
   });
 
+  it('cleans recovery state when edits return to the saved content', async () => {
+    await service.updateSession({ id: 'note-id', content: 'draft', revision: 1 });
+    await service.updateSession({ id: 'note-id', content: 'saved', revision: 2 });
+
+    expect(recoveryDrafts.discard).toHaveBeenCalledWith('note-id');
+    await expect(service.getSession({ id: 'note-id' })).resolves.toMatchObject({
+      content: 'saved',
+      status: 'saved'
+    });
+  });
+
+  it('keeps the close timeout bounded when recovery storage and disk writes do not finish', async () => {
+    jest.useFakeTimers();
+    try {
+      await service.updateSession({ id: 'note-id', content: 'draft', revision: 1 });
+      recoveryDrafts.save.mockImplementation(() => new Promise(() => undefined));
+      jest.spyOn(fileSystem, 'writeFile').mockImplementation(() => new Promise(() => undefined));
+
+      const result = service.flushAll(100);
+      await jest.advanceTimersByTimeAsync(100);
+
+      await expect(result).resolves.toBe(false);
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it('removes deleted documents from session, cache, pending saves, and recovery state', async () => {
+    await service.updateSession({ id: 'note-id', content: 'draft', revision: 1 });
+    const cancel = jest.spyOn(saveScheduler, 'cancel');
+
+    service.removeDocument('note-id');
+
+    expect(cancel).toHaveBeenCalledWith('note-id');
+    expect(cache.getCache('note-id')).toBeNull();
+    expect(recoveryDrafts.discard).toHaveBeenCalledWith('note-id');
+  });
+
   it('saves an opened note after its parent folder is renamed', async () => {
     const oldFolderPath = nodePath.join(rootDir, 'drafts');
     const newFolderPath = nodePath.join(rootDir, 'archive');
@@ -310,6 +360,25 @@ describe('DocumentService cache revisions', () => {
       async updateTree<T>(updater: (tree: RootLibraryTree) => T | Promise<T>): Promise<T> {
         return updater(libraryTree);
       }
+    };
+  }
+
+  function createRecoveryDraftService(): jest.Mocked<IRecoveryDraftService> {
+    return {
+      initialize: jest.fn().mockResolvedValue(undefined),
+      get: jest.fn().mockReturnValue(null),
+      save: jest.fn().mockImplementation(async session => ({
+        version: 1,
+        documentId: session.id,
+        originalPath: session.path,
+        content: session.content,
+        revision: session.localRevision,
+        createdAt: Date.now(),
+        source: 'save-failure'
+      })),
+      scheduleSnapshot: jest.fn(),
+      discard: jest.fn().mockResolvedValue(true),
+      destroy: jest.fn()
     };
   }
 });

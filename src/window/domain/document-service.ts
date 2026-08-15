@@ -5,6 +5,7 @@ import {
   GetDocumentSessionRequest,
   ReadFileRequest,
   ReadFileResponse,
+  RecoveryDraft,
   RootLibraryTree,
   UpdateCacheRequest,
   UpdateDocumentSessionRequest,
@@ -17,6 +18,7 @@ import ILibraryTreeStore from '../interface/library-tree-store';
 import IDocumentService from '../interface/document-service';
 import IDocumentSessionService from '../interface/document-session-service';
 import IRenderConfigStore from '../interface/render-config-store';
+import IRecoveryDraftService from '../interface/recovery-draft-service';
 import ISaveScheduler from '../interface/save-scheduler';
 import { isLibraryTreeNode, persistLibTree, resolveLibraryNodePath } from '../utils/lib-tree-utils';
 import { TYPES } from '../types';
@@ -33,7 +35,8 @@ class DocumentService implements IDocumentService {
     @inject(TYPES.IDocumentCacheService) private cache: IDocumentCacheService,
     @inject(TYPES.IDocumentSessionService) private sessions: IDocumentSessionService,
     @inject(TYPES.IRenderConfigStore) private renderConfigStore: IRenderConfigStore,
-    @inject(TYPES.ISaveScheduler) private saveScheduler: ISaveScheduler
+    @inject(TYPES.ISaveScheduler) private saveScheduler: ISaveScheduler,
+    @inject(TYPES.IRecoveryDraftService) private recoveryDrafts: IRecoveryDraftService
   ) {}
 
   async readFile(data: ReadFileRequest): Promise<ReadFileResponse> {
@@ -66,6 +69,8 @@ class DocumentService implements IDocumentService {
   }
 
   async flushAll(timeoutMs: number): Promise<boolean> {
+    // 关闭开始时立即备份，不让恢复目录 IO 延长保存调度器的超时上限。
+    void this.saveCloseRecoveryDrafts();
     this.sessions.getAll().forEach(session => {
       if (session.content !== session.savedContent) {
         this.saveScheduler.schedule(session.id, 0, () => this.persistCurrentSession(session.id).then(() => undefined));
@@ -76,6 +81,15 @@ class DocumentService implements IDocumentService {
     } catch {
       return false;
     }
+  }
+
+  private async saveCloseRecoveryDrafts(): Promise<void> {
+    await Promise.all(
+      this.sessions
+        .getAll()
+        .filter(session => session.content !== session.savedContent)
+        .map(session => this.recoveryDrafts.save(session, 'close-timeout').catch(() => undefined))
+    );
   }
 
   private async persistDocument(data: WriteFileRequest): Promise<RootLibraryTree> {
@@ -104,11 +118,18 @@ class DocumentService implements IDocumentService {
         const newStat = await this.fileSystem.stat(pathInfo.fullPath);
         const savedSession = this.sessions.completeSave(id, content, savingSession.localRevision, newStat.mtimeMs);
         this.syncCache(savedSession);
+        if (savedSession.content === savedSession.savedContent) {
+          void this.recoveryDrafts.discard(id).catch(() => undefined);
+        } else {
+          this.recoveryDrafts.scheduleSnapshot(savedSession);
+        }
         pathInfo.node.modifiedTime = newStat.mtime.toLocaleString();
         pathInfo.node.description = content.substring(0, MAX_FILE_DESCRIPTION_LENGTH);
       } catch (error) {
         const message = error instanceof Error ? error.message : '保存文件失败';
-        this.syncCache(this.sessions.failSave(id, message, savingSession.localRevision));
+        const failedSession = this.sessions.failSave(id, message, savingSession.localRevision);
+        this.syncCache(failedSession);
+        await this.recoveryDrafts.save(failedSession, 'save-failure').catch(() => undefined);
         throw new Error('保存文件失败');
       }
 
@@ -127,7 +148,7 @@ class DocumentService implements IDocumentService {
 
     const nextSession = this.sessions.updateContent(id, content, revision);
     this.syncCache(nextSession);
-    this.scheduleAutoSave(nextSession);
+    this.scheduleSessionPersistence(nextSession);
 
     return { success: true };
   }
@@ -148,8 +169,41 @@ class DocumentService implements IDocumentService {
 
     const nextSession = this.sessions.updateContent(id, content, revision);
     this.syncCache(nextSession);
-    this.scheduleAutoSave(nextSession);
+    this.scheduleSessionPersistence(nextSession);
     return nextSession;
+  }
+
+  async getRecoveryDraft(id: string): Promise<RecoveryDraft | null> {
+    await this.getSession({ id });
+    return this.recoveryDrafts.get(id);
+  }
+
+  async recoverDraft(id: string): Promise<DocumentSession> {
+    const currentSession = await this.getSession({ id });
+    const draft = this.recoveryDrafts.get(id);
+    if (!draft) {
+      throw new Error('恢复草稿不存在');
+    }
+
+    const recoveredSession = this.sessions.updateContent(
+      id,
+      draft.content,
+      Math.max(currentSession.localRevision + 1, draft.revision)
+    );
+    this.syncCache(recoveredSession);
+    this.scheduleAutoSave(recoveredSession);
+    return recoveredSession;
+  }
+
+  async discardRecoveryDraft(id: string, createdAt: number, revision: number): Promise<{ success: boolean }> {
+    return { success: await this.recoveryDrafts.discard(id, { createdAt, revision }) };
+  }
+
+  removeDocument(id: string): void {
+    this.saveScheduler.cancel(id);
+    this.sessions.remove(id);
+    this.cache.removeCache(id);
+    void this.recoveryDrafts.discard(id).catch(() => undefined);
   }
 
   private persistCurrentSession(id: string): Promise<RootLibraryTree> {
@@ -174,6 +228,16 @@ class DocumentService implements IDocumentService {
     this.saveScheduler.schedule(session.id, delayMs, () =>
       this.persistCurrentSession(session.id).then(() => undefined)
     );
+  }
+
+  private scheduleSessionPersistence(session: DocumentSession): void {
+    if (session.content === session.savedContent) {
+      this.saveScheduler.cancel(session.id);
+      void this.recoveryDrafts.discard(session.id).catch(() => undefined);
+      return;
+    }
+    this.recoveryDrafts.scheduleSnapshot(session);
+    this.scheduleAutoSave(session);
   }
 
   private async ensureSession(id: string, path: string): Promise<DocumentSession> {

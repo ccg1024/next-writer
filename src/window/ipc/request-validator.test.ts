@@ -20,6 +20,18 @@ describe('validateIpcRequest', () => {
         data: { id: 'note-id', content: 'content', revision: 1 }
       })
     ).toMatchObject({ valid: true });
+    expect(validateIpcRequest({ type: IPC_CHANNEL.GET_RECOVERY_DRAFT, data: { id: 'note-id' } })).toMatchObject({
+      valid: true
+    });
+    expect(validateIpcRequest({ type: IPC_CHANNEL.RECOVER_DRAFT, data: { id: 'note-id' } })).toMatchObject({
+      valid: true
+    });
+    expect(
+      validateIpcRequest({
+        type: IPC_CHANNEL.DISCARD_RECOVERY_DRAFT,
+        data: { id: 'note-id', createdAt: 10, revision: 2 }
+      })
+    ).toMatchObject({ valid: true });
     expect(
       validateIpcRequest({
         type: IPC_CHANNEL.UPDATE_CACHE,

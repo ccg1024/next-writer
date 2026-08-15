@@ -1,12 +1,16 @@
 import type {
   ApplyThemeRequest,
+  DiscardRecoveryDraftRequest,
   DocumentSession,
   FlushDocumentRequest,
   FlushDocumentResponse,
   GetDocumentSessionRequest,
+  GetRecoveryDraftRequest,
+  GetRecoveryDraftResponse,
   ReadConfigResponse,
   ReadFileRequest,
   ReadFileResponse,
+  RecoverDraftRequest,
   RootLibraryTree,
   RuntimeConfigResponse,
   ThemeStateResponse,
@@ -33,7 +37,10 @@ export const IPC_CHANNEL = {
   UPDATE_CACHE: 'update-cache',
   GET_DOCUMENT_SESSION: 'get-document-session',
   UPDATE_DOCUMENT_SESSION: 'update-document-session',
-  FLUSH_DOCUMENT: 'flush-document'
+  FLUSH_DOCUMENT: 'flush-document',
+  GET_RECOVERY_DRAFT: 'get-recovery-draft',
+  RECOVER_DRAFT: 'recover-draft',
+  DISCARD_RECOVERY_DRAFT: 'discard-recovery-draft'
 } as const;
 
 export type IpcChannel = (typeof IPC_CHANNEL)[keyof typeof IPC_CHANNEL];
@@ -50,6 +57,9 @@ type IpcRequestMap = {
   [IPC_CHANNEL.GET_DOCUMENT_SESSION]: GetDocumentSessionRequest;
   [IPC_CHANNEL.UPDATE_DOCUMENT_SESSION]: UpdateDocumentSessionRequest;
   [IPC_CHANNEL.FLUSH_DOCUMENT]: FlushDocumentRequest;
+  [IPC_CHANNEL.GET_RECOVERY_DRAFT]: GetRecoveryDraftRequest;
+  [IPC_CHANNEL.RECOVER_DRAFT]: RecoverDraftRequest;
+  [IPC_CHANNEL.DISCARD_RECOVERY_DRAFT]: DiscardRecoveryDraftRequest;
 };
 
 type IpcResponseMap = {
@@ -64,6 +74,9 @@ type IpcResponseMap = {
   [IPC_CHANNEL.GET_DOCUMENT_SESSION]: DocumentSession;
   [IPC_CHANNEL.UPDATE_DOCUMENT_SESSION]: DocumentSession;
   [IPC_CHANNEL.FLUSH_DOCUMENT]: FlushDocumentResponse;
+  [IPC_CHANNEL.GET_RECOVERY_DRAFT]: GetRecoveryDraftResponse;
+  [IPC_CHANNEL.RECOVER_DRAFT]: DocumentSession;
+  [IPC_CHANNEL.DISCARD_RECOVERY_DRAFT]: { success: boolean };
 };
 
 export type IpcRequestData<C extends IpcChannel> = IpcRequestMap[C];

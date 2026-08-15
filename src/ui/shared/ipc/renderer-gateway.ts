@@ -1,8 +1,11 @@
 import {
   ApplyThemeRequest,
+  DiscardRecoveryDraftRequest,
   FlushDocumentRequest,
   GetDocumentSessionRequest,
+  GetRecoveryDraftRequest,
   ReadFileRequest,
+  RecoverDraftRequest,
   UpdateCacheRequest,
   UpdateDocumentSessionRequest,
   UpdateLibRequest,
@@ -56,6 +59,18 @@ async function flushDocument(data: FlushDocumentRequest) {
   return window.ipc.flushDocument(data);
 }
 
+async function getRecoveryDraft(data: GetRecoveryDraftRequest) {
+  return window.ipc.getRecoveryDraft(data);
+}
+
+async function recoverDraft(data: RecoverDraftRequest) {
+  return window.ipc.recoverDraft(data);
+}
+
+async function discardRecoveryDraft(data: DiscardRecoveryDraftRequest) {
+  return window.ipc.discardRecoveryDraft(data);
+}
+
 const rendererGateway = {
   readConfig,
   listThemes,
@@ -67,7 +82,10 @@ const rendererGateway = {
   updateCache,
   getDocumentSession,
   updateDocumentSession,
-  flushDocument
+  flushDocument,
+  getRecoveryDraft,
+  recoverDraft,
+  discardRecoveryDraft
 };
 
 export default rendererGateway;

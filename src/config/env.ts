@@ -25,6 +25,9 @@ export const MAX_FILE_DESCRIPTION_LENGTH = 100;
 
 export const DEFAULT_AUTO_SAVE_DELAY_MS = 1000;
 export const WINDOW_CLOSE_FLUSH_TIMEOUT_MS = 3000;
+export const RECOVERY_DRAFT_DIR_NAME = 'recovery-drafts';
+export const RECOVERY_DRAFT_SNAPSHOT_DELAY_MS = 1000;
+export const RECOVERY_DRAFT_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
 
 // Default config
 export const NW_CONFIG = {

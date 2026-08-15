@@ -9,6 +9,7 @@ import { RootLibraryTree } from '_types';
 import FileSystem from '../infrastructure/file-system';
 import PathResolver from '../infrastructure/path-resolver';
 import IAppPathStore from '../interface/app-path-store';
+import IDocumentService from '../interface/document-service';
 import ILibraryTreeStore from '../interface/library-tree-store';
 import LibraryService from './library-service';
 
@@ -16,6 +17,7 @@ describe('LibraryService ID based operations', () => {
   let rootDir: string;
   let libraryTree: RootLibraryTree;
   let service: LibraryService;
+  let documentService: jest.Mocked<Pick<IDocumentService, 'flushAll' | 'removeDocument'>>;
 
   beforeEach(async () => {
     rootDir = await nodeFs.promises.mkdtemp(nodePath.join(nodeOs.tmpdir(), 'next-writer-library-'));
@@ -24,11 +26,13 @@ describe('LibraryService ID based operations', () => {
       children: []
     };
     const appPathStore = createAppPathStore();
+    documentService = { flushAll: jest.fn().mockResolvedValue(true), removeDocument: jest.fn() };
     service = new LibraryService(
       new FileSystem(),
       appPathStore,
       createLibraryTreeStore(),
-      new PathResolver(appPathStore)
+      new PathResolver(appPathStore),
+      documentService as unknown as IDocumentService
     );
   });
 
@@ -138,6 +142,34 @@ describe('LibraryService ID based operations', () => {
     await expect(service.updateLibrary({ operate: 'rename', id: 'note-id', name: 'bad/name' })).rejects.toThrow(
       'The library name cannot contain path separators.'
     );
+  });
+
+  it('cleans document state after deleting a note', async () => {
+    await nodeFs.promises.writeFile(nodePath.join(rootDir, 'note.md'), 'content');
+    libraryTree.children = [
+      {
+        id: 'note-id',
+        name: 'note',
+        type: 'file',
+        birthTime: '',
+        modifiedTime: '',
+        children: []
+      }
+    ];
+
+    const result = await service.updateLibrary({ operate: 'del', id: 'note-id' });
+
+    expect(result.children).toEqual([]);
+    expect(documentService.removeDocument).toHaveBeenCalledWith('note-id');
+    await expect(nodeFs.promises.stat(nodePath.join(rootDir, 'note.md'))).rejects.toThrow();
+  });
+
+  it('does not synchronize or reload the workspace when pending documents cannot be flushed', async () => {
+    documentService.flushAll.mockResolvedValue(false);
+
+    await expect(service.synchronizeLibrary()).rejects.toThrow('同步文库前保存失败');
+
+    expect(documentService.flushAll).toHaveBeenCalledWith(3000);
   });
 
   function createAppPathStore(): IAppPathStore {
