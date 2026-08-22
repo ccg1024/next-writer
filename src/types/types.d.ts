@@ -13,6 +13,7 @@ const RENDERER_LISTENER_ACTIONS = [
   'write-file',
   'external-document-change',
   'search-workspace',
+  'open-document-shortcuts',
   'toggle-toc',
   'toggle-lib',
   'toggle-lib-detail',
@@ -44,6 +45,8 @@ export interface IPC {
   ) => Promise<Response<ResolveDocumentConflictResponse>>;
   saveDocumentCopy: (data: SaveDocumentCopyRequest) => Promise<Response<SaveDocumentCopyResponse>>;
   searchWorkspace: (data: WorkspaceSearchRequest) => Promise<Response<WorkspaceSearchResponse>>;
+  getWorkspaceMetadata: () => Promise<Response<WorkspaceMetadata>>;
+  updateWorkspaceMetadata: (data: UpdateWorkspaceMetadataRequest) => Promise<Response<WorkspaceMetadata>>;
   rendererListener: (cb: RendererListenerCallback) => () => void;
 }
 
@@ -209,7 +212,28 @@ export type ReadFileRequest = {
 
 export type ReadFileResponse = {
   content: string;
+  session: DocumentSession;
 };
+
+export type WorkspaceRecentDocument = {
+  id: string;
+  path: string;
+  openedAt: number;
+};
+
+export type WorkspaceMetadata = {
+  version: 1;
+  recent: WorkspaceRecentDocument[];
+  favoriteIds: string[];
+  pinnedIds: string[];
+  recentLimit: number;
+  invalidPathsCleanedAt: number;
+};
+
+export type UpdateWorkspaceMetadataRequest =
+  | { action: 'set-favorite'; id: string; value: boolean }
+  | { action: 'set-pinned'; id: string; value: boolean }
+  | { action: 'clear-recent' };
 
 export type WriteFileRequest = {
   id: string;

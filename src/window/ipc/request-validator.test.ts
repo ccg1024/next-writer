@@ -20,6 +20,16 @@ describe('validateIpcRequest', () => {
         data: { id: 'note-id', content: 'content', revision: 1 }
       })
     ).toMatchObject({ valid: true });
+    expect(validateIpcRequest({ type: IPC_CHANNEL.GET_WORKSPACE_METADATA })).toMatchObject({ valid: true });
+    expect(
+      validateIpcRequest({
+        type: IPC_CHANNEL.UPDATE_WORKSPACE_METADATA,
+        data: { action: 'set-favorite', id: 'note-id', value: true }
+      })
+    ).toMatchObject({ valid: true });
+    expect(
+      validateIpcRequest({ type: IPC_CHANNEL.UPDATE_WORKSPACE_METADATA, data: { action: 'clear-recent' } })
+    ).toMatchObject({ valid: true });
     expect(
       validateIpcRequest({
         type: IPC_CHANNEL.SEARCH_WORKSPACE,
@@ -173,5 +183,11 @@ describe('validateIpcRequest', () => {
       valid: false,
       message: 'Workspace search options are invalid.'
     });
+  });
+
+  it('rejects invalid workspace metadata updates', () => {
+    expect(
+      validateIpcRequest({ type: IPC_CHANNEL.UPDATE_WORKSPACE_METADATA, data: { action: 'set-pinned', id: '' } })
+    ).toEqual({ valid: false, message: 'Workspace metadata update is invalid.' });
   });
 });

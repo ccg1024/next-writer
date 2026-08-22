@@ -17,6 +17,7 @@ import ILibraryTreeStore from '../interface/library-tree-store';
 import ILibraryService from '../interface/library-service';
 import IPathResolver from '../interface/path-resolver';
 import IWorkspaceIndexService from '../interface/workspace-index-service';
+import IWorkspaceMetadataService from '../interface/workspace-metadata-service';
 import {
   createLibraryNodeId,
   isLibraryTreeNode,
@@ -36,7 +37,8 @@ class LibraryService implements ILibraryService {
     @inject(TYPES.ILibraryTreeStore) private libraryTreeStore: ILibraryTreeStore,
     @inject(TYPES.IPathResolver) private pathResolver: IPathResolver,
     @inject(TYPES.IDocumentService) private documentService: IDocumentService,
-    @inject(TYPES.IWorkspaceIndexService) private workspaceIndex: IWorkspaceIndexService
+    @inject(TYPES.IWorkspaceIndexService) private workspaceIndex: IWorkspaceIndexService,
+    @inject(TYPES.IWorkspaceMetadataService) private workspaceMetadata: IWorkspaceMetadataService
   ) {}
 
   async synchronizeLibrary(win?: BrowserWindow): Promise<void> {
@@ -55,6 +57,7 @@ class LibraryService implements ILibraryService {
 
     await this.fileSystem.writeFile(nodePath.resolve(root, ROOT_CONFIG_NAME), JSON.stringify(rootLib, null, 2));
     this.libraryTreeStore.setTree(rootLib);
+    await this.workspaceMetadata.syncLibraryTree(rootLib).catch(() => undefined);
     win?.webContents.reload();
   }
 
@@ -163,6 +166,7 @@ class LibraryService implements ILibraryService {
       return libTree;
     });
     this.documentService.refreshSessionPaths(result);
+    await this.workspaceMetadata.syncLibraryTree(result).catch(() => undefined);
     void this.workspaceIndex.rebuild().catch(() => undefined);
     return result;
   }

@@ -6,6 +6,8 @@ import IWorkspaceFileWatcher from '../interface/workspace-file-watcher';
 import WorkspaceFileWatcher from '../infrastructure/workspace-file-watcher';
 import IWorkspaceIndexService from '../interface/workspace-index-service';
 import WorkspaceIndexService from '../domain/workspace-index-service';
+import IWorkspaceMetadataService from '../interface/workspace-metadata-service';
+import WorkspaceMetadataService from '../domain/workspace-metadata-service';
 import IAppPathStore from '../interface/app-path-store';
 import AppPathStore from '../state/app-path-store';
 import IRenderConfigStore from '../interface/render-config-store';
@@ -73,6 +75,8 @@ import {
   ResolveDocumentConflictHandler,
   SaveDocumentCopyHandler,
   SearchWorkspaceHandler,
+  GetWorkspaceMetadataHandler,
+  UpdateWorkspaceMetadataHandler,
   RuntimeHandler,
   UpdateCacheHandler,
   UpdateDocumentSessionHandler,
@@ -115,6 +119,10 @@ container.bind<ISaveScheduler>(TYPES.ISaveScheduler).to(SaveScheduler).inSinglet
 container.bind<IRecoveryDraftService>(TYPES.IRecoveryDraftService).to(RecoveryDraftService).inSingletonScope();
 container.bind<IWorkspaceFileWatcher>(TYPES.IWorkspaceFileWatcher).to(WorkspaceFileWatcher).inSingletonScope();
 container.bind<IWorkspaceIndexService>(TYPES.IWorkspaceIndexService).to(WorkspaceIndexService).inSingletonScope();
+container
+  .bind<IWorkspaceMetadataService>(TYPES.IWorkspaceMetadataService)
+  .to(WorkspaceMetadataService)
+  .inSingletonScope();
 container.bind<IMenuActionService>(TYPES.IMenuActionService).to(MenuActionService).inSingletonScope();
 container.bind<IThemeService>(TYPES.IThemeService).to(ThemeService).inSingletonScope();
 container.bind<ISenderValidator>(TYPES.ISenderValidator).to(SenderValidator).inSingletonScope();
@@ -136,5 +144,7 @@ container.bind<IIpcHandler>(TYPES.IIpcHandler).to(DiscardRecoveryDraftHandler).i
 container.bind<IIpcHandler>(TYPES.IIpcHandler).to(ResolveDocumentConflictHandler).inSingletonScope();
 container.bind<IIpcHandler>(TYPES.IIpcHandler).to(SaveDocumentCopyHandler).inSingletonScope();
 container.bind<IIpcHandler>(TYPES.IIpcHandler).to(SearchWorkspaceHandler).inSingletonScope();
+container.bind<IIpcHandler>(TYPES.IIpcHandler).to(GetWorkspaceMetadataHandler).inSingletonScope();
+container.bind<IIpcHandler>(TYPES.IIpcHandler).to(UpdateWorkspaceMetadataHandler).inSingletonScope();
 
 export { container };

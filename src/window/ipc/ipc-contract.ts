@@ -24,7 +24,9 @@ import type {
   UpdateLibResponse,
   WriteFileRequest,
   WorkspaceSearchRequest,
-  WorkspaceSearchResponse
+  WorkspaceSearchResponse,
+  WorkspaceMetadata,
+  UpdateWorkspaceMetadataRequest
 } from '_types';
 import type { ResolvedTheme } from 'src/theme/theme-contract';
 
@@ -49,7 +51,9 @@ export const IPC_CHANNEL = {
   DISCARD_RECOVERY_DRAFT: 'discard-recovery-draft',
   RESOLVE_DOCUMENT_CONFLICT: 'resolve-document-conflict',
   SAVE_DOCUMENT_COPY: 'save-document-copy',
-  SEARCH_WORKSPACE: 'search-workspace'
+  SEARCH_WORKSPACE: 'search-workspace',
+  GET_WORKSPACE_METADATA: 'get-workspace-metadata',
+  UPDATE_WORKSPACE_METADATA: 'update-workspace-metadata'
 } as const;
 
 export type IpcChannel = (typeof IPC_CHANNEL)[keyof typeof IPC_CHANNEL];
@@ -72,6 +76,8 @@ type IpcRequestMap = {
   [IPC_CHANNEL.RESOLVE_DOCUMENT_CONFLICT]: ResolveDocumentConflictRequest;
   [IPC_CHANNEL.SAVE_DOCUMENT_COPY]: SaveDocumentCopyRequest;
   [IPC_CHANNEL.SEARCH_WORKSPACE]: WorkspaceSearchRequest;
+  [IPC_CHANNEL.GET_WORKSPACE_METADATA]: undefined;
+  [IPC_CHANNEL.UPDATE_WORKSPACE_METADATA]: UpdateWorkspaceMetadataRequest;
 };
 
 type IpcResponseMap = {
@@ -92,6 +98,8 @@ type IpcResponseMap = {
   [IPC_CHANNEL.RESOLVE_DOCUMENT_CONFLICT]: ResolveDocumentConflictResponse;
   [IPC_CHANNEL.SAVE_DOCUMENT_COPY]: SaveDocumentCopyResponse;
   [IPC_CHANNEL.SEARCH_WORKSPACE]: WorkspaceSearchResponse;
+  [IPC_CHANNEL.GET_WORKSPACE_METADATA]: WorkspaceMetadata;
+  [IPC_CHANNEL.UPDATE_WORKSPACE_METADATA]: WorkspaceMetadata;
 };
 
 export type IpcRequestData<C extends IpcChannel> = IpcRequestMap[C];

@@ -429,26 +429,32 @@ const Main: FC = () => {
       if (!shouldUpdate) {
         return;
       }
-      const { status, data } = await rendererGateway.getDocumentSession({ id: currentNote.id });
+      const { status, data } = await rendererGateway.readFile({ id: currentNote.id });
+      const openedSession = data?.session;
       const hasUnresolvedExternalChange = unresolvedExternalChangesRef.current.has(currentNote.id);
-      if (shouldUpdate && status === 0 && (!hasUnresolvedExternalChange || blocksDocumentPersistence(data.status))) {
+      if (
+        shouldUpdate &&
+        status === 0 &&
+        openedSession &&
+        (!hasUnresolvedExternalChange || blocksDocumentPersistence(openedSession.status))
+      ) {
         sessionRevisionsRef.current.set(
-          data.id,
-          Math.max(sessionRevisionsRef.current.get(data.id) ?? 0, data.localRevision)
+          openedSession.id,
+          Math.max(sessionRevisionsRef.current.get(openedSession.id) ?? 0, openedSession.localRevision)
         );
-        sessionRef.current = data;
-        setSession(data);
-        patchCurrentNote({ isChange: isDocumentSessionModified(data) });
-        setInitialEditorState({ initDoc: data.content });
-        loadedNoteIdRef.current = data.id;
-        if (blocksDocumentPersistence(data.status)) {
-          unresolvedExternalChangesRef.current.add(data.id);
-          setExternalChangeKind(data.status === 'conflict' ? 'conflict' : 'deleted');
+        sessionRef.current = openedSession;
+        setSession(openedSession);
+        patchCurrentNote({ isChange: isDocumentSessionModified(openedSession) });
+        setInitialEditorState({ initDoc: openedSession.content });
+        loadedNoteIdRef.current = openedSession.id;
+        if (blocksDocumentPersistence(openedSession.status)) {
+          unresolvedExternalChangesRef.current.add(openedSession.id);
+          setExternalChangeKind(openedSession.status === 'conflict' ? 'conflict' : 'deleted');
         } else {
-          unresolvedExternalChangesRef.current.delete(data.id);
+          unresolvedExternalChangesRef.current.delete(openedSession.id);
         }
-        const draftResponse = await rendererGateway.getRecoveryDraft({ id: data.id });
-        if (shouldUpdate && draftResponse.status === 0 && draftResponse.data?.content !== data.savedContent) {
+        const draftResponse = await rendererGateway.getRecoveryDraft({ id: openedSession.id });
+        if (shouldUpdate && draftResponse.status === 0 && draftResponse.data?.content !== openedSession.savedContent) {
           setRecoveryDraft(draftResponse.data);
         }
       }

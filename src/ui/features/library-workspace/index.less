@@ -320,6 +320,31 @@
   font-size: 12px;
 }
 
+.document-shortcuts {
+  max-height: 560px;
+  overflow-y: auto;
+}
+
+.document-shortcuts-section + .document-shortcuts-section {
+  margin-top: 12px;
+}
+
+.document-shortcuts-section-title {
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.document-shortcuts-item {
+  cursor: pointer;
+  padding-inline: 8px;
+
+  &:hover {
+    background-color: var(--nw-hover-bg);
+  }
+}
+
 .workspace-search-context {
   white-space: pre-wrap;
   overflow-wrap: anywhere;

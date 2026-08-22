@@ -15,3 +15,5 @@ export { default as DiscardRecoveryDraftHandler } from './discard-recovery-draft
 export { default as ResolveDocumentConflictHandler } from './resolve-document-conflict-handler';
 export { default as SaveDocumentCopyHandler } from './save-document-copy-handler';
 export { default as SearchWorkspaceHandler } from './search-workspace-handler';
+export { default as GetWorkspaceMetadataHandler } from './get-workspace-metadata-handler';
+export { default as UpdateWorkspaceMetadataHandler } from './update-workspace-metadata-handler';

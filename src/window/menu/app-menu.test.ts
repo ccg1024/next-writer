@@ -41,6 +41,7 @@ describe('AppMenu', () => {
     menuActions = {
       save: jest.fn(),
       searchWorkspace: jest.fn(),
+      openDocumentShortcuts: jest.fn(),
       toggleToc: jest.fn(),
       toggleTypewriterMode: jest.fn(),
       toggleVisible: jest.fn(),
@@ -91,6 +92,12 @@ describe('AppMenu', () => {
     clickMenuItem(appMenu.getMenuTemplate(), '编辑', '搜索工作区', win);
 
     expect(menuActions.searchWorkspace).toHaveBeenCalledWith(win);
+  });
+
+  it('opens document shortcuts from the edit menu', () => {
+    clickMenuItem(appMenu.getMenuTemplate(), '编辑', '快捷文档', win);
+
+    expect(menuActions.openDocumentShortcuts).toHaveBeenCalledWith(win);
   });
 });
 

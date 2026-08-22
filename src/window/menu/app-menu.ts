@@ -15,6 +15,7 @@ class AppMenu implements IAppMenu {
     this.synchronousLibrary = this.synchronousLibrary.bind(this);
     this.save = this.save.bind(this);
     this.searchWorkspace = this.searchWorkspace.bind(this);
+    this.openDocumentShortcuts = this.openDocumentShortcuts.bind(this);
     this.toggleToc = this.toggleToc.bind(this);
     this.toggleTypewriterMode = this.toggleTypewriterMode.bind(this);
     this.toggleVisible = this.toggleVisible.bind(this);
@@ -85,6 +86,11 @@ class AppMenu implements IAppMenu {
           accelerator: this.isMac ? 'Cmd+Shift+f' : 'Ctrl+Shift+f',
           click: this.searchWorkspace
         },
+        {
+          label: '快捷文档',
+          accelerator: this.isMac ? 'Cmd+Shift+o' : 'Ctrl+Shift+o',
+          click: this.openDocumentShortcuts
+        },
         { type: 'separator' },
         { role: 'copy', label: '复制' },
         { role: 'paste', label: '粘贴' },
@@ -133,6 +139,10 @@ class AppMenu implements IAppMenu {
 
   private searchWorkspace(_m: MenuItem, win: BrowserWindow): void {
     this.menuActions.searchWorkspace(win);
+  }
+
+  private openDocumentShortcuts(_m: MenuItem, win: BrowserWindow): void {
+    this.menuActions.openDocumentShortcuts(win);
   }
 
   private toggleToc(_m: MenuItem, win: BrowserWindow): void {

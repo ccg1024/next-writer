@@ -60,7 +60,7 @@ class DocumentService implements IDocumentService {
     const pathInfo = this.resolveFileNode(id);
     const session = await this.ensureSession(id, pathInfo.fullPath);
 
-    return { content: session.content };
+    return { content: session.content, session };
   }
 
   async writeFile(data: WriteFileRequest): Promise<RootLibraryTree> {

@@ -6,6 +6,7 @@ import { useRendererCommand } from 'src/ui/shared/renderer-command';
 import type { RendererLibraryTree } from '_types';
 import { LibraryList } from './library-list';
 import { NoteList } from './note-list';
+import { DocumentShortcuts } from './document-shortcuts';
 import { ForwardRenameHandler, ForwardRenameModal } from './rename-modal';
 import { WorkspaceSearch } from './workspace-search';
 
@@ -19,6 +20,7 @@ const LibrarySidebar: FC = () => {
     useRuntimeLayout();
   const renameRef = useRef<ForwardRenameHandler>(null);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
 
   useRendererCommand('toggle-lib', (_e, action) => {
     setLibrarySidebarVisible(!!action.payload);
@@ -26,6 +28,10 @@ const LibrarySidebar: FC = () => {
 
   useRendererCommand('toggle-lib-detail', (_e, action) => {
     setDetailSidebarVisible(!!action.payload);
+  });
+
+  useRendererCommand('open-document-shortcuts', () => {
+    setShortcutsOpen(true);
   });
 
   const onNoteChange = useCallback((note: RendererLibraryTree) => {
@@ -40,6 +46,7 @@ const LibrarySidebar: FC = () => {
         renameRef={renameRef}
         onSelectLibrary={setCurrentLib}
         onSearch={() => setSearchOpen(true)}
+        onShortcuts={() => setShortcutsOpen(true)}
       />
       <NoteList
         currentLib={currentLib}
@@ -54,6 +61,7 @@ const LibrarySidebar: FC = () => {
       )}
       <ForwardRenameModal ref={renameRef} />
       <WorkspaceSearch open={searchOpen} onOpen={() => setSearchOpen(true)} onClose={() => setSearchOpen(false)} />
+      <DocumentShortcuts open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
     </>
   );
 };

@@ -35,6 +35,7 @@ export function validateIpcRequest(value: unknown): IpcRequestValidation {
     case IPC_CHANNEL.READ_CONFIG:
     case IPC_CHANNEL.LIST_THEMES:
     case IPC_CHANNEL.RUNTIME:
+    case IPC_CHANNEL.GET_WORKSPACE_METADATA:
       return validateNoPayload(value, channel);
     case IPC_CHANNEL.APPLY_THEME:
       return validateApplyTheme(data, channel);
@@ -61,9 +62,28 @@ export function validateIpcRequest(value: unknown): IpcRequestValidation {
       return validateSaveDocumentCopy(data, channel);
     case IPC_CHANNEL.SEARCH_WORKSPACE:
       return validateWorkspaceSearch(data, channel);
+    case IPC_CHANNEL.UPDATE_WORKSPACE_METADATA:
+      return validateWorkspaceMetadataUpdate(data, channel);
     default:
       return invalid('Invalid IPC channel.');
   }
+}
+
+function validateWorkspaceMetadataUpdate(data: unknown, type: IpcChannel): IpcRequestValidation {
+  if (!isRecord(data)) {
+    return invalid('Workspace metadata update requires data.');
+  }
+  if (data.action === 'clear-recent') {
+    return valid({ type, data: { action: data.action } } as AnyIpcRequest);
+  }
+  if (
+    (data.action !== 'set-favorite' && data.action !== 'set-pinned') ||
+    !isNonEmptyString(data.id) ||
+    typeof data.value !== 'boolean'
+  ) {
+    return invalid('Workspace metadata update is invalid.');
+  }
+  return valid({ type, data: { action: data.action, id: data.id, value: data.value } } as AnyIpcRequest);
 }
 
 function validateWorkspaceSearch(data: unknown, type: IpcChannel): IpcRequestValidation {

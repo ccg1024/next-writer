@@ -18,6 +18,7 @@ describe('LibraryService ID based operations', () => {
   let libraryTree: RootLibraryTree;
   let service: LibraryService;
   let documentService: jest.Mocked<Pick<IDocumentService, 'flushAll' | 'removeDocument' | 'refreshSessionPaths'>>;
+  let workspaceMetadata: { syncLibraryTree: jest.Mock };
 
   beforeEach(async () => {
     rootDir = await nodeFs.promises.mkdtemp(nodePath.join(nodeOs.tmpdir(), 'next-writer-library-'));
@@ -31,13 +32,15 @@ describe('LibraryService ID based operations', () => {
       removeDocument: jest.fn(),
       refreshSessionPaths: jest.fn()
     };
+    workspaceMetadata = { syncLibraryTree: jest.fn().mockResolvedValue(undefined) };
     service = new LibraryService(
       new FileSystem(),
       appPathStore,
       createLibraryTreeStore(),
       new PathResolver(appPathStore),
       documentService as unknown as IDocumentService,
-      { rebuild: jest.fn().mockResolvedValue(undefined) } as never
+      { rebuild: jest.fn().mockResolvedValue(undefined) } as never,
+      workspaceMetadata as never
     );
   });
 
@@ -74,6 +77,7 @@ describe('LibraryService ID based operations', () => {
     const result = await service.updateLibrary({ operate: 'rename', id: 'folder-id', name: 'archive' });
 
     expect(result.children[0].name).toBe('archive');
+    expect(workspaceMetadata.syncLibraryTree).toHaveBeenCalledWith(result);
     await expect(nodeFs.promises.stat(oldFolderPath)).rejects.toThrow();
     await expect(nodeFs.promises.readFile(nodePath.join(newFolderPath, 'note.md'), { encoding: 'utf8' })).resolves.toBe(
       'content'
@@ -165,6 +169,7 @@ describe('LibraryService ID based operations', () => {
     const result = await service.updateLibrary({ operate: 'del', id: 'note-id' });
 
     expect(result.children).toEqual([]);
+    expect(workspaceMetadata.syncLibraryTree).toHaveBeenCalledWith(result);
     expect(documentService.removeDocument).toHaveBeenCalledWith('note-id');
     await expect(nodeFs.promises.stat(nodePath.join(rootDir, 'note.md'))).rejects.toThrow();
   });

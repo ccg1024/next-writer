@@ -33,6 +33,9 @@ export const WORKSPACE_INDEX_VERSION = 1;
 export const WORKSPACE_INDEX_MAX_FILE_SIZE = 2 * 1024 * 1024;
 export const WORKSPACE_SEARCH_DEFAULT_LIMIT = 50;
 export const WORKSPACE_SEARCH_MAX_LIMIT = 100;
+export const WORKSPACE_METADATA_NAME = 'workspace-metadata.json';
+export const WORKSPACE_METADATA_VERSION = 1;
+export const WORKSPACE_RECENT_DOCUMENT_LIMIT = 20;
 
 // Default config
 export const NW_CONFIG = {

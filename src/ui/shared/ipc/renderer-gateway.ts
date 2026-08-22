@@ -11,6 +11,7 @@ import {
   UpdateCacheRequest,
   UpdateDocumentSessionRequest,
   UpdateLibRequest,
+  UpdateWorkspaceMetadataRequest,
   WriteFileRequest,
   WorkspaceSearchRequest
 } from '_types';
@@ -86,6 +87,14 @@ async function searchWorkspace(data: WorkspaceSearchRequest) {
   return window.ipc.searchWorkspace(data);
 }
 
+async function getWorkspaceMetadata() {
+  return window.ipc.getWorkspaceMetadata();
+}
+
+async function updateWorkspaceMetadata(data: UpdateWorkspaceMetadataRequest) {
+  return window.ipc.updateWorkspaceMetadata(data);
+}
+
 const rendererGateway = {
   readConfig,
   listThemes,
@@ -103,7 +112,9 @@ const rendererGateway = {
   discardRecoveryDraft,
   resolveDocumentConflict,
   saveDocumentCopy,
-  searchWorkspace
+  searchWorkspace,
+  getWorkspaceMetadata,
+  updateWorkspaceMetadata
 };
 
 export default rendererGateway;
