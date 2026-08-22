@@ -91,7 +91,12 @@ describe('WindowSessionCoordinator', () => {
       recoveryDrafts as unknown as IRecoveryDraftService,
       workspaceFileWatcher,
       { getRootDir: jest.fn().mockReturnValue('/workspace') } as unknown as IAppPathStore,
-      { handleExternalChange: jest.fn().mockResolvedValue(undefined) } as unknown as IDocumentService
+      { handleExternalChange: jest.fn().mockResolvedValue(undefined) } as unknown as IDocumentService,
+      {
+        initialize: jest.fn().mockResolvedValue(undefined),
+        updatePath: jest.fn().mockResolvedValue(undefined),
+        destroy: jest.fn()
+      } as never
     );
   });
 

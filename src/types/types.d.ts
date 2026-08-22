@@ -12,6 +12,7 @@ export type NormalObject = Record<
 const RENDERER_LISTENER_ACTIONS = [
   'write-file',
   'external-document-change',
+  'search-workspace',
   'toggle-toc',
   'toggle-lib',
   'toggle-lib-detail',
@@ -42,6 +43,7 @@ export interface IPC {
     data: ResolveDocumentConflictRequest
   ) => Promise<Response<ResolveDocumentConflictResponse>>;
   saveDocumentCopy: (data: SaveDocumentCopyRequest) => Promise<Response<SaveDocumentCopyResponse>>;
+  searchWorkspace: (data: WorkspaceSearchRequest) => Promise<Response<WorkspaceSearchResponse>>;
   rendererListener: (cb: RendererListenerCallback) => () => void;
 }
 
@@ -306,6 +308,38 @@ export type SaveDocumentCopyRequest = {
 export type SaveDocumentCopyResponse = {
   copyId: string;
   libTree: RootLibraryTree;
+};
+
+export type WorkspaceSearchRequest = {
+  query: string;
+  caseSensitive?: boolean;
+  fuzzy?: boolean;
+  offset?: number;
+  limit?: number;
+};
+
+export type WorkspaceSearchMatchField = 'filename' | 'title' | 'content';
+
+export type WorkspaceSearchResult = {
+  id: string;
+  path: string;
+  name: string;
+  title?: string;
+  field: WorkspaceSearchMatchField;
+  line: number;
+  column: number;
+  context: string;
+  matchStart: number;
+  matchEnd: number;
+};
+
+export type WorkspaceIndexStatus = 'ready' | 'building' | 'error';
+
+export type WorkspaceSearchResponse = {
+  results: WorkspaceSearchResult[];
+  total: number;
+  hasMore: boolean;
+  indexStatus: WorkspaceIndexStatus;
 };
 // ============================================================
 // end -- just for ipc communication

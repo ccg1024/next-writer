@@ -18,6 +18,10 @@ class MenuActionService implements IMenuActionService {
     win.webContents.send('next-ipc-client', { type: 'write-file' } as RendererListenerAction);
   }
 
+  searchWorkspace(win: BrowserWindow): void {
+    win.webContents.send('next-ipc-client', { type: 'search-workspace' } as RendererListenerAction);
+  }
+
   toggleToc(win: BrowserWindow): void {
     const tocSidebar = this.menuStateStore.toggle('toggle-toc');
     win.webContents.send('next-ipc-client', {

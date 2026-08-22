@@ -293,3 +293,44 @@
     font-size: 14px;
   }
 }
+
+.workspace-search-options {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-height: 44px;
+}
+
+.workspace-search-results {
+  max-height: 520px;
+  overflow-y: auto;
+}
+
+.workspace-search-result {
+  cursor: pointer;
+  padding-inline: 8px;
+
+  &:hover {
+    background-color: var(--nw-hover-bg);
+  }
+}
+
+.workspace-search-location {
+  margin-left: 12px;
+  font-size: 12px;
+}
+
+.workspace-search-context {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+
+  mark {
+    color: inherit;
+    background: #ffd666;
+  }
+}
+
+.workspace-search-more {
+  padding: 12px;
+  text-align: center;
+}

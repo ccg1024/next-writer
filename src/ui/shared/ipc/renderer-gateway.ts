@@ -11,7 +11,8 @@ import {
   UpdateCacheRequest,
   UpdateDocumentSessionRequest,
   UpdateLibRequest,
-  WriteFileRequest
+  WriteFileRequest,
+  WorkspaceSearchRequest
 } from '_types';
 
 /**
@@ -81,6 +82,10 @@ async function saveDocumentCopy(data: SaveDocumentCopyRequest) {
   return window.ipc.saveDocumentCopy(data);
 }
 
+async function searchWorkspace(data: WorkspaceSearchRequest) {
+  return window.ipc.searchWorkspace(data);
+}
+
 const rendererGateway = {
   readConfig,
   listThemes,
@@ -97,7 +102,8 @@ const rendererGateway = {
   recoverDraft,
   discardRecoveryDraft,
   resolveDocumentConflict,
-  saveDocumentCopy
+  saveDocumentCopy,
+  searchWorkspace
 };
 
 export default rendererGateway;

@@ -1,5 +1,5 @@
 import type { RefObject } from 'react';
-import { DeleteOutlined, EditOutlined, FolderOutlined } from '@ant-design/icons';
+import { DeleteOutlined, EditOutlined, FolderOutlined, SearchOutlined } from '@ant-design/icons';
 import { App, Menu, MenuProps, Typography } from 'antd';
 import { motion } from 'framer-motion';
 import type { RendererLibraryTree, RendererRootLibraryTree } from '_types';
@@ -18,11 +18,12 @@ type LibraryListProps = {
   visible: boolean;
   renameRef: RefObject<ForwardRenameHandler>;
   onSelectLibrary: (lib: RendererLibraryTree) => void;
+  onSearch: () => void;
 };
 
 /** 展示顶层文库，并把新增、重命名、删除操作提交给文库领域层。 */
 export function LibraryList(props: LibraryListProps) {
-  const { libraryTree, visible, renameRef, onSelectLibrary } = props;
+  const { libraryTree, visible, renameRef, onSelectLibrary, onSearch } = props;
   const { setLibraryTree, createLibrary, renameLibrary, deleteLibrary } = useLibraryActions();
   const { message, modal } = App.useApp();
 
@@ -153,6 +154,10 @@ export function LibraryList(props: LibraryListProps) {
         >
           <FolderOutlined />
           <Text className="footer-text">添加库</Text>
+        </div>
+        <div className="library-sidebar-footer" onClick={onSearch}>
+          <SearchOutlined />
+          <Text className="footer-text">搜索工作区</Text>
         </div>
       </div>
     </div>

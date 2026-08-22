@@ -33,7 +33,8 @@ const TYPES = {
   ISenderValidator: Symbol.for('ISenderValidator'),
   ISaveScheduler: Symbol.for('ISaveScheduler'),
   IRecoveryDraftService: Symbol.for('IRecoveryDraftService'),
-  IWorkspaceFileWatcher: Symbol.for('IWorkspaceFileWatcher')
+  IWorkspaceFileWatcher: Symbol.for('IWorkspaceFileWatcher'),
+  IWorkspaceIndexService: Symbol.for('IWorkspaceIndexService')
 };
 
 export { TYPES };

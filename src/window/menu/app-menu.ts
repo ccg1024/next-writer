@@ -14,6 +14,7 @@ class AppMenu implements IAppMenu {
 
     this.synchronousLibrary = this.synchronousLibrary.bind(this);
     this.save = this.save.bind(this);
+    this.searchWorkspace = this.searchWorkspace.bind(this);
     this.toggleToc = this.toggleToc.bind(this);
     this.toggleTypewriterMode = this.toggleTypewriterMode.bind(this);
     this.toggleVisible = this.toggleVisible.bind(this);
@@ -79,6 +80,12 @@ class AppMenu implements IAppMenu {
     const edit: MenuItemConstructorOptions = {
       label: '编辑',
       submenu: [
+        {
+          label: '搜索工作区',
+          accelerator: this.isMac ? 'Cmd+Shift+f' : 'Ctrl+Shift+f',
+          click: this.searchWorkspace
+        },
+        { type: 'separator' },
         { role: 'copy', label: '复制' },
         { role: 'paste', label: '粘贴' },
         { type: 'separator' },
@@ -122,6 +129,10 @@ class AppMenu implements IAppMenu {
 
   private save(_m: MenuItem, win: BrowserWindow, _event: KeyboardEvent): void {
     this.menuActions.save(win);
+  }
+
+  private searchWorkspace(_m: MenuItem, win: BrowserWindow): void {
+    this.menuActions.searchWorkspace(win);
   }
 
   private toggleToc(_m: MenuItem, win: BrowserWindow): void {

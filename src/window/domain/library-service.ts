@@ -16,6 +16,7 @@ import IFileSystem from '../interface/file-system';
 import ILibraryTreeStore from '../interface/library-tree-store';
 import ILibraryService from '../interface/library-service';
 import IPathResolver from '../interface/path-resolver';
+import IWorkspaceIndexService from '../interface/workspace-index-service';
 import {
   createLibraryNodeId,
   isLibraryTreeNode,
@@ -34,7 +35,8 @@ class LibraryService implements ILibraryService {
     @inject(TYPES.IAppPathStore) private appPathStore: IAppPathStore,
     @inject(TYPES.ILibraryTreeStore) private libraryTreeStore: ILibraryTreeStore,
     @inject(TYPES.IPathResolver) private pathResolver: IPathResolver,
-    @inject(TYPES.IDocumentService) private documentService: IDocumentService
+    @inject(TYPES.IDocumentService) private documentService: IDocumentService,
+    @inject(TYPES.IWorkspaceIndexService) private workspaceIndex: IWorkspaceIndexService
   ) {}
 
   async synchronizeLibrary(win?: BrowserWindow): Promise<void> {
@@ -161,6 +163,7 @@ class LibraryService implements ILibraryService {
       return libTree;
     });
     this.documentService.refreshSessionPaths(result);
+    void this.workspaceIndex.rebuild().catch(() => undefined);
     return result;
   }
 

@@ -20,6 +20,12 @@ describe('validateIpcRequest', () => {
         data: { id: 'note-id', content: 'content', revision: 1 }
       })
     ).toMatchObject({ valid: true });
+    expect(
+      validateIpcRequest({
+        type: IPC_CHANNEL.SEARCH_WORKSPACE,
+        data: { query: 'draft', caseSensitive: false, fuzzy: true, offset: 0, limit: 50 }
+      })
+    ).toMatchObject({ valid: true });
     expect(validateIpcRequest({ type: IPC_CHANNEL.GET_RECOVERY_DRAFT, data: { id: 'note-id' } })).toMatchObject({
       valid: true
     });
@@ -156,5 +162,16 @@ describe('validateIpcRequest', () => {
     expect(
       validateIpcRequest({ type: IPC_CHANNEL.WIRTE_FILE, data: { id: 'note-id', content: 'content' } })
     ).toMatchObject({ valid: true });
+  });
+
+  it('rejects invalid workspace search requests', () => {
+    expect(validateIpcRequest({ type: IPC_CHANNEL.SEARCH_WORKSPACE, data: { query: ' ' } })).toEqual({
+      valid: false,
+      message: 'Workspace search request requires a non-empty query.'
+    });
+    expect(validateIpcRequest({ type: IPC_CHANNEL.SEARCH_WORKSPACE, data: { query: 'draft', limit: 0 } })).toEqual({
+      valid: false,
+      message: 'Workspace search options are invalid.'
+    });
   });
 });

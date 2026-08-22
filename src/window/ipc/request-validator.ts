@@ -59,9 +59,35 @@ export function validateIpcRequest(value: unknown): IpcRequestValidation {
       return validateResolveDocumentConflict(data, channel);
     case IPC_CHANNEL.SAVE_DOCUMENT_COPY:
       return validateSaveDocumentCopy(data, channel);
+    case IPC_CHANNEL.SEARCH_WORKSPACE:
+      return validateWorkspaceSearch(data, channel);
     default:
       return invalid('Invalid IPC channel.');
   }
+}
+
+function validateWorkspaceSearch(data: unknown, type: IpcChannel): IpcRequestValidation {
+  if (!isRecord(data) || !isNonEmptyString(data.query)) {
+    return invalid('Workspace search request requires a non-empty query.');
+  }
+  if (
+    (data.caseSensitive !== undefined && typeof data.caseSensitive !== 'boolean') ||
+    (data.fuzzy !== undefined && typeof data.fuzzy !== 'boolean') ||
+    !isOptionalNonNegativeInteger(data.offset) ||
+    !isOptionalPositiveInteger(data.limit)
+  ) {
+    return invalid('Workspace search options are invalid.');
+  }
+  return valid({
+    type,
+    data: {
+      query: data.query,
+      caseSensitive: data.caseSensitive,
+      fuzzy: data.fuzzy,
+      offset: data.offset,
+      limit: data.limit
+    }
+  } as AnyIpcRequest);
 }
 
 function validateApplyTheme(data: unknown, type: IpcChannel): IpcRequestValidation {
@@ -267,4 +293,12 @@ function isNonEmptyString(value: unknown): value is string {
 
 function isOptionalFiniteNumber(value: unknown): boolean {
   return value === undefined || (typeof value === 'number' && Number.isFinite(value));
+}
+
+function isOptionalNonNegativeInteger(value: unknown): boolean {
+  return value === undefined || (typeof value === 'number' && Number.isInteger(value) && value >= 0);
+}
+
+function isOptionalPositiveInteger(value: unknown): boolean {
+  return value === undefined || (typeof value === 'number' && Number.isInteger(value) && value > 0);
 }

@@ -36,7 +36,8 @@ describe('LibraryService ID based operations', () => {
       appPathStore,
       createLibraryTreeStore(),
       new PathResolver(appPathStore),
-      documentService as unknown as IDocumentService
+      documentService as unknown as IDocumentService,
+      { rebuild: jest.fn().mockResolvedValue(undefined) } as never
     );
   });
 

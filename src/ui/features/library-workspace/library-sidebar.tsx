@@ -1,4 +1,4 @@
-import { FC, useCallback, useRef } from 'react';
+import { FC, useCallback, useRef, useState } from 'react';
 import { WindowDragBox } from 'src/ui/components/drag';
 import { useLibraryActions, useLibraryState } from 'src/ui/domain/library';
 import { useRuntimeLayout } from 'src/ui/domain/runtime';
@@ -7,6 +7,7 @@ import type { RendererLibraryTree } from '_types';
 import { LibraryList } from './library-list';
 import { NoteList } from './note-list';
 import { ForwardRenameHandler, ForwardRenameModal } from './rename-modal';
+import { WorkspaceSearch } from './workspace-search';
 
 import './index.less';
 
@@ -17,6 +18,7 @@ const LibrarySidebar: FC = () => {
   const { librarySidebarVisible, detailSidebarVisible, setLibrarySidebarVisible, setDetailSidebarVisible } =
     useRuntimeLayout();
   const renameRef = useRef<ForwardRenameHandler>(null);
+  const [searchOpen, setSearchOpen] = useState(false);
 
   useRendererCommand('toggle-lib', (_e, action) => {
     setLibrarySidebarVisible(!!action.payload);
@@ -37,6 +39,7 @@ const LibrarySidebar: FC = () => {
         visible={librarySidebarVisible}
         renameRef={renameRef}
         onSelectLibrary={setCurrentLib}
+        onSearch={() => setSearchOpen(true)}
       />
       <NoteList
         currentLib={currentLib}
@@ -50,6 +53,7 @@ const LibrarySidebar: FC = () => {
         <WindowDragBox style={{ height: '32px', top: 0, left: 0, width: '100%', position: 'fixed' }} />
       )}
       <ForwardRenameModal ref={renameRef} />
+      <WorkspaceSearch open={searchOpen} onOpen={() => setSearchOpen(true)} onClose={() => setSearchOpen(false)} />
     </>
   );
 };

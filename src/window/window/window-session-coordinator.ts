@@ -14,6 +14,7 @@ import IWindowRegistry from '../interface/window-registry';
 import IWindowSessionCoordinator from '../interface/window-session-coordinator';
 import IWorkspaceService from '../interface/workspace-service';
 import IWorkspaceFileWatcher from '../interface/workspace-file-watcher';
+import IWorkspaceIndexService from '../interface/workspace-index-service';
 import { TYPES } from '../types';
 
 declare const MAIN_WINDOW_WEBPACK_ENTRY: string;
@@ -37,7 +38,8 @@ class WindowSessionCoordinator implements IWindowSessionCoordinator {
     @inject(TYPES.IRecoveryDraftService) private recoveryDrafts: IRecoveryDraftService,
     @inject(TYPES.IWorkspaceFileWatcher) private workspaceFileWatcher: IWorkspaceFileWatcher,
     @inject(TYPES.IAppPathStore) private appPathStore: IAppPathStore,
-    @inject(TYPES.IDocumentService) private documentService: IDocumentService
+    @inject(TYPES.IDocumentService) private documentService: IDocumentService,
+    @inject(TYPES.IWorkspaceIndexService) private workspaceIndex: IWorkspaceIndexService
   ) {
     this.createWindow = this.createWindow.bind(this);
   }
@@ -51,6 +53,7 @@ class WindowSessionCoordinator implements IWindowSessionCoordinator {
     this.windowRegistry.setCurrentWindow(this.win);
     this.cache.init();
     await this.workspaceService.initWorkspace();
+    void this.workspaceIndex.initialize().catch(() => undefined);
     await this.recoveryDrafts.initialize();
     this.menu.createMenu();
     this.menuStateStore.reset();
@@ -63,6 +66,7 @@ class WindowSessionCoordinator implements IWindowSessionCoordinator {
     await this.win.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
     this.workspaceFileWatcher.start(this.appPathStore.getRootDir(), change => {
       void this.documentService.handleExternalChange(change.path).catch(() => undefined);
+      void this.workspaceIndex.updatePath(change.path).catch(() => undefined);
     });
   }
 
@@ -71,6 +75,7 @@ class WindowSessionCoordinator implements IWindowSessionCoordinator {
     this.cache.destroy();
     this.documentSessions.destroy();
     this.recoveryDrafts.destroy();
+    this.workspaceIndex.destroy();
     this.windowRegistry.clearCurrentWindow(this.win);
     this.win = null;
   }

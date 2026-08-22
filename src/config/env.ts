@@ -28,6 +28,11 @@ export const WINDOW_CLOSE_FLUSH_TIMEOUT_MS = 3000;
 export const RECOVERY_DRAFT_DIR_NAME = 'recovery-drafts';
 export const RECOVERY_DRAFT_SNAPSHOT_DELAY_MS = 1000;
 export const RECOVERY_DRAFT_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
+export const WORKSPACE_INDEX_NAME = 'workspace-index.json';
+export const WORKSPACE_INDEX_VERSION = 1;
+export const WORKSPACE_INDEX_MAX_FILE_SIZE = 2 * 1024 * 1024;
+export const WORKSPACE_SEARCH_DEFAULT_LIMIT = 50;
+export const WORKSPACE_SEARCH_MAX_LIMIT = 100;
 
 // Default config
 export const NW_CONFIG = {

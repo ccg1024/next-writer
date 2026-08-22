@@ -40,6 +40,7 @@ describe('AppMenu', () => {
     jest.clearAllMocks();
     menuActions = {
       save: jest.fn(),
+      searchWorkspace: jest.fn(),
       toggleToc: jest.fn(),
       toggleTypewriterMode: jest.fn(),
       toggleVisible: jest.fn(),
@@ -84,6 +85,12 @@ describe('AppMenu', () => {
     clickMenuItem(appMenu.getMenuTemplate(), '编辑', '打字机模式', win);
 
     expect(menuActions.toggleTypewriterMode).toHaveBeenCalledWith(win);
+  });
+
+  it('opens workspace search from the edit menu', () => {
+    clickMenuItem(appMenu.getMenuTemplate(), '编辑', '搜索工作区', win);
+
+    expect(menuActions.searchWorkspace).toHaveBeenCalledWith(win);
   });
 });
 
