@@ -48,6 +48,14 @@ contextBridge.exposeInMainWorld('ipc', {
     return post({ type: IPC_CHANNEL.RUNTIME });
   },
 
+  updateRuntimePreference(data: unknown) {
+    return post({ type: IPC_CHANNEL.UPDATE_RUNTIME_PREFERENCE, data });
+  },
+
+  synchronizeWorkspace() {
+    return post({ type: IPC_CHANNEL.SYNCHRONIZE_WORKSPACE });
+  },
+
   updateCache(data: unknown) {
     return post({ type: IPC_CHANNEL.UPDATE_CACHE, data });
   },

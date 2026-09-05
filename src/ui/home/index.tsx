@@ -12,7 +12,10 @@ import renderStore from '../modules/store';
 import { LibraryProvider, useLibraryActions } from 'src/ui/domain/library';
 import { RuntimeProvider, useRuntimeLayout } from 'src/ui/domain/runtime';
 import { EditorProvider } from 'src/ui/domain/editor';
-import { rendererIpcListener } from 'src/ui/shared/renderer-command';
+import { CommandProvider, useCommandRegistry } from 'src/ui/domain/command';
+import { CommandPalette } from 'src/ui/features/command-palette/command-palette';
+import { CommandContributions } from 'src/ui/features/command-palette/command-contributions';
+import { rendererIpcListener, useRendererCommand } from 'src/ui/shared/renderer-command';
 
 import './index.css';
 
@@ -26,7 +29,9 @@ const Home = ({ initialConfigData }: HomeProps) => {
     <RuntimeProvider>
       <LibraryProvider>
         <EditorProvider>
-          <HomeContent initialConfigData={initialConfigData} />
+          <CommandProvider>
+            <HomeContent initialConfigData={initialConfigData} />
+          </CommandProvider>
         </EditorProvider>
       </LibraryProvider>
     </RuntimeProvider>
@@ -37,6 +42,7 @@ const HomeContent = ({ initialConfigData }: HomeProps) => {
   const [renderConfig, setRenderConfig] = useState(null);
   const { setLibraryTree } = useLibraryActions();
   const { setRuntimeConfig } = useRuntimeLayout();
+  const { execute } = useCommandRegistry();
 
   /** 将主进程配置同时投影到 React 状态、文库树与编辑器 CSS 变量。 */
   useLayoutEffect(() => {
@@ -94,6 +100,11 @@ const HomeContent = ({ initialConfigData }: HomeProps) => {
     };
   }, []);
 
+  useRendererCommand('execute-command', (_event, action) => {
+    const id = (action.payload as { id?: string })?.id;
+    if (id) void execute(id);
+  });
+
   const themeConfig = useMemo(() => ({ config: renderConfig }), [renderConfig]);
 
   return (
@@ -106,6 +117,8 @@ const HomeContent = ({ initialConfigData }: HomeProps) => {
         <Outline />
       </BaseLayout>
       <FontMeasure />
+      <CommandContributions />
+      <CommandPalette />
     </ThemeProvider>
   );
 };

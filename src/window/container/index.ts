@@ -8,6 +8,8 @@ import IWorkspaceIndexService from '../interface/workspace-index-service';
 import WorkspaceIndexService from '../domain/workspace-index-service';
 import IWorkspaceMetadataService from '../interface/workspace-metadata-service';
 import WorkspaceMetadataService from '../domain/workspace-metadata-service';
+import IAppLogger from '../interface/app-logger';
+import AppLogger from '../infrastructure/app-logger';
 import IAppPathStore from '../interface/app-path-store';
 import AppPathStore from '../state/app-path-store';
 import IRenderConfigStore from '../interface/render-config-store';
@@ -77,6 +79,8 @@ import {
   SearchWorkspaceHandler,
   GetWorkspaceMetadataHandler,
   UpdateWorkspaceMetadataHandler,
+  UpdateRuntimePreferenceHandler,
+  SynchronizeWorkspaceHandler,
   RuntimeHandler,
   UpdateCacheHandler,
   UpdateDocumentSessionHandler,
@@ -91,6 +95,7 @@ import {
 const container = new Container();
 
 container.bind<IFileSystem>(TYPES.IFileSystem).to(FileSystem).inSingletonScope();
+container.bind<IAppLogger>(TYPES.IAppLogger).to(AppLogger).inSingletonScope();
 container.bind<IAppPathStore>(TYPES.IAppPathStore).to(AppPathStore).inSingletonScope();
 container.bind<IRenderConfigStore>(TYPES.IRenderConfigStore).to(RenderConfigStore).inSingletonScope();
 container.bind<ILibraryTreeStore>(TYPES.ILibraryTreeStore).to(LibraryTreeStore).inSingletonScope();
@@ -146,5 +151,7 @@ container.bind<IIpcHandler>(TYPES.IIpcHandler).to(SaveDocumentCopyHandler).inSin
 container.bind<IIpcHandler>(TYPES.IIpcHandler).to(SearchWorkspaceHandler).inSingletonScope();
 container.bind<IIpcHandler>(TYPES.IIpcHandler).to(GetWorkspaceMetadataHandler).inSingletonScope();
 container.bind<IIpcHandler>(TYPES.IIpcHandler).to(UpdateWorkspaceMetadataHandler).inSingletonScope();
+container.bind<IIpcHandler>(TYPES.IIpcHandler).to(UpdateRuntimePreferenceHandler).inSingletonScope();
+container.bind<IIpcHandler>(TYPES.IIpcHandler).to(SynchronizeWorkspaceHandler).inSingletonScope();
 
 export { container };

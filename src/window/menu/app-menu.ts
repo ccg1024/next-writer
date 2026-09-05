@@ -14,6 +14,7 @@ class AppMenu implements IAppMenu {
 
     this.synchronousLibrary = this.synchronousLibrary.bind(this);
     this.save = this.save.bind(this);
+    this.openCommandPalette = this.openCommandPalette.bind(this);
     this.searchWorkspace = this.searchWorkspace.bind(this);
     this.openDocumentShortcuts = this.openDocumentShortcuts.bind(this);
     this.toggleToc = this.toggleToc.bind(this);
@@ -82,6 +83,12 @@ class AppMenu implements IAppMenu {
       label: '编辑',
       submenu: [
         {
+          label: '命令面板',
+          accelerator: this.isMac ? 'Cmd+Shift+P' : 'Ctrl+Shift+P',
+          click: this.openCommandPalette
+        },
+        { type: 'separator' },
+        {
           label: '搜索工作区',
           accelerator: this.isMac ? 'Cmd+Shift+f' : 'Ctrl+Shift+f',
           click: this.searchWorkspace
@@ -97,6 +104,7 @@ class AppMenu implements IAppMenu {
         { type: 'separator' },
 
         {
+          id: 'typewriter-mode',
           label: '打字机模式',
           type: 'checkbox',
           click: this.toggleTypewriterMode
@@ -135,6 +143,10 @@ class AppMenu implements IAppMenu {
 
   private save(_m: MenuItem, win: BrowserWindow, _event: KeyboardEvent): void {
     this.menuActions.save(win);
+  }
+
+  private openCommandPalette(_m: MenuItem, win: BrowserWindow): void {
+    this.menuActions.openCommandPalette(win);
   }
 
   private searchWorkspace(_m: MenuItem, win: BrowserWindow): void {

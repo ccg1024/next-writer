@@ -26,6 +26,10 @@ class MenuStateStore implements IMenuStateStore {
     return { ...this.status };
   }
 
+  setTypewriterMode(value: boolean): void {
+    this.status = { ...this.status, typewriterMode: value };
+  }
+
   toggle(
     type: Extract<
       RendererListenerAction['type'],

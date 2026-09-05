@@ -20,6 +20,7 @@ import IFileSystem from '../interface/file-system';
 import ILibraryTreeStore from '../interface/library-tree-store';
 import IWorkspaceIndexService from '../interface/workspace-index-service';
 import { TYPES } from '../types';
+import IAppLogger from '../interface/app-logger';
 
 type WorkspaceIndexEntry = {
   id: string;
@@ -59,27 +60,41 @@ class WorkspaceIndexService implements IWorkspaceIndexService {
   constructor(
     @inject(TYPES.IFileSystem) private fileSystem: IFileSystem,
     @inject(TYPES.IAppPathStore) private appPathStore: IAppPathStore,
-    @inject(TYPES.ILibraryTreeStore) private libraryTreeStore: ILibraryTreeStore
+    @inject(TYPES.ILibraryTreeStore) private libraryTreeStore: ILibraryTreeStore,
+    @inject(TYPES.IAppLogger) private appLogger: IAppLogger = { record: () => undefined }
   ) {}
 
   async initialize(): Promise<void> {
     if (this.initializationPromise) {
       return this.initializationPromise;
     }
+    const startedAt = Date.now();
+    this.appLogger.record('workspace.index-initialize', 'start');
     this.initialized = true;
     this.initializationPromise = (async () => {
       try {
-        await this.loadPersistedIndex();
-      } catch {
-        this.entries.clear();
+        try {
+          await this.loadPersistedIndex();
+        } catch {
+          this.entries.clear();
+        }
+        await this.rebuild();
+        this.appLogger.record('workspace.index-initialize', 'success', {
+          durationMs: Date.now() - startedAt,
+          metadata: { indexEntryCount: this.entries.size }
+        });
+      } catch (error) {
+        this.appLogger.record('workspace.index-initialize', 'failure', { durationMs: Date.now() - startedAt, error });
+        throw error;
       }
-      await this.rebuild();
     })();
     return this.initializationPromise;
   }
 
   rebuild(): Promise<void> {
     return this.enqueue(async () => {
+      const startedAt = Date.now();
+      this.appLogger.record('workspace.index-rebuild', 'start');
       this.status = 'building';
       try {
         const files = this.collectWorkspaceFiles();
@@ -98,8 +113,13 @@ class WorkspaceIndexService implements IWorkspaceIndexService {
         this.entries = nextEntries;
         await this.persistIndex();
         this.status = 'ready';
+        this.appLogger.record('workspace.index-rebuild', 'success', {
+          durationMs: Date.now() - startedAt,
+          metadata: { indexEntryCount: this.entries.size }
+        });
       } catch (error) {
         this.status = 'error';
+        this.appLogger.record('workspace.index-rebuild', 'failure', { durationMs: Date.now() - startedAt, error });
         throw error;
       }
     });

@@ -35,6 +35,7 @@ import {
   resolveLibraryNodePath
 } from '../utils/lib-tree-utils';
 import { TYPES } from '../types';
+import IAppLogger from '../interface/app-logger';
 
 @injectable()
 /**
@@ -52,15 +53,29 @@ class DocumentService implements IDocumentService {
     @inject(TYPES.IRenderConfigStore) private renderConfigStore: IRenderConfigStore,
     @inject(TYPES.ISaveScheduler) private saveScheduler: ISaveScheduler,
     @inject(TYPES.IRecoveryDraftService) private recoveryDrafts: IRecoveryDraftService,
-    @inject(TYPES.IWindowRegistry) private windowRegistry: IWindowRegistry
+    @inject(TYPES.IWindowRegistry) private windowRegistry: IWindowRegistry,
+    @inject(TYPES.IAppLogger) private appLogger: IAppLogger = { record: () => undefined }
   ) {}
 
   async readFile(data: ReadFileRequest): Promise<ReadFileResponse> {
+    const startedAt = Date.now();
     const { id } = data ?? {};
-    const pathInfo = this.resolveFileNode(id);
-    const session = await this.ensureSession(id, pathInfo.fullPath);
-
-    return { content: session.content, session };
+    try {
+      const pathInfo = this.resolveFileNode(id);
+      const session = await this.ensureSession(id, pathInfo.fullPath);
+      this.appLogger.record('document.open', 'success', {
+        durationMs: Date.now() - startedAt,
+        metadata: { documentId: id }
+      });
+      return { content: session.content, session };
+    } catch (error) {
+      this.appLogger.record('document.open', 'failure', {
+        durationMs: Date.now() - startedAt,
+        metadata: { documentId: id },
+        error
+      });
+      throw error;
+    }
   }
 
   async writeFile(data: WriteFileRequest): Promise<RootLibraryTree> {
@@ -121,6 +136,8 @@ class DocumentService implements IDocumentService {
     expectedDisk?: { content?: string; missing?: boolean }
   ): Promise<RootLibraryTree> {
     const { id, content, revision } = data ?? {};
+    const startedAt = Date.now();
+    this.appLogger.record('document.save', 'start', { metadata: { documentId: id } });
     const rootDir = this.appPathStore.getRootDir();
 
     return this.libraryTreeStore.updateTree(async libTree => {
@@ -157,7 +174,16 @@ class DocumentService implements IDocumentService {
         }
         pathInfo.node.modifiedTime = newStat.mtime.toLocaleString();
         pathInfo.node.description = content.substring(0, MAX_FILE_DESCRIPTION_LENGTH);
+        this.appLogger.record('document.save', 'success', {
+          durationMs: Date.now() - startedAt,
+          metadata: { documentId: id }
+        });
       } catch (error) {
+        this.appLogger.record('document.save', 'failure', {
+          durationMs: Date.now() - startedAt,
+          metadata: { documentId: id },
+          error
+        });
         if (this.sessions.get(id)?.status === 'conflict' || this.sessions.get(id)?.status === 'unavailable') {
           throw error;
         }
@@ -216,20 +242,34 @@ class DocumentService implements IDocumentService {
   }
 
   async recoverDraft(id: string): Promise<DocumentSession> {
-    const currentSession = await this.getSession({ id });
-    const draft = this.recoveryDrafts.get(id);
-    if (!draft) {
-      throw new Error('恢复草稿不存在');
-    }
+    const startedAt = Date.now();
+    try {
+      const currentSession = await this.getSession({ id });
+      const draft = this.recoveryDrafts.get(id);
+      if (!draft) {
+        throw new Error('恢复草稿不存在');
+      }
 
-    const recoveredSession = this.sessions.updateContent(
-      id,
-      draft.content,
-      Math.max(currentSession.localRevision + 1, draft.revision)
-    );
-    this.syncCache(recoveredSession);
-    this.scheduleAutoSave(recoveredSession);
-    return recoveredSession;
+      const recoveredSession = this.sessions.updateContent(
+        id,
+        draft.content,
+        Math.max(currentSession.localRevision + 1, draft.revision)
+      );
+      this.syncCache(recoveredSession);
+      this.scheduleAutoSave(recoveredSession);
+      this.appLogger.record('draft.recover', 'success', {
+        durationMs: Date.now() - startedAt,
+        metadata: { documentId: id }
+      });
+      return recoveredSession;
+    } catch (error) {
+      this.appLogger.record('draft.recover', 'failure', {
+        durationMs: Date.now() - startedAt,
+        metadata: { documentId: id },
+        error
+      });
+      throw error;
+    }
   }
 
   async discardRecoveryDraft(id: string, createdAt: number, revision: number): Promise<{ success: boolean }> {
@@ -255,6 +295,9 @@ class DocumentService implements IDocumentService {
       this.syncCache(unavailable);
       this.recoveryDrafts.scheduleSnapshot(unavailable);
       this.emitExternalChange({ kind: 'deleted', session: unavailable });
+      this.appLogger.record('document.external-change', 'success', {
+        metadata: { documentId: session.id, changeKind: 'deleted' }
+      });
       return;
     }
 
@@ -270,6 +313,9 @@ class DocumentService implements IDocumentService {
       const reloaded = this.sessions.applyExternalContent(session.id, diskContent, stat.mtimeMs);
       this.syncCache(reloaded);
       this.emitExternalChange({ kind: 'reloaded', session: reloaded });
+      this.appLogger.record('document.external-change', 'success', {
+        metadata: { documentId: session.id, changeKind: 'reloaded' }
+      });
       return;
     }
 
@@ -278,6 +324,9 @@ class DocumentService implements IDocumentService {
     this.syncCache(conflicted);
     this.recoveryDrafts.scheduleSnapshot(conflicted);
     this.emitExternalChange({ kind: 'conflict', session: conflicted });
+    this.appLogger.record('document.external-change', 'success', {
+      metadata: { documentId: session.id, changeKind: 'conflict' }
+    });
   }
 
   async resolveDocumentConflict(data: ResolveDocumentConflictRequest): Promise<ResolveDocumentConflictResponse> {

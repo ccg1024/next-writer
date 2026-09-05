@@ -14,6 +14,7 @@ import { useLibraryActions, useLibraryState } from 'src/ui/domain/library';
 import { useEditorActions } from 'src/ui/domain/editor';
 import { useRuntimeLayout } from 'src/ui/domain/runtime';
 import { findRendererNodeById } from 'src/ui/libs/renderer-tree';
+import { useRegisterCommand } from 'src/ui/domain/command';
 import {
   blocksDocumentPersistence,
   ExternalDocumentChangeKind,
@@ -187,14 +188,14 @@ const Main: FC = () => {
     typewriterMode
   });
 
-  const handleWriteFile = useCallback(() => {
+  const handleWriteFile = useCallback(async () => {
     if (!editor || !currentNote?.id || sessionRef.current?.id !== currentNote.id) {
-      return;
+      throw new Error('编辑器未就绪');
     }
 
     if (blocksDocumentPersistence(sessionRef.current.status)) {
       message.warning('请先处理文件的外部变更');
-      return;
+      throw new Error('请先处理文件的外部变更');
     }
 
     const content = editor.state.doc.toString();
@@ -206,35 +207,51 @@ const Main: FC = () => {
       setSession(savingSession);
     }
     nwSpin.loading(true);
-    rendererGateway
-      .writeFile({ id: noteId, content, revision: sessionRevisionsRef.current.get(noteId) })
-      .then(res => {
-        if (res.status !== 0) {
-          message.error(res.message || '保存文件失败');
-          return rendererGateway.getDocumentSession({ id: noteId });
-        }
-
-        setLibraryTree(res.data);
-        return rendererGateway.getDocumentSession({ id: noteId });
-      })
-      .then(sessionResponse => {
-        if (
-          sessionResponse?.status === 0 &&
-          sessionResponse.data &&
-          activeNoteIdRef.current === noteId &&
-          sessionRef.current?.id === noteId
-        ) {
-          sessionRef.current = sessionResponse.data;
-          setSession(sessionResponse.data);
-          patchCurrentNote({ isChange: isDocumentSessionModified(sessionResponse.data) });
-        }
-      })
-      .finally(() => {
-        nwSpin.loading(false);
+    try {
+      const res = await rendererGateway.writeFile({
+        id: noteId,
+        content,
+        revision: sessionRevisionsRef.current.get(noteId)
       });
+      if (res.status !== 0) {
+        message.error(res.message || '保存文件失败');
+        await rendererGateway.getDocumentSession({ id: noteId });
+        throw new Error(res.message || '保存文件失败');
+      }
+
+      setLibraryTree(res.data);
+      const sessionResponse = await rendererGateway.getDocumentSession({ id: noteId });
+      if (
+        sessionResponse?.status === 0 &&
+        sessionResponse.data &&
+        activeNoteIdRef.current === noteId &&
+        sessionRef.current?.id === noteId
+      ) {
+        sessionRef.current = sessionResponse.data;
+        setSession(sessionResponse.data);
+        patchCurrentNote({ isChange: isDocumentSessionModified(sessionResponse.data) });
+      }
+    } finally {
+      nwSpin.loading(false);
+    }
   }, [currentNote, editor, message, patchCurrentNote, setLibraryTree]);
 
   useRendererCommand('write-file', handleWriteFile);
+
+  useRegisterCommand({
+    id: 'document.save',
+    title: '保存当前文档',
+    category: 'action',
+    keywords: ['保存', 'save'],
+    shortcut: 'Cmd/Ctrl+S',
+    availability: () => {
+      if (!currentNote) return { enabled: false, reason: '没有当前文档' };
+      if (!editor || session?.id !== currentNote.id) return { enabled: false, reason: '编辑器未就绪' };
+      if (blocksDocumentPersistence(session.status)) return { enabled: false, reason: '文档存在外部冲突' };
+      return { enabled: true };
+    },
+    execute: handleWriteFile
+  });
 
   const handleRecoverDraft = useCallback(async () => {
     if (!currentNote?.id || !recoveryDraft) {

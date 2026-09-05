@@ -40,6 +40,7 @@ describe('AppMenu', () => {
     jest.clearAllMocks();
     menuActions = {
       save: jest.fn(),
+      openCommandPalette: jest.fn(),
       searchWorkspace: jest.fn(),
       openDocumentShortcuts: jest.fn(),
       toggleToc: jest.fn(),

@@ -10,12 +10,14 @@ import FileSystem from '../infrastructure/file-system';
 import AppPathStore from '../state/app-path-store';
 import RenderConfigStore from '../state/render-config-store';
 import ThemeService from './theme-service';
+import ConfigService from './config-service';
 
 describe('ThemeService', () => {
   let tempDir: string;
   let configDir: string;
   let appPathStore: AppPathStore;
   let renderConfigStore: RenderConfigStore;
+  let configService: ConfigService;
   let themeService: ThemeService;
 
   beforeEach(async () => {
@@ -25,7 +27,9 @@ describe('ThemeService', () => {
     appPathStore.setPaths({ configDir });
     renderConfigStore = new RenderConfigStore();
     renderConfigStore.setConfig({ themeId: DEFAULT_THEME_ID });
-    themeService = new ThemeService(new FileSystem(), appPathStore, renderConfigStore);
+    const fileSystem = new FileSystem();
+    configService = new ConfigService(fileSystem, appPathStore, renderConfigStore);
+    themeService = new ThemeService(fileSystem, appPathStore, renderConfigStore, configService);
   });
 
   afterEach(async () => {
@@ -114,5 +118,24 @@ describe('ThemeService', () => {
 
   it('rejects applying unknown themes', async () => {
     await expect(themeService.applyTheme('missing-theme')).rejects.toThrow('Theme "missing-theme" does not exist.');
+  });
+
+  it('serializes theme and auto-save patches without losing either field', async () => {
+    await nodeFs.promises.mkdir(configDir, { recursive: true });
+    await nodeFs.promises.writeFile(
+      nodePath.join(configDir, CONFIG_JSON_NAME),
+      JSON.stringify({ themeId: DEFAULT_THEME_ID, autoSave: { enabled: true, delayMs: 800 } })
+    );
+
+    await Promise.all([
+      themeService.applyTheme(CLAUDE_THEME_ID),
+      configService.patchConfig({ autoSave: { enabled: false } })
+    ]);
+
+    const persisted = JSON.parse(await nodeFs.promises.readFile(nodePath.join(configDir, CONFIG_JSON_NAME), 'utf8'));
+    expect(persisted).toEqual({
+      themeId: CLAUDE_THEME_ID,
+      autoSave: { enabled: false, delayMs: 800 }
+    });
   });
 });

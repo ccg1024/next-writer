@@ -11,6 +11,19 @@ describe('validateIpcRequest', () => {
       valid: true
     });
     expect(validateIpcRequest({ type: IPC_CHANNEL.RUNTIME })).toMatchObject({ valid: true });
+    expect(validateIpcRequest({ type: IPC_CHANNEL.SYNCHRONIZE_WORKSPACE })).toMatchObject({ valid: true });
+    expect(
+      validateIpcRequest({
+        type: IPC_CHANNEL.UPDATE_RUNTIME_PREFERENCE,
+        data: { preference: 'autoSave.enabled', value: false, ignored: 'removed' }
+      })
+    ).toEqual({
+      valid: true,
+      request: {
+        type: IPC_CHANNEL.UPDATE_RUNTIME_PREFERENCE,
+        data: { preference: 'autoSave.enabled', value: false }
+      }
+    });
     expect(validateIpcRequest({ type: IPC_CHANNEL.READ_FILE, data: { id: 'note-id' } })).toMatchObject({
       valid: true
     });
@@ -189,5 +202,14 @@ describe('validateIpcRequest', () => {
     expect(
       validateIpcRequest({ type: IPC_CHANNEL.UPDATE_WORKSPACE_METADATA, data: { action: 'set-pinned', id: '' } })
     ).toEqual({ valid: false, message: 'Workspace metadata update is invalid.' });
+  });
+
+  it('rejects runtime preferences outside the explicit whitelist', () => {
+    expect(
+      validateIpcRequest({
+        type: IPC_CHANNEL.UPDATE_RUNTIME_PREFERENCE,
+        data: { preference: 'autoSave.delayMs', value: true }
+      })
+    ).toEqual({ valid: false, message: 'Runtime preference update is invalid.' });
   });
 });

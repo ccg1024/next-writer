@@ -10,6 +10,7 @@ export type NormalObject = Record<
 // For Renderer process
 // -----------------------------------------------
 const RENDERER_LISTENER_ACTIONS = [
+  'execute-command',
   'write-file',
   'external-document-change',
   'search-workspace',
@@ -33,6 +34,8 @@ export interface IPC {
   updateLib: (data: UpdateLibRequest) => Promise<Response<UpdateLibResponse>>;
   writeFile: (data: WriteFileRequest) => Promise<Response<RootLibraryTree>>;
   queryRuntimeConfig: () => Promise<Response<RuntimeConfigResponse>>;
+  updateRuntimePreference: (data: UpdateRuntimePreferenceRequest) => Promise<Response<RuntimeConfigResponse>>;
+  synchronizeWorkspace: () => Promise<Response<RootLibraryTree>>;
   updateCache: (data: UpdateCacheRequest) => Promise<Response<{ success: boolean }>>;
   getDocumentSession: (data: GetDocumentSessionRequest) => Promise<Response<GetDocumentSessionResponse>>;
   updateDocumentSession: (data: UpdateDocumentSessionRequest) => Promise<Response<UpdateDocumentSessionResponse>>;
@@ -181,6 +184,10 @@ export type RuntimeConfigResponse = {
     delayMs: number;
   };
 };
+
+export type UpdateRuntimePreferenceRequest =
+  | { preference: 'autoSave.enabled'; value: boolean }
+  | { preference: 'typewriterMode'; value: boolean };
 
 // ============================================================
 // Just for Ipc communication -- start

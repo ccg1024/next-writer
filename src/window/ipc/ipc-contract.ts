@@ -22,6 +22,7 @@ import type {
   UpdateDocumentSessionRequest,
   UpdateLibRequest,
   UpdateLibResponse,
+  UpdateRuntimePreferenceRequest,
   WriteFileRequest,
   WorkspaceSearchRequest,
   WorkspaceSearchResponse,
@@ -53,7 +54,9 @@ export const IPC_CHANNEL = {
   SAVE_DOCUMENT_COPY: 'save-document-copy',
   SEARCH_WORKSPACE: 'search-workspace',
   GET_WORKSPACE_METADATA: 'get-workspace-metadata',
-  UPDATE_WORKSPACE_METADATA: 'update-workspace-metadata'
+  UPDATE_WORKSPACE_METADATA: 'update-workspace-metadata',
+  UPDATE_RUNTIME_PREFERENCE: 'update-runtime-preference',
+  SYNCHRONIZE_WORKSPACE: 'synchronize-workspace'
 } as const;
 
 export type IpcChannel = (typeof IPC_CHANNEL)[keyof typeof IPC_CHANNEL];
@@ -78,6 +81,8 @@ type IpcRequestMap = {
   [IPC_CHANNEL.SEARCH_WORKSPACE]: WorkspaceSearchRequest;
   [IPC_CHANNEL.GET_WORKSPACE_METADATA]: undefined;
   [IPC_CHANNEL.UPDATE_WORKSPACE_METADATA]: UpdateWorkspaceMetadataRequest;
+  [IPC_CHANNEL.UPDATE_RUNTIME_PREFERENCE]: UpdateRuntimePreferenceRequest;
+  [IPC_CHANNEL.SYNCHRONIZE_WORKSPACE]: undefined;
 };
 
 type IpcResponseMap = {
@@ -100,6 +105,8 @@ type IpcResponseMap = {
   [IPC_CHANNEL.SEARCH_WORKSPACE]: WorkspaceSearchResponse;
   [IPC_CHANNEL.GET_WORKSPACE_METADATA]: WorkspaceMetadata;
   [IPC_CHANNEL.UPDATE_WORKSPACE_METADATA]: WorkspaceMetadata;
+  [IPC_CHANNEL.UPDATE_RUNTIME_PREFERENCE]: RuntimeConfigResponse;
+  [IPC_CHANNEL.SYNCHRONIZE_WORKSPACE]: RootLibraryTree;
 };
 
 export type IpcRequestData<C extends IpcChannel> = IpcRequestMap[C];

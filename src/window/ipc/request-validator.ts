@@ -36,6 +36,7 @@ export function validateIpcRequest(value: unknown): IpcRequestValidation {
     case IPC_CHANNEL.LIST_THEMES:
     case IPC_CHANNEL.RUNTIME:
     case IPC_CHANNEL.GET_WORKSPACE_METADATA:
+    case IPC_CHANNEL.SYNCHRONIZE_WORKSPACE:
       return validateNoPayload(value, channel);
     case IPC_CHANNEL.APPLY_THEME:
       return validateApplyTheme(data, channel);
@@ -64,9 +65,22 @@ export function validateIpcRequest(value: unknown): IpcRequestValidation {
       return validateWorkspaceSearch(data, channel);
     case IPC_CHANNEL.UPDATE_WORKSPACE_METADATA:
       return validateWorkspaceMetadataUpdate(data, channel);
+    case IPC_CHANNEL.UPDATE_RUNTIME_PREFERENCE:
+      return validateRuntimePreference(data, channel);
     default:
       return invalid('Invalid IPC channel.');
   }
+}
+
+function validateRuntimePreference(data: unknown, type: IpcChannel): IpcRequestValidation {
+  if (
+    !isRecord(data) ||
+    (data.preference !== 'autoSave.enabled' && data.preference !== 'typewriterMode') ||
+    typeof data.value !== 'boolean'
+  ) {
+    return invalid('Runtime preference update is invalid.');
+  }
+  return valid({ type, data: { preference: data.preference, value: data.value } } as AnyIpcRequest);
 }
 
 function validateWorkspaceMetadataUpdate(data: unknown, type: IpcChannel): IpcRequestValidation {

@@ -6,6 +6,7 @@ import IAppPathStore from '../interface/app-path-store';
 import IFileSystem from '../interface/file-system';
 import IRecoveryDraftService from '../interface/recovery-draft-service';
 import { TYPES } from '../types';
+import IAppLogger from '../interface/app-logger';
 
 const RECOVERY_DRAFT_VERSION = 1 as const;
 
@@ -19,7 +20,8 @@ class RecoveryDraftService implements IRecoveryDraftService {
 
   constructor(
     @inject(TYPES.IFileSystem) private fileSystem: IFileSystem,
-    @inject(TYPES.IAppPathStore) private appPathStore: IAppPathStore
+    @inject(TYPES.IAppPathStore) private appPathStore: IAppPathStore,
+    @inject(TYPES.IAppLogger) private appLogger: IAppLogger = { record: () => undefined }
   ) {}
 
   async initialize(): Promise<void> {
@@ -70,7 +72,18 @@ class RecoveryDraftService implements IRecoveryDraftService {
         this.drafts.set(session.id, draft);
       });
     this.writes.set(session.id, write);
-    await write;
+    try {
+      await write;
+      this.appLogger.record('draft.create', 'success', {
+        metadata: { documentId: session.id, changeKind: source }
+      });
+    } catch (error) {
+      this.appLogger.record('draft.create', 'failure', {
+        metadata: { documentId: session.id, changeKind: source },
+        error
+      });
+      throw error;
+    }
     if (this.writes.get(session.id) === write) {
       this.writes.delete(session.id);
     }

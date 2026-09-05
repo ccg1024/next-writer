@@ -1,6 +1,5 @@
 import nodePath from 'path';
 import { inject, injectable } from 'inversify';
-import { CONFIG_JSON_NAME } from 'src/config/env';
 import {
   DEFAULT_LIGHT_THEME,
   CLAUDE_THEME,
@@ -14,8 +13,8 @@ import {
   ThemeState,
   toThemeListItem
 } from 'src/theme/theme-contract';
-import type { NormalObject } from '_types';
 import IAppPathStore from '../interface/app-path-store';
+import IConfigService from '../interface/config-service';
 import IFileSystem from '../interface/file-system';
 import IRenderConfigStore from '../interface/render-config-store';
 import IThemeService from '../interface/theme-service';
@@ -34,7 +33,8 @@ class ThemeService implements IThemeService {
   constructor(
     @inject(TYPES.IFileSystem) private fileSystem: IFileSystem,
     @inject(TYPES.IAppPathStore) private appPathStore: IAppPathStore,
-    @inject(TYPES.IRenderConfigStore) private renderConfigStore: IRenderConfigStore
+    @inject(TYPES.IRenderConfigStore) private renderConfigStore: IRenderConfigStore,
+    @inject(TYPES.IConfigService) private configService: IConfigService
   ) {}
 
   async initThemes(): Promise<void> {
@@ -60,13 +60,7 @@ class ThemeService implements IThemeService {
       throw new Error(`Theme "${themeId}" does not exist.`);
     }
 
-    const configFilePath = this.getConfigFilePath();
-    const config = await this.readConfigFile(configFilePath);
-    const nextConfig: Record<string, unknown> = { ...config, themeId };
-
-    await this.fileSystem.writeFile(configFilePath, JSON.stringify(nextConfig, null, 2));
-    const { root: _root, ...renderConfig } = nextConfig;
-    this.renderConfigStore.setConfig(renderConfig as NormalObject);
+    await this.configService.patchConfig({ themeId });
 
     return theme;
   }
@@ -149,20 +143,6 @@ class ThemeService implements IThemeService {
 
   private getThemeDir(): string {
     return nodePath.join(this.appPathStore.getConfigDir(), THEME_DIR_NAME);
-  }
-
-  private getConfigFilePath(): string {
-    return nodePath.join(this.appPathStore.getConfigDir(), CONFIG_JSON_NAME);
-  }
-
-  private async readConfigFile(configFilePath: string): Promise<Record<string, unknown>> {
-    if (!(await this.fileSystem.exists(configFilePath))) {
-      return {};
-    }
-
-    const content = await this.fileSystem.readFile(configFilePath);
-    const parsed = JSON.parse(content);
-    return isRecord(parsed) ? parsed : {};
   }
 }
 

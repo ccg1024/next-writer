@@ -42,6 +42,7 @@ export function AppThemeProvider({ config, activeTheme, themes, children }: AppT
     }
 
     message.error(res?.message || '切换主题失败');
+    throw new Error(res?.message || '切换主题失败');
   }, []);
 
   const token = useMemo(() => deriveAntdToken(currentTheme, config), [config, currentTheme]);

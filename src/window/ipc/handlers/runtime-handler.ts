@@ -17,23 +17,29 @@ class RuntimeHandler implements IIpcHandler<typeof IPC_CHANNEL.RUNTIME> {
   ) {}
 
   async handle(): Promise<RuntimeConfigResponse> {
-    const menuStatus = this.menuStateStore.getStatus();
-    const autoSave = this.renderConfigStore.getConfig().autoSave;
-    return {
-      menuStatus,
-      autoSave: {
-        enabled: typeof autoSave !== 'object' || autoSave === null || autoSave.enabled !== false,
-        delayMs:
-          typeof autoSave === 'object' &&
-          autoSave !== null &&
-          typeof autoSave.delayMs === 'number' &&
-          Number.isFinite(autoSave.delayMs) &&
-          autoSave.delayMs >= 0
-            ? autoSave.delayMs
-            : DEFAULT_AUTO_SAVE_DELAY_MS
-      }
-    };
+    return createRuntimeConfigResponse(this.menuStateStore, this.renderConfigStore);
   }
+}
+
+export function createRuntimeConfigResponse(
+  menuStateStore: IMenuStateStore,
+  renderConfigStore: IRenderConfigStore
+): RuntimeConfigResponse {
+  const autoSave = renderConfigStore.getConfig().autoSave;
+  return {
+    menuStatus: menuStateStore.getStatus(),
+    autoSave: {
+      enabled: typeof autoSave !== 'object' || autoSave === null || autoSave.enabled !== false,
+      delayMs:
+        typeof autoSave === 'object' &&
+        autoSave !== null &&
+        typeof autoSave.delayMs === 'number' &&
+        Number.isFinite(autoSave.delayMs) &&
+        autoSave.delayMs >= 0
+          ? autoSave.delayMs
+          : DEFAULT_AUTO_SAVE_DELAY_MS
+    }
+  };
 }
 
 export default RuntimeHandler;

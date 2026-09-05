@@ -35,7 +35,8 @@ const TYPES = {
   IRecoveryDraftService: Symbol.for('IRecoveryDraftService'),
   IWorkspaceFileWatcher: Symbol.for('IWorkspaceFileWatcher'),
   IWorkspaceIndexService: Symbol.for('IWorkspaceIndexService'),
-  IWorkspaceMetadataService: Symbol.for('IWorkspaceMetadataService')
+  IWorkspaceMetadataService: Symbol.for('IWorkspaceMetadataService'),
+  IAppLogger: Symbol.for('IAppLogger')
 };
 
 export { TYPES };

@@ -6,6 +6,7 @@ import ISenderValidator from '../interface/sender-validator';
 import { AnyIpcRequest, IPC_SERVER_NAME, IpcChannel, IpcRequestData, IpcResponse } from './ipc-contract';
 import { validateIpcRequest } from './request-validator';
 import { TYPES } from '../types';
+import IAppLogger from '../interface/app-logger';
 
 @injectable()
 /**
@@ -14,7 +15,10 @@ import { TYPES } from '../types';
 class IpcRouter implements IIpcRouter {
   private handlers: Map<IpcChannel, IIpcHandler>;
 
-  constructor(@inject(TYPES.ISenderValidator) private senderValidator: ISenderValidator) {
+  constructor(
+    @inject(TYPES.ISenderValidator) private senderValidator: ISenderValidator,
+    @inject(TYPES.IAppLogger) private appLogger: IAppLogger = { record: () => undefined }
+  ) {
     this.handlers = new Map();
     this.listener = this.listener.bind(this);
   }
@@ -61,6 +65,7 @@ class IpcRouter implements IIpcRouter {
       });
       return { status: 0, data: result ?? null };
     } catch (error) {
+      this.appLogger.record('ipc.handler', 'failure', { metadata: { ipcChannel: type }, error });
       return {
         status: -1,
         data: null,

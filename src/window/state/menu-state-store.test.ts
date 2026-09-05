@@ -38,4 +38,12 @@ describe('MenuStateStore', () => {
       actionSidebar: false
     });
   });
+
+  it('explicitly assigns typewriter mode', () => {
+    const store = new MenuStateStore();
+    store.setTypewriterMode(true);
+    expect(store.getStatus().typewriterMode).toBe(true);
+    store.setTypewriterMode(false);
+    expect(store.getStatus().typewriterMode).toBe(false);
+  });
 });

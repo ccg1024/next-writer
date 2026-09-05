@@ -1,0 +1,39 @@
+.command-palette ._next_writer-modal-body {
+  padding-top: 8px;
+}
+
+.command-palette-results {
+  max-height: min(62vh, 560px);
+  margin-top: 12px;
+  overflow-y: auto;
+}
+
+.command-palette-item {
+  display: flex;
+  width: 100%;
+  min-height: 48px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.command-palette-item.selected {
+  background: var(--nw-color-fill-secondary);
+}
+
+.command-palette-item:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.command-palette-item-main {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}

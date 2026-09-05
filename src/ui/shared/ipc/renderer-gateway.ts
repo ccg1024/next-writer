@@ -11,6 +11,7 @@ import {
   UpdateCacheRequest,
   UpdateDocumentSessionRequest,
   UpdateLibRequest,
+  UpdateRuntimePreferenceRequest,
   UpdateWorkspaceMetadataRequest,
   WriteFileRequest,
   WorkspaceSearchRequest
@@ -45,6 +46,14 @@ async function writeFile(data: WriteFileRequest) {
 
 async function queryRuntimeConfig() {
   return window.ipc.queryRuntimeConfig();
+}
+
+async function updateRuntimePreference(data: UpdateRuntimePreferenceRequest) {
+  return window.ipc.updateRuntimePreference(data);
+}
+
+async function synchronizeWorkspace() {
+  return window.ipc.synchronizeWorkspace();
 }
 
 async function updateCache(data: UpdateCacheRequest) {
@@ -103,6 +112,8 @@ const rendererGateway = {
   updateLib,
   writeFile,
   queryRuntimeConfig,
+  updateRuntimePreference,
+  synchronizeWorkspace,
   updateCache,
   getDocumentSession,
   updateDocumentSession,
